@@ -1,0 +1,13 @@
+django
+djangorestframework
+django-cors-headers
+django-environ
+django-filter
+django-redis
+django-storages
+boto3
+stripe
+pillow
+psycopg2-binary
+djangorestframework-simplejwt
+drf-nested-routers
