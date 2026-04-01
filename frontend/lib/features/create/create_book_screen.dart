@@ -1,15 +1,103 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glassmorphism/glassmorphism.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import '../../providers/navigation_provider.dart';
+import '../../providers/book_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/book_model.dart';
 
-class CreateBookScreen extends StatefulWidget {
+class CreateBookScreen extends ConsumerStatefulWidget {
   const CreateBookScreen({super.key});
 
   @override
-  State<CreateBookScreen> createState() => _CreateBookScreenState();
+  ConsumerState<CreateBookScreen> createState() => _CreateBookScreenState();
 }
 
-class _CreateBookScreenState extends State<CreateBookScreen> {
+class _CreateBookScreenState extends ConsumerState<CreateBookScreen> {
   int _currentStep = 0;
+  XFile? _coverImage;
+  final ImagePicker _picker = ImagePicker();
+  
+  final _titleController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _descController = TextEditingController();
+  final List<quill.QuillController> _pageControllers = [];
+  final PageController _pageController = PageController();
+  int _currentPageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _addNewPage();
+  }
+
+  void _addNewPage() {
+    final controller = quill.QuillController.basic();
+    // Auto-pagination listener
+    controller.addListener(() {
+      final text = controller.document.toPlainText();
+      // Using ~2500 characters as a standard page limit
+      if (text.length > 2500 && _pageControllers.indexOf(controller) == _pageControllers.length - 1) {
+        _addNewPage();
+      }
+    });
+    setState(() {
+      _pageControllers.add(controller);
+    });
+    // If not the first page, navigate to it
+    if (_pageControllers.length > 1) {
+      Future.microtask(() {
+        _pageController.animateToPage(
+          _pageControllers.length - 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
+  }
+
+  void _removePage(int index) {
+    if (_pageControllers.length <= 1) return;
+    setState(() {
+      _pageControllers[index].dispose();
+      _pageControllers.removeAt(index);
+    });
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _categoryController.dispose();
+    _descController.dispose();
+    for (var c in _pageControllers) {
+      c.dispose();
+    }
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _exitStudio() {
+    ref.read(navigationProvider.notifier).state = 0; // Back to Home
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? selected = await _picker.pickImage(source: ImageSource.gallery);
+      if (selected != null) {
+        setState(() {
+          _coverImage = selected;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting image: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +113,7 @@ class _CreateBookScreenState extends State<CreateBookScreen> {
                   const Spacer(),
                   if (_currentStep > 0)
                     IconButton(onPressed: () => setState(() => _currentStep--), icon: const Icon(Icons.arrow_back_ios_new_rounded)),
+                  IconButton(onPressed: _exitStudio, icon: const Icon(Icons.close_rounded, color: Colors.white54)),
                 ],
               ),
             ),
@@ -91,42 +180,119 @@ class _CreateBookScreenState extends State<CreateBookScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTextField('Book Title', 'Enter a catchy title...'),
+          _buildTextField('Book Title', 'Enter a catchy title...', _titleController),
           const SizedBox(height: 20),
-          _buildTextField('Category', 'e.g. Science Fiction, Romance...'),
+          _buildTextField('Category', 'e.g. Science Fiction, Romance...', _categoryController),
           const SizedBox(height: 20),
           const Text('Book Cover', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: () {},
+            onTap: _pickImage,
             child: Container(
               height: 200,
               width: 150,
-              decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white24, style: BorderStyle.solid)),
-              child: const Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.white54),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white24, style: BorderStyle.solid),
+                image: _coverImage != null
+                    ? DecorationImage(
+                        image: FileImage(File(_coverImage!.path)),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: _coverImage == null
+                  ? const Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.white54)
+                  : null,
             ),
           ),
           const SizedBox(height: 20),
-          _buildTextField('Description', 'What is your story about?', maxLines: 5),
+          _buildTextField('Description', 'What is your story about?', _descController, maxLines: 5),
         ],
       ),
     );
   }
 
   Widget _buildWritingStep() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: TextField(
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        decoration: InputDecoration(
-          hintText: 'Start writing your masterwork here...',
-          filled: true,
-          fillColor: Colors.grey[900],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+    return Column(
+      children: [
+        // Shared Toolbar
+        quill.QuillSimpleToolbar(
+          controller: _pageControllers[_currentPageIndex],
+          config: quill.QuillSimpleToolbarConfig(
+            headerStyleType: quill.HeaderStyleType.buttons,
+            showAlignmentButtons: true,
+            showSmallButton: false,
+            showInlineCode: false,
+            showLink: true,
+            showCodeBlock: false,
+            showSubscript: false,
+            showSuperscript: false,
+
+          ),
         ),
-      ),
+        
+        // Page Info & Manual Controls
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            children: [
+              Text(
+                'Page ${_currentPageIndex + 1} of ${_pageControllers.length}',
+                style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _addNewPage,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add Page'),
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF6C63FF)),
+              ),
+              if (_pageControllers.length > 1)
+                IconButton(
+                  onPressed: () => _removePage(_currentPageIndex),
+                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _pageControllers.length,
+            onPageChanged: (index) => setState(() => _currentPageIndex = index),
+            itemBuilder: (context, index) {
+              return Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: quill.QuillEditor.basic(
+                    controller: _pageControllers[index],
+                    config: quill.QuillEditorConfig(
+                      placeholder: 'Once upon a time...',
+                      expands: true,
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -149,13 +315,14 @@ class _CreateBookScreenState extends State<CreateBookScreen> {
     );
   }
 
-  Widget _buildTextField(String label, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(String label, String hint, TextEditingController controller, {int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         TextField(
+          controller: controller,
           maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint,
@@ -197,8 +364,31 @@ class _CreateBookScreenState extends State<CreateBookScreen> {
               setState(() => _currentStep++);
             } else {
               // Publish logic
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Book published successfully!')));
-              Navigator.pop(context);
+              final authState = ref.read(authProvider);
+              
+              // Map all pages to plain text for now, or JSON if you prefer
+              final pagesData = _pageControllers.map((c) => c.document.toPlainText()).toList();
+              
+              final newBook = BookModel(
+                id: DateTime.now().millisecondsSinceEpoch,
+                title: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
+                authorName: authState.profile?.username ?? 'Anomymous',
+                coverUrl: _coverImage?.path ?? '',
+                description: pagesData.isNotEmpty ? pagesData.first.substring(0, 200 > pagesData.first.length ? pagesData.first.length : 200) : '',
+                price: 0.0,
+                likesCount: 0,
+                totalReads: 0,
+                chapters: [],
+                pages: pagesData,
+              );
+
+              ref.read(bookProvider.notifier).addBook(newBook);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Book published successfully!')),
+              );
+              // Exit Studio and go back to Home
+              ref.read(navigationProvider.notifier).state = 0;
             }
           },
           child: Center(

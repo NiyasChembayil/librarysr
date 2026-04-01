@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/book_provider.dart';
+import '../../models/book_model.dart';
+import '../../widgets/book_card.dart';
 import '../settings/settings_screen.dart';
+import '../book/book_detail_screen.dart';
+import 'user_list_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -11,8 +16,12 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final profile = authState.profile;
+    final bookState = ref.watch(bookProvider);
 
-    if (authState.status == AuthStatus.loading) {
+    // Filter books by this author
+    final myBooks = bookState.books.where((b) => b.authorName == profile?.username).toList();
+
+    if (authState.status == AuthStatus.loading || authState.status == AuthStatus.initial) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -22,7 +31,7 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           children: [
             const SizedBox(height: 50),
-            // Header with Settings Button
+            // Header with Settings button
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -30,99 +39,283 @@ class ProfileScreen extends ConsumerWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
                     );
                   },
                   icon: const Icon(Icons.settings_outlined, color: Colors.white70, size: 28),
                 ),
               ],
             ),
-            // Profile Header
+
+            // Avatar
             CircleAvatar(
               radius: 60,
-              backgroundImage: NetworkImage(profile?.avatar ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200'),
+              backgroundColor: const Color(0xFF1E1E2E),
+              backgroundImage: profile?.avatar != null
+                  ? NetworkImage(profile!.avatar!)
+                  : null,
+              child: profile?.avatar == null
+                  ? Text(
+                      (profile?.username ?? 'U')[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF)),
+                    )
+                  : null,
             ),
             const SizedBox(height: 15),
-            Text(authState.status == AuthStatus.authenticated ? 'Welcome' : 'Guest', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text(profile?.bio ?? 'No bio available', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54)),
-            const SizedBox(height: 30),
-            
-            // Stats Grid
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem('Total Reads', '0'),
-                _buildVerticalDivider(),
-                _buildStatItem('Followers', '${profile?.followersCount ?? 0}'),
-                _buildVerticalDivider(),
-                _buildStatItem('Role', profile?.role.toUpperCase() ?? 'READER'),
-              ],
+
+            // Username
+            Text(
+              profile?.username ?? 'User',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 40),
-            
+            const SizedBox(height: 6),
+
+            // Role badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.5),
+                ),
+              ),
+              child: const Text(
+                'CREATOR',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6C63FF),
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Bio
+            if (profile?.bio != null && profile!.bio.isNotEmpty)
+              Text(profile.bio, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54)),
+
+            const SizedBox(height: 30),
+
+            // Stats row
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStatItem('Total Reads', '0'),
+                  _buildVerticalDivider(),
+                  _buildStatItem(
+                    'Followers',
+                    '${profile?.followersCount ?? 0}',
+                    onTap: () {
+                      if (profile != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserListScreen(
+                              title: 'Followers',
+                              endpoint: 'accounts/profile/${profile.id}/followers/',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  _buildVerticalDivider(),
+                  _buildStatItem(
+                    'Following',
+                    '${profile?.followingCount ?? 0}',
+                    onTap: () {
+                      if (profile != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserListScreen(
+                              title: 'Following',
+                              endpoint: 'accounts/profile/${profile.id}/following/',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+
             // Analytics Chart
-            _buildChartSection(context),
-            const SizedBox(height: 40),
-            
-            // My Books Title
+            _buildChartSection(),
+            const SizedBox(height: 30),
+
+            // My Books section — now visible for everyone to encourage creation
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('My Published Works', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                TextButton(onPressed: () {}, child: const Text('View All')),
+                if (myBooks.isNotEmpty)
+                  TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(color: Color(0xFF6C63FF)))),
               ],
             ),
-            _buildMyBooksList(),
-            const SizedBox(height: 100), // Space for navigation
+            myBooks.isEmpty ? _buildNoBooksPlaceholder() : _buildBooksList(context, myBooks),
+
+            const SizedBox(height: 100),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF))),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-      ],
+  Widget _buildBooksList(BuildContext context, List<BookModel> books) {
+    return SizedBox(
+      height: 320,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: books.length,
+        itemBuilder: (context, index) {
+          final book = books[index];
+          return SizedBox(
+            width: 250,
+            child: Transform.scale(
+              scale: 0.7,
+              alignment: Alignment.topLeft,
+              child: BookCard(
+                title: book.title,
+                author: book.authorName,
+                coverUrl: book.coverUrl,
+                likes: book.likesCount,
+                onPlay: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookDetailScreen(
+                        id: book.id,
+                        title: book.title,
+                        author: book.authorName,
+                        coverUrl: book.coverUrl,
+                        description: book.description,
+                        price: book.price,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildVerticalDivider() => Container(height: 30, width: 1, color: Colors.white10);
+  Widget _buildStatItem(String label, String value, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          children: [
+            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF))),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
 
-  Widget _buildChartSection(BuildContext context) {
+  Widget _buildVerticalDivider() => Container(height: 35, width: 1, color: Colors.white10);
+
+  Widget _buildChartSection() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.grey[900]?.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.grey[900]?.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Reading Analytics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Reading Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('Last 7 days', style: TextStyle(color: Color(0xFF6C63FF), fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Connect backend ReadStats to see real activity here.',
+            style: TextStyle(color: Colors.white38, fontSize: 12),
+          ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 200,
+            height: 180,
             child: LineChart(
               LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: const FlTitlesData(show: false),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 2,
+                  getDrawingHorizontalLine: (_) => FlLine(color: Colors.white10, strokeWidth: 1),
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        final idx = value.toInt();
+                        if (idx < 0 || idx >= days.length) return const SizedBox.shrink();
+                        return Text(days[idx], style: const TextStyle(color: Colors.white38, fontSize: 11));
+                      },
+                    ),
+                  ),
+                ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: [
-                      const FlSpot(0, 3),
-                      const FlSpot(2, 2),
-                      const FlSpot(4, 5),
-                      const FlSpot(6, 3.1),
-                      const FlSpot(8, 4),
-                      const FlSpot(10, 3),
+                    // Placeholder data — replace with real ReadStats from backend
+                    spots: const [
+                      FlSpot(0, 0),
+                      FlSpot(1, 0),
+                      FlSpot(2, 0),
+                      FlSpot(3, 0),
+                      FlSpot(4, 0),
+                      FlSpot(5, 0),
+                      FlSpot(6, 0),
                     ],
                     isCurved: true,
                     color: const Color(0xFF6C63FF),
-                    barWidth: 4,
-                    belowBarData: BarAreaData(show: true, color: const Color(0xFF6C63FF).withValues(alpha: 0.1)),
+                    barWidth: 3,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: const Color(0xFF6C63FF).withValues(alpha: 0.1),
+                    ),
                   ),
                 ],
+                minY: 0,
+                maxY: 10,
               ),
             ),
           ),
@@ -131,32 +324,24 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMyBooksList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 2,
-      itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(top: 15),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(15)),
-          child: ListTile(
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                index == 0 ? 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1582135294i/52578297.jpg' : 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1597695864i/54495368.jpg',
-                width: 50,
-                height: 70,
-                fit: BoxFit.cover,
-              ),
-            ),
-            title: Text(index == 0 ? 'The Midnight Library' : 'Project Hail Mary', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(index == 0 ? '2,400 reads' : '1,850 reads', style: const TextStyle(color: Colors.grey)),
-            trailing: const Icon(Icons.show_chart_rounded, color: Color(0xFF00D2FF)),
-          ),
-        );
-      },
+  Widget _buildNoBooksPlaceholder() {
+    return Container(
+      margin: const EdgeInsets.only(top: 15),
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.grey[900]?.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.auto_stories_rounded, size: 48, color: Colors.white24),
+          SizedBox(height: 12),
+          Text("You haven't published any books yet.", style: TextStyle(color: Colors.white54)),
+          SizedBox(height: 6),
+          Text('Tap the + tab to start creating!', style: TextStyle(color: Colors.white38, fontSize: 13)),
+        ],
+      ),
     );
   }
 }

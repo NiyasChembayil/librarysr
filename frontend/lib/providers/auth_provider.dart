@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,13 +27,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    if (token != null) {
-      _apiClient.setAuthToken(token);
-      final profile = await _fetchProfile();
-      state = AuthState(status: AuthStatus.authenticated, token: token, profile: profile);
-    } else {
+    try {
+      debugPrint('Auth: Checking token...');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      if (token != null) {
+        debugPrint('Auth: Token found, fetching profile...');
+        _apiClient.setAuthToken(token);
+        final profile = await _fetchProfile();
+        state = AuthState(status: AuthStatus.authenticated, token: token, profile: profile);
+        debugPrint('Auth: Authenticated.');
+      } else {
+        debugPrint('Auth: No token found.');
+        state = AuthState(status: AuthStatus.unauthenticated);
+      }
+    } catch (e) {
+      debugPrint('Auth: Initialization error: $e');
       state = AuthState(status: AuthStatus.unauthenticated);
     }
   }
@@ -40,6 +50,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<ProfileModel?> _fetchProfile() async {
     try {
       final response = await _apiClient.dio.get('accounts/profile/me/');
+      // The serializer now returns username, role, bio, avatar, followers_count
       return ProfileModel.fromJson(response.data);
     } catch (e) {
       return null;
@@ -61,7 +72,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final profile = await _fetchProfile();
       state = AuthState(status: AuthStatus.authenticated, token: token, profile: profile);
     } catch (e) {
-      state = AuthState(status: AuthStatus.error, errorMessage: e.toString());
+      // Parse friendly error from DioException if available
+      String message = 'Login failed. Please check your credentials.';
+      state = AuthState(status: AuthStatus.error, errorMessage: message);
     }
   }
 
@@ -77,7 +90,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.unauthenticated);
       return true;
     } catch (e) {
-      state = AuthState(status: AuthStatus.error, errorMessage: e.toString());
+      // Try to extract the server's validation error message
+      String message = 'Registration failed. Please try again.';
+      try {
+        final data = (e as dynamic).response?.data;
+        if (data is Map) {
+          final firstKey = data.keys.first;
+          final firstVal = data[firstKey];
+          message = firstVal is List ? firstVal.first.toString() : firstVal.toString();
+        }
+      } catch (_) {}
+      state = AuthState(status: AuthStatus.error, errorMessage: message);
       return false;
     }
   }

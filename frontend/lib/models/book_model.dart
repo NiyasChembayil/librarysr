@@ -8,6 +8,7 @@ class BookModel {
   final int likesCount;
   final int totalReads;
   final List<ChapterModel> chapters;
+  final List<String> pages;
 
   BookModel({
     required this.id,
@@ -19,6 +20,7 @@ class BookModel {
     required this.likesCount,
     required this.totalReads,
     required this.chapters,
+    this.pages = const [],
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,9 @@ class BookModel {
       totalReads: json['total_reads'] ?? 0,
       chapters: (json['chapters'] as List? ?? [])
           .map((c) => ChapterModel.fromJson(c))
+          .toList(),
+      pages: (json['pages'] as List? ?? [])
+          .map((p) => p.toString())
           .toList(),
     );
   }

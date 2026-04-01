@@ -6,7 +6,8 @@ import '../payment/checkout_screen.dart';
 import '../audio/audio_player_screen.dart';
 import 'reader_screen.dart';
 import '../../providers/book_provider.dart';
-import '../../core/api_client.dart';
+import '../../providers/purchase_provider.dart';
+import '../../widgets/follow_button.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   final int id;
@@ -29,11 +30,30 @@ class BookDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookAsync = ref.watch(currentBookProvider(id));
-    final bool isOwned = price == 0.0; 
+    // Check if the user actually purchased this book OR if it's free
+    final isPurchased = ref.watch(purchaseProvider.select((s) => s.contains(id)));
+    final isFree = price == 0.0;
+    final isOwned = isFree || isPurchased;
 
     return bookAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, stack) => Scaffold(body: Center(child: Text('Error: $e'))),
+      error: (e, stack) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 60, color: Colors.white24),
+              const SizedBox(height: 16),
+              Text('Could not load book', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => ref.invalidate(currentBookProvider(id)),
+                child: const Text('Retry', style: TextStyle(color: Color(0xFF6C63FF))),
+              ),
+            ],
+          ),
+        ),
+      ),
       data: (book) => Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -49,6 +69,11 @@ class BookDetailScreen extends ConsumerWidget {
                       child: CachedNetworkImage(
                         imageUrl: coverUrl,
                         fit: BoxFit.cover,
+                        placeholder: (_, _) => const ColoredBox(color: Color(0xFF1E1E2E)),
+                        errorWidget: (_, _, _) => const ColoredBox(
+                          color: Color(0xFF1E1E2E),
+                          child: Icon(Icons.menu_book_rounded, size: 80, color: Colors.white24),
+                        ),
                       ),
                     ),
                     Container(
@@ -74,12 +99,9 @@ class BookDetailScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _fadeIn(
-                      child: Text(
-                        title,
-                        style: Theme.of(context).textTheme.displayLarge,
-                      ),
+                      child: Text(title, style: Theme.of(context).textTheme.displayLarge),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 10),
                     _fadeIn(
                       delay: 100,
                       child: Row(
@@ -89,23 +111,26 @@ class BookDetailScreen extends ConsumerWidget {
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white70),
                           ),
                           const SizedBox(width: 15),
-                          _FollowButton(bookId: id),
+                          FollowButton(authorUsername: author),
                         ],
                       ),
                     ),
                     const SizedBox(height: 30),
+
+                    // Stat columns... (no change)
                     _fadeIn(
                       delay: 200,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatColumn('4.8', 'Rating'),
-                          _buildStatColumn('1.2k', 'Reads'),
-                          _buildStatColumn('540', 'Likes'),
+                          _buildStatColumn('${book?.likesCount ?? 0}', 'Likes'),
+                          _buildStatColumn('${book?.totalReads ?? 0}', 'Reads'),
+                          _buildStatColumn('${book?.chapters.length ?? 0}', 'Chapters'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 40),
+
                     _fadeIn(
                       delay: 300,
                       child: Text(
@@ -141,7 +166,7 @@ class BookDetailScreen extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ReaderScreen(
+                          builder: (_) => ReaderScreen(
                             bookId: id,
                             title: title,
                             chapters: book?.chapters ?? [],
@@ -152,7 +177,7 @@ class BookDetailScreen extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CheckoutScreen(
+                          builder: (_) => CheckoutScreen(
                             bookId: id,
                             title: title,
                             price: price,
@@ -167,8 +192,8 @@ class BookDetailScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: Text(
-                    isOwned ? 'Read Now' : 'Buy for \$${price.toStringAsFixed(2)}', 
-                    style: const TextStyle(color: Colors.white, fontSize: 18)
+                    isOwned ? 'Read Now' : 'Buy for \$${price.toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
               ),
@@ -184,16 +209,16 @@ class BookDetailScreen extends ConsumerWidget {
                 borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.5), Colors.white.withValues(alpha: 0.2)]),
                 child: IconButton(
                   onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AudioPlayerScreen(
-                            title: title,
-                            author: author,
-                            coverUrl: coverUrl,
-                          ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AudioPlayerScreen(
+                          title: title,
+                          author: author,
+                          coverUrl: coverUrl,
                         ),
-                      );
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.headphones_rounded, color: Colors.white, size: 30),
                 ),
@@ -211,7 +236,10 @@ class BookDetailScreen extends ConsumerWidget {
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOut,
       builder: (context, value, child) {
-        return Opacity(opacity: value, child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child));
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
+        );
       },
       child: child,
     );
@@ -220,39 +248,10 @@ class BookDetailScreen extends ConsumerWidget {
   Widget _buildStatColumn(String value, String label) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
       ],
-    );
-  }
-}
-
-class _FollowButton extends ConsumerStatefulWidget {
-  final int bookId;
-  const _FollowButton({required this.bookId});
-
-  @override
-  ConsumerState<_FollowButton> createState() => _FollowButtonState();
-}
-
-class _FollowButtonState extends ConsumerState<_FollowButton> {
-  bool isFollowing = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        setState(() => isFollowing = !isFollowing);
-        // Call API in the background
-        ref.read(apiClientProvider).dio.post('social/follows/', data: {'followed': widget.bookId});
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: isFollowing ? Colors.grey : const Color(0xFF6C63FF),
-        side: BorderSide(color: isFollowing ? Colors.grey : const Color(0xFF6C63FF)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-      ),
-      child: Text(isFollowing ? 'Following' : 'Follow', style: const TextStyle(fontSize: 12)),
     );
   }
 }

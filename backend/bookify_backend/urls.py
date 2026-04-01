@@ -22,8 +22,18 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from .admin_views import AdminDashboardViewSet
+from rest_framework import routers
+from django.views.generic import TemplateView
+
+router = routers.DefaultRouter()
+router.register(r'admin-stats', AdminDashboardViewSet, basename='admin-stats')
 
 urlpatterns = [
+    # Frontend Apps
+    path('', TemplateView.as_view(template_name='web_client/index.html'), name='public-ui'),
+    path('portal/', TemplateView.as_view(template_name='web_admin/index.html'), name='admin-ui'),
+
     path('admin/', admin.site.urls),
     
     # Auth
@@ -34,6 +44,7 @@ urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
     path('api/core/', include('core.urls')),
     path('api/social/', include('social.urls')),
+    path('api/admin/', include(router.urls)),
 ]
 
 if settings.DEBUG:

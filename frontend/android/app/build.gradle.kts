@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.bookify.frontend"
+    namespace = "com.srishty.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,14 +16,23 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
+    // ⚠️ BEFORE RELEASE: Generate a keystore and configure signingConfigs.
+    // Run: keytool -genkey -v -keystore srishty-release.jks -alias srishty -keyalg RSA -keysize 2048 -validity 10000
+    // Then fill in the storeFile, storePassword, keyAlias, keyPassword below.
+    // signingConfigs {
+    //     create("release") {
+    //         storeFile = file("srishty-release.jks")
+    //         storePassword = System.getenv("STORE_PASSWORD")
+    //         keyAlias = "srishty"
+    //         keyPassword = System.getenv("KEY_PASSWORD")
+    //     }
+    // }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.bookify.frontend"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.srishty.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -31,10 +40,16 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // ⚠️ BEFORE RELEASE: Switch to your release signingConfig:
+            // signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug") // Temporary: replace before Play Store upload
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

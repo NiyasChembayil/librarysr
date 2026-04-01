@@ -40,13 +40,20 @@ class BookViewSet(viewsets.ModelViewSet):
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def trending(self, request):
+        region = request.query_params.get('region')
+        
         # Weighted Score: (Reads * 1) + (Likes * 3)
         books = Book.objects.annotate(
             read_count=Count('read_stats', distinct=True),
             likes_count=Count('likes', distinct=True)
         ).annotate(
             score=(Count('read_stats') * 1) + (Count('likes') * 3)
-        ).order_by('-score')[:10]
+        )
+        
+        if region:
+            books = books.filter(region__icontains=region)
+            
+        books = books.order_by('-score')[:10]
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
 

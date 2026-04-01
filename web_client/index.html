@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Srishty | Discover Stories</title>
+    <meta name="description" content="Discover trending stories, sci-fi, and fiction on Srishty.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="../assets/logo.png" type="image/x-icon">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar glass">
+        <div class="nav-brand">
+            <img src="../assets/logo.png" alt="Srishty Logo" class="nav-logo">
+            <span class="nav-title">Srishty</span>
+        </div>
+        <div class="nav-links">
+            <a href="#trending">Trending</a>
+            <a href="#sci-fi">Sci-Fi</a>
+            <a href="#fiction">Fiction</a>
+            <div class="location-badge" id="user-location">
+                📍 Detecting Region...
+            </div>
+        </div>
+        <div class="nav-auth">
+            <button class="btn-secondary">Sign In</button>
+            <button class="btn-primary">Start Writing</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="animate-up">Discover Worlds Beyond Imagination</h1>
+            <p class="animate-up" style="animation-delay: 0.1s;">Read trending stories from authors near you or dive into the best Sci-Fi and Fiction Srishty has to offer.</p>
+            <div class="hero-actions animate-up" style="animation-delay: 0.2s;">
+                <button class="btn-primary large">Explore Library</button>
+            </div>
+        </div>
+        <div class="hero-glow"></div>
+    </header>
+
+    <main class="container">
+        <!-- Trending Banner -->
+        <section id="trending" class="book-section">
+            <div class="section-header">
+                <h2>🔥 Trending Right Now <span id="local-trend-indicator">Globally</span></h2>
+                <a href="#" class="view-all">View All →</a>
+            </div>
+            <div class="carousel-container glass" id="trending-carousel">
+                <div class="loading-spinner">Loading trending books...</div>
+                <!-- Dynamic Content Here -->
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section id="categories" class="book-section">
+            <div class="section-header">
+                <h2>Browse by Genre</h2>
+            </div>
+            <div class="category-tabs">
+                <button class="tab-btn active" data-category="sci-fi">Sci-Fi</button>
+                <button class="tab-btn" data-category="fiction">Fiction</button>
+                <button class="tab-btn" data-category="mystery">Mystery</button>
+                <button class="tab-btn" data-category="romance">Romance</button>
+            </div>
+            
+            <div class="grid-container" id="category-books">
+                <div class="loading-spinner">Select a category to explore...</div>
+                <!-- Dynamic Content Here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer glass">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="nav-title">Srishty</span>
+                <p>The premium storytelling platform.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Authors</a>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 Srishty Platform. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

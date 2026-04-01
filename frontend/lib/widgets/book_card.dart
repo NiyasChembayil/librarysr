@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'follow_button.dart';
 
 class BookCard extends StatelessWidget {
   final String title;
@@ -43,12 +45,18 @@ class BookCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // Background Image
-              CachedNetworkImage(
-                imageUrl: coverUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.grey[900]),
-                errorWidget: (context, url, error) => const Icon(Icons.book),
-              ),
+              coverUrl.startsWith('http')
+                  ? CachedNetworkImage(
+                      imageUrl: coverUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.grey[900]),
+                      errorWidget: (context, url, error) => const Icon(Icons.book),
+                    )
+                  : Image.file(
+                      File(coverUrl),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.book),
+                    ),
               // Gradient Overlay
               Container(
                 decoration: BoxDecoration(
@@ -79,12 +87,18 @@ class BookCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(
-                      'by $author',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white70,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'by $author',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        FollowButton(authorUsername: author, isCompact: true),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     Row(

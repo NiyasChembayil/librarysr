@@ -1,23 +1,28 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/main.dart';
+import 'package:srishty/main.dart';
 
 void main() {
-  testWidgets('App loads smoke test', (WidgetTester tester) async {
+  testWidgets('Login screen shows branding and credentials fields', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: BookifyApp()));
+    // ProviderScope is required for Riverpod
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: BookifyApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the title "Srishty" is present.
+    expect(find.text('Srishty'), findsOneWidget);
+    
+    // Verify that the tagline is present.
+    expect(find.text('Your Stories, Amplified.'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify fields are present.
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify Login button text is present.
+    expect(find.text('Login'), findsOneWidget);
   });
 }
