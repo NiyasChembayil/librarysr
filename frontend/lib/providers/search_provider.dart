@@ -6,15 +6,27 @@ import '../models/profile_model.dart';
 class SearchState {
   final List<BookModel> books;
   final List<ProfileModel> profiles;
+  final List<BookModel> mostlyReadBooks;
+  final String mostlyReadCategoryName;
+  final List<BookModel> localHits;
   final bool isLoading;
 
   SearchState({
     required this.books,
     required this.profiles,
+    this.mostlyReadBooks = const [],
+    this.mostlyReadCategoryName = '',
+    this.localHits = const [],
     this.isLoading = false,
   });
 
-  factory SearchState.initial() => SearchState(books: [], profiles: []);
+  factory SearchState.initial() => SearchState(
+    books: [], 
+    profiles: [], 
+    mostlyReadBooks: [], 
+    mostlyReadCategoryName: '', 
+    localHits: []
+  );
 }
 
 final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((ref) {
@@ -28,17 +40,24 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   Future<void> searchAll(String query) async {
     if (query.isEmpty) {
-      state = SearchState.initial();
+      // Don't just reset, keep discovery data if it exists or re-fetch it
+      fetchDiscovery();
       return;
     }
     
-    state = SearchState(books: state.books, profiles: state.profiles, isLoading: true);
+    state = SearchState(
+      books: state.books, 
+      profiles: state.profiles, 
+      mostlyReadBooks: state.mostlyReadBooks,
+      mostlyReadCategoryName: state.mostlyReadCategoryName,
+      localHits: state.localHits,
+      isLoading: true
+    );
     
     try {
-      // Run both searches in parallel
       final results = await Future.wait([
         _apiClient.dio.get('core/books/?search=$query'),
-        _apiClient.dio.get('accounts/profiles/?search=$query'),
+        _apiClient.dio.get('accounts/profile/?search=$query'),
       ]);
 
       final bookData = results[0].data['results'] as List? ?? [];
@@ -47,10 +66,57 @@ class SearchNotifier extends StateNotifier<SearchState> {
       state = SearchState(
         books: bookData.map((j) => BookModel.fromJson(j)).toList(),
         profiles: profileData.map((j) => ProfileModel.fromJson(j)).toList(),
+        mostlyReadBooks: state.mostlyReadBooks,
+        mostlyReadCategoryName: state.mostlyReadCategoryName,
+        localHits: state.localHits,
         isLoading: false,
       );
     } catch (e) {
-      state = SearchState(books: state.books, profiles: state.profiles, isLoading: false);
+      state = SearchState(
+        books: state.books, 
+        profiles: state.profiles, 
+        mostlyReadBooks: state.mostlyReadBooks,
+        mostlyReadCategoryName: state.mostlyReadCategoryName,
+        localHits: state.localHits,
+        isLoading: false
+      );
+    }
+  }
+
+  Future<void> fetchDiscovery({String region = 'Global'}) async {
+    state = SearchState(
+      books: state.books, 
+      profiles: state.profiles, 
+      mostlyReadBooks: state.mostlyReadBooks,
+      mostlyReadCategoryName: state.mostlyReadCategoryName,
+      localHits: state.localHits,
+      isLoading: true
+    );
+
+    try {
+      final response = await _apiClient.dio.get('core/books/discovery/?region=$region');
+      final data = response.data;
+
+      final mostlyRead = data['mostly_read']['books'] as List? ?? [];
+      final localHits = data['local_hits'] as List? ?? [];
+
+      state = SearchState(
+        books: [], // Clear search results when showing discovery
+        profiles: [],
+        mostlyReadBooks: mostlyRead.map((j) => BookModel.fromJson(j)).toList(),
+        mostlyReadCategoryName: data['mostly_read']['category_name'] ?? 'Trending',
+        localHits: localHits.map((j) => BookModel.fromJson(j)).toList(),
+        isLoading: false,
+      );
+    } catch (e) {
+      state = SearchState(
+        books: state.books, 
+        profiles: state.profiles, 
+        mostlyReadBooks: state.mostlyReadBooks,
+        mostlyReadCategoryName: state.mostlyReadCategoryName,
+        localHits: state.localHits,
+        isLoading: false
+      );
     }
   }
 

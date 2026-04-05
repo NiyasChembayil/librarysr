@@ -1,5 +1,5 @@
 """
-ASGI config for bookify_backend project.
+ASGI config for Srishty project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

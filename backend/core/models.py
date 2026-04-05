@@ -12,10 +12,10 @@ class Book(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, null=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')
-    cover = models.ImageField(upload_to='book_covers/')
+    cover = models.ImageField(upload_to='book_covers/', null=True, blank=True)
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='books')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # Legacy field, platform is free
     is_published = models.BooleanField(default=False)
     region = models.CharField(max_length=50, default='Global', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,10 +34,14 @@ class Book(models.Model):
     def total_reads(self):
         return self.read_stats.count()
 
+    @property
+    def total_downloads(self):
+        return self.userlibrary_set.count()
+
 class Chapter(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='chapters')
     title = models.CharField(max_length=255)
-    content = models.TextField() # Rich text content
+    content = models.TextField(null=True, blank=True) # Rich text content
     audio_file = models.FileField(upload_to='chapter_audio/', null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
 
@@ -69,3 +73,16 @@ class ReadStats(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='read_stats')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+class UserLibrary(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='library')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'book')
+        verbose_name_plural = "User Libraries"
+
+    def __str__(self):
+        return f"{self.user.username}'s library: {self.book.title}"
+

@@ -4,7 +4,7 @@ from .views import CategoryViewSet, BookViewSet, ChapterViewSet, PurchaseViewSet
 
 router = routers.DefaultRouter()
 router.register(r'categories', CategoryViewSet)
-router.register(r'books', BookViewSet)
+router.register(r'books', BookViewSet, basename='book')
 router.register(r'purchases', PurchaseViewSet)
 
 books_router = routers.NestedDefaultRouter(router, r'books', lookup='book')

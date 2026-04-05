@@ -8,7 +8,7 @@ void main() {
     // ProviderScope is required for Riverpod
     await tester.pumpWidget(
       const ProviderScope(
-        child: BookifyApp(),
+        child: SrishtyApp(),
       ),
     );
 

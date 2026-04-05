@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../models/book_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'my_books_provider.dart';
 
 // --- State class to distinguish loading / loaded / empty / error ---
 enum BookFeedStatus { initial, loading, loaded, empty, error }
@@ -17,6 +19,18 @@ class BookFeedState {
     this.books = const [],
     this.error,
   });
+
+  BookFeedState copyWith({
+    BookFeedStatus? status,
+    List<BookModel>? books,
+    String? error,
+  }) {
+    return BookFeedState(
+      status: status ?? this.status,
+      books: books ?? this.books,
+      error: error ?? this.error,
+    );
+  }
 }
 
 final bookProvider = StateNotifierProvider<BookNotifier, BookFeedState>((ref) {
@@ -75,11 +89,31 @@ class BookNotifier extends StateNotifier<BookFeedState> {
     }
   }
 
-  Future<void> likeBook(int id) async {
+  Future<void> likeBook(int id, WidgetRef ref) async {
     try {
       await _apiClient.dio.post('social/likes/', data: {'book': id});
+      // Refresh the specific book detail provider to show the new count and state
+      ref.invalidate(currentBookProvider(id));
     } catch (e) {
-      // Silence error if liking fails (e.g. already liked or offline)
+      // Silence error if liking fails
+    }
+  }
+
+  Future<void> recordRead(int id) async {
+    try {
+      await _apiClient.dio.post('core/books/$id/record_read/');
+      
+      // Update local state for immediate feedback
+      final updatedBooks = state.books.map((book) {
+        if (book.id == id) {
+          return book.copyWith(totalReads: book.totalReads + 1);
+        }
+        return book;
+      }).toList();
+      
+      state = state.copyWith(books: updatedBooks);
+    } catch (e) {
+      // Silence error if recording fails
     }
   }
 
@@ -97,6 +131,73 @@ class BookNotifier extends StateNotifier<BookFeedState> {
       status: BookFeedStatus.loaded,
       books: [book, ...state.books],
     );
+  }
+
+  Future<void> publishBook(String title, String description, List<String> pages) async {
+    await publishBookGetId(title, description, pages);
+  }
+
+  Future<int> publishBookGetId(String title, String description, List<String> pages) async {
+    try {
+      final response = await _apiClient.dio.post('core/books/', data: {
+        'title': title,
+        'description': description,
+        'price': 0.0,
+        'is_published': true,
+      });
+      final newBookId = response.data['id'] as int;
+
+      // Create chapters for each page
+      for (int i = 0; i < pages.length; i++) {
+        await _apiClient.dio.post('core/books/$newBookId/chapters/', data: {
+          'title': 'Chapter ${i + 1}',
+          'content': pages[i],
+          'order': i + 1,
+        });
+      }
+
+      await fetchBooks();
+      return newBookId;
+    } catch (e) {
+      debugPrint("Failed to publish book: $e");
+      rethrow;
+    }
+  }
+
+  Future<String> convertDocx({String? filePath, Uint8List? bytes, String? filename}) async {
+    try {
+      final data = await _apiClient.convertDocx(
+        filePath: filePath,
+        bytes: bytes,
+        filename: filename,
+      );
+      return data['html'] as String;
+    } catch (e) {
+      debugPrint("Failed to convert docx: $e");
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> importChapters(int bookId, List<Map<String, String>> chapters) async {
+    try {
+      final data = await _apiClient.importChapters(bookId, chapters);
+      return data;
+    } catch (e) {
+      debugPrint("Failed to import chapters: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> toggleLibrary(int id, WidgetRef ref) async {
+    try {
+      await _apiClient.dio.post('core/books/$id/toggle_library/');
+      // Refresh the specific book detail provider
+      ref.invalidate(currentBookProvider(id));
+      // Also refresh the library tab
+      ref.read(myBooksProvider.notifier).fetchMyBooks();
+    } catch (e) {
+      debugPrint("Failed to toggle library: $e");
+    }
   }
 }
 

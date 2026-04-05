@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,8 +8,11 @@ import 'follow_button.dart';
 class BookCard extends StatelessWidget {
   final String title;
   final String author;
+  final int authorProfileId;
+  final bool isAuthorFollowing;
   final String coverUrl;
   final int likes;
+  final int downloads;
   final VoidCallback onPlay;
   final VoidCallback onTap;
 
@@ -16,8 +20,11 @@ class BookCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.author,
+    required this.authorProfileId,
+    required this.isAuthorFollowing,
     required this.coverUrl,
     required this.likes,
+    required this.downloads,
     required this.onPlay,
     required this.onTap,
   });
@@ -45,18 +52,26 @@ class BookCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // Background Image
-              coverUrl.startsWith('http')
-                  ? CachedNetworkImage(
-                      imageUrl: coverUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.grey[900]),
-                      errorWidget: (context, url, error) => const Icon(Icons.book),
-                    )
-                  : Image.file(
-                      File(coverUrl),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.book),
-                    ),
+              coverUrl.isEmpty
+                  ? Container(color: Colors.grey[900], child: const Icon(Icons.book, size: 50, color: Colors.white24))
+                  : (coverUrl.startsWith('http')
+                      ? CachedNetworkImage(
+                          imageUrl: coverUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: Colors.grey[900]),
+                          errorWidget: (context, url, error) => const Icon(Icons.book, size: 50, color: Colors.white24),
+                        )
+                      : (kIsWeb
+                          ? Image.network(
+                              coverUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 50, color: Colors.white24),
+                            )
+                          : Image.file(
+                              File(coverUrl),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 50, color: Colors.white24),
+                            ))),
               // Gradient Overlay
               Container(
                 decoration: BoxDecoration(
@@ -97,7 +112,12 @@ class BookCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        FollowButton(authorUsername: author, isCompact: true),
+                        FollowButton(
+                          authorUsername: author,
+                          authorProfileId: authorProfileId,
+                          initialIsFollowing: isAuthorFollowing,
+                          isCompact: true,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -106,11 +126,18 @@ class BookCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.favorite_rounded, color: Colors.redAccent),
-                            const SizedBox(width: 5),
+                            const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 18),
+                            const SizedBox(width: 4),
                             Text(
                               '$likes',
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                            ),
+                            const SizedBox(width: 15),
+                            const Icon(Icons.cloud_download_rounded, color: Color(0xFF00D2FF), size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$downloads',
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
                             ),
                           ],
                         ),

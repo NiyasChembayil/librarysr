@@ -63,7 +63,7 @@ def populate():
                 "category": bdata["category"],
                 "description": bdata["desc"],
                 "is_published": True,
-                "price": random.choice([0.00, 4.99, 9.99, 14.99])
+                "price": 0.00,
             }
         )
         if created:

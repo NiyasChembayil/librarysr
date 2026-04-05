@@ -341,7 +341,7 @@ class AdminApp {
         
         // Load mock settings from local storage or set defaults
         const settings = JSON.parse(localStorage.getItem('srishty_settings')) || {
-            platformName: 'Srishty StoryVerse',
+            platformName: 'Srishty',
             maintenanceMode: false,
             allowNewRegistrations: true,
             authorCommission: '70'

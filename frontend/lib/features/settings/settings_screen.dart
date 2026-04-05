@@ -2,35 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../profile/edit_profile_screen.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // Toggles for state management
-  bool isPrivateAccount = false;
-  bool notifyNewFollower = true;
-  bool notifyLikes = true;
-  bool notifyComments = true;
-  bool notifyNewBooks = true;
-  bool notifyPayments = true;
-  
-  bool audioAutoPlay = false;
-  bool audioDownloadWifiOnly = true;
-  bool audioBackgroundPlay = true;
-
-  bool readerAutoScroll = false;
-  
-  String audioSpeed = '1x';
-  String readerTheme = 'Dark';
-  
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final settings = ref.watch(settingsProvider);
+    final settingsNotifier = ref.read(settingsProvider.notifier);
     final isAuthor = authState.profile?.role == 'author';
 
     return Scaffold(
@@ -49,8 +31,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader('1. ACCOUNT SETTINGS', Icons.person_outline),
             _buildGlassCard(
               children: [
-                _buildListTile('Edit Profile', subtitle: 'Name, bio, profile image', icon: Icons.edit),
-                _buildListTile('Change Username', icon: Icons.alternate_email),
+                _buildListTile(
+                  'Edit Profile', 
+                  subtitle: 'Name, bio, profile image', 
+                  icon: Icons.edit,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                ),
+                _buildListTile('Change Username', icon: Icons.alternate_email, subtitle: 'Currently: ${authState.profile?.username ?? ""}'),
                 _buildListTile('Change Email', icon: Icons.email_outlined),
                 _buildListTile('Change Password', icon: Icons.lock_outline),
                 if (!isAuthor)
@@ -61,107 +48,118 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildSectionHeader('2. PRIVACY & SECURITY', Icons.security),
             _buildGlassCard(
               children: [
-                _buildSwitchTile('Private account', isPrivateAccount, (val) => setState(() => isPrivateAccount = val)),
+                _buildSwitchTile(
+                  'Private account', 
+                  settings.isPrivateAccount, 
+                  (val) => settingsNotifier.updateSetting('isPrivateAccount', val),
+                ),
                 _buildListTile('Who can comment', subtitle: 'Everyone', icon: Icons.comment_outlined),
                 _buildListTile('Block users', icon: Icons.block),
-                _buildListTile('Two-factor authentication', subtitle: 'Future upgrade', icon: Icons.verified_user_outlined),
-                _buildListTile('Logout from all devices', icon: Icons.phonelink_erase, textColor: Colors.redAccent),
+                _buildListTile('Two-factor authentication', subtitle: 'Coming soon', icon: Icons.verified_user_outlined),
               ],
             ),
 
             _buildSectionHeader('3. NOTIFICATIONS', Icons.notifications_none),
             _buildGlassCard(
               children: [
-                _buildSwitchTile('New follower', notifyNewFollower, (val) => setState(() => notifyNewFollower = val)),
-                _buildSwitchTile('Likes', notifyLikes, (val) => setState(() => notifyLikes = val)),
-                _buildSwitchTile('Comments', notifyComments, (val) => setState(() => notifyComments = val)),
-                _buildSwitchTile('New books from followed authors', notifyNewBooks, (val) => setState(() => notifyNewBooks = val)),
-                _buildSwitchTile('Payment / purchase updates', notifyPayments, (val) => setState(() => notifyPayments = val)),
+                _buildSwitchTile(
+                  'New follower', 
+                  settings.notifyNewFollower, 
+                  (val) => settingsNotifier.updateSetting('notifyNewFollower', val),
+                ),
+                _buildSwitchTile(
+                  'Likes', 
+                  settings.notifyLikes, 
+                  (val) => settingsNotifier.updateSetting('notifyLikes', val),
+                ),
+                _buildSwitchTile(
+                  'Comments', 
+                  settings.notifyComments, 
+                  (val) => settingsNotifier.updateSetting('notifyComments', val),
+                ),
+                _buildSwitchTile(
+                  'New books from followed authors', 
+                  settings.notifyNewBooks, 
+                  (val) => settingsNotifier.updateSetting('notifyNewBooks', val),
+                ),
               ],
             ),
 
             _buildSectionHeader('4. AUDIO SETTINGS', Icons.headset_mic_outlined),
             _buildGlassCard(
               children: [
-                _buildListTile('Default playback speed', subtitle: audioSpeed, icon: Icons.speed),
-                _buildSwitchTile('Auto-play next chapter', audioAutoPlay, (val) => setState(() => audioAutoPlay = val)),
-                _buildSwitchTile('Download audio on WiFi only', audioDownloadWifiOnly, (val) => setState(() => audioDownloadWifiOnly = val)),
-                _buildSwitchTile('Background play enabled', audioBackgroundPlay, (val) => setState(() => audioBackgroundPlay = val)),
+                _buildListTile('Default playback speed', subtitle: '${settings.playbackSpeed}x', icon: Icons.speed),
+                _buildSwitchTile(
+                  'Auto-play next chapter', 
+                  settings.audioAutoPlay, 
+                  (val) => settingsNotifier.updateSetting('audioAutoPlay', val),
+                ),
+                _buildSwitchTile(
+                  'Download audio on WiFi only', 
+                  settings.audioDownloadWifiOnly, 
+                  (val) => settingsNotifier.updateSetting('audioDownloadWifiOnly', val),
+                ),
+                _buildSwitchTile(
+                  'Background play enabled', 
+                  settings.audioBackgroundPlay, 
+                  (val) => settingsNotifier.updateSetting('audioBackgroundPlay', val),
+                ),
               ],
             ),
 
             _buildSectionHeader('5. READING SETTINGS', Icons.menu_book),
             _buildGlassCard(
               children: [
-                _buildListTile('Font size', subtitle: 'Manage slider', icon: Icons.format_size),
+                _buildListTile('Font size', subtitle: '${settings.fontSize.toInt()} px', icon: Icons.format_size),
                 _buildListTile('Font style', subtitle: 'Inter', icon: Icons.font_download_outlined),
-                _buildListTile('Line spacing', icon: Icons.format_line_spacing),
-                _buildListTile('Theme', subtitle: readerTheme, icon: Icons.palette_outlined),
-                _buildSwitchTile('Auto-scroll', readerAutoScroll, (val) => setState(() => readerAutoScroll = val)),
+                _buildListTile('Theme', subtitle: settings.readerTheme, icon: Icons.palette_outlined),
               ],
             ),
 
-            _buildSectionHeader('6. PAYMENTS & SUBSCRIPTIONS', Icons.payment),
-            _buildGlassCard(
-              children: [
-                _buildListTile('My purchases', icon: Icons.shopping_bag_outlined),
-                _buildListTile('Active subscriptions', icon: Icons.star_border),
-                _buildListTile('Payment methods', icon: Icons.credit_card),
-                _buildListTile('Transaction history', icon: Icons.history),
-                _buildListTile('Refund request', icon: Icons.request_quote_outlined),
-              ],
-            ),
-
-            _buildSectionHeader('7. DOWNLOADS / STORAGE', Icons.save_alt),
+            _buildSectionHeader('6. DOWNLOADS / STORAGE', Icons.save_alt),
             _buildGlassCard(
               children: [
                 _buildListTile('Downloaded books', icon: Icons.download_done),
-                _buildListTile('Clear cache', icon: Icons.delete_sweep_outlined),
-                _buildListTile('Storage usage', subtitle: '120 MB', icon: Icons.storage),
+                _buildListTile(
+                  'Clear cache', 
+                  icon: Icons.delete_sweep_outlined,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cache cleared locally.')));
+                  }
+                ),
+                _buildListTile('Storage usage', subtitle: '0 MB', icon: Icons.storage),
               ],
             ),
 
-            _buildSectionHeader('8. LANGUAGE & REGION', Icons.language),
+            _buildSectionHeader('7. LANGUAGE & REGION', Icons.language),
             _buildGlassCard(
               children: [
                 _buildListTile('App language', subtitle: 'English (US)', icon: Icons.translate),
                 _buildListTile('Content language', subtitle: 'Global', icon: Icons.public),
-                _buildListTile('Currency settings', subtitle: 'USD (\$)', icon: Icons.attach_money),
               ],
             ),
 
             if (isAuthor) ...[
-              _buildSectionHeader('9. AUTHOR SETTINGS', Icons.draw_outlined),
+              _buildSectionHeader('8. AUTHOR SETTINGS', Icons.draw_outlined),
               _buildGlassCard(
                 children: [
                   _buildListTile('Payment account', subtitle: 'UPI / Bank', icon: Icons.account_balance),
                   _buildListTile('Earnings dashboard', icon: Icons.bar_chart),
                   _buildListTile('Upload preferences', icon: Icons.cloud_upload_outlined),
-                  _buildListTile('Content visibility', subtitle: 'Free/Paid Default', icon: Icons.visibility_outlined),
                 ],
               ),
             ],
 
-            _buildSectionHeader('10. HELP & SUPPORT', Icons.help_outline),
+            _buildSectionHeader('9. HELP & SUPPORT', Icons.help_outline),
             _buildGlassCard(
               children: [
                 _buildListTile('Help center', icon: Icons.support_agent),
                 _buildListTile('Contact support', icon: Icons.mail_outline),
-                _buildListTile('Report a problem', icon: Icons.report_problem_outlined),
                 _buildListTile('FAQ', icon: Icons.question_answer_outlined),
               ],
             ),
 
-            _buildSectionHeader('11. LEGAL', Icons.gavel),
-            _buildGlassCard(
-              children: [
-                _buildListTile('Terms & Conditions', icon: Icons.description_outlined),
-                _buildListTile('Privacy Policy', icon: Icons.privacy_tip_outlined),
-                _buildListTile('Copyright policy', icon: Icons.copyright),
-              ],
-            ),
-
-            _buildSectionHeader('12. LOGOUT & DELETE ACCOUNT', Icons.exit_to_app),
+            _buildSectionHeader('10. LOGOUT & DELETE ACCOUNT', Icons.exit_to_app),
             _buildGlassCard(
               children: [
                 _buildListTile(
@@ -172,7 +170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onTap: () async {
                     final nav = Navigator.of(context);
                     await ref.read(authProvider.notifier).logout();
-                    if (mounted) nav.pop(); // Go back after logout
+                    if (nav.canPop()) nav.pop(); 
                   }
                 ),
                 _buildListTile(
@@ -197,15 +195,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       padding: const EdgeInsets.only(top: 24.0, bottom: 8.0, left: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF6C63FF), size: 20),
+          Icon(icon, color: const Color(0xFF6C63FF), size: 18),
           const SizedBox(width: 8),
           Text(
             title,
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
+              letterSpacing: 0.8,
             ),
           ),
         ],
@@ -216,7 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildGlassCard({required List<Widget> children}) {
     return GlassmorphicContainer(
       width: double.infinity,
-      height: children.length * 65.0, // Approximate height to fit tiles
+      height: children.length * 60.0, 
       borderRadius: 16,
       blur: 20,
       alignment: Alignment.center,
@@ -225,20 +223,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFffffff).withValues(alpha: 0.1),
-            const Color(0xFFffffff).withValues(alpha: 0.05),
+            const Color(0xFFffffff).withValues(alpha: 0.08),
+            const Color(0xFFffffff).withValues(alpha: 0.03),
           ]),
       borderGradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color(0xFFffffff).withValues(alpha: 0.2),
+          const Color(0xFFffffff).withValues(alpha: 0.15),
           const Color(0xFFffffff).withValues(alpha: 0.0),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: children.map((widget) => SizedBox(height: 65, child: widget)).toList(),
+        children: children.map((widget) => SizedBox(height: 60, child: widget)).toList(),
       ),
     );
   }
@@ -246,27 +244,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildListTile(String title, {String? subtitle, required IconData icon, Color? textColor, Color? iconColor, VoidCallback? onTap}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-      leading: Icon(icon, color: iconColor ?? Colors.white70),
-      title: Text(title, style: TextStyle(color: textColor ?? Colors.white, fontSize: 16)),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24),
-      minVerticalPadding: 0,
-      onTap: onTap ?? () {
-        // Dummy default handler
-      },
+      leading: Icon(icon, color: iconColor ?? Colors.white70, size: 22),
+      title: Text(title, style: TextStyle(color: textColor ?? Colors.white, fontSize: 15)),
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)) : null,
+      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
+      onTap: onTap,
     );
   }
 
   Widget _buildSwitchTile(String title, bool value, ValueChanged<bool> onChanged) {
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
       value: value,
       onChanged: onChanged,
       activeThumbColor: const Color(0xFF00D2FF),
-      activeTrackColor: const Color(0xFF6C63FF).withValues(alpha: 0.5),
-      inactiveThumbColor: Colors.white54,
-      inactiveTrackColor: Colors.white10,
     );
   }
 }

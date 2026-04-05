@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,7 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Example: 'https://api.srishty.com/api/'
 // Using localhost (127.0.0.1) will NOT work on real devices!
 const String _baseUrl = kDebugMode
-    ? 'http://192.168.1.3:8000/api/' // Computer Local IP → physical device over Wi-Fi
+    ? 'http://192.168.1.18:8000/api/' // Updated for mobile testing with computer's local IP
     : 'https://your-production-api.com/api/'; // ← REPLACE THIS before release!
 
 class ApiClient {
@@ -30,6 +31,18 @@ class ApiClient {
     if (kDebugMode) {
       dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
     }
+
+    // Add interceptor to handle 401 Unauthorized (Expired Tokens)
+    dio.interceptors.add(InterceptorsWrapper(
+      onError: (e, handler) {
+        if (e.response?.statusCode == 401) {
+          // If token is expired, clear it so we can at least browse as a guest
+          clearAuthToken();
+          debugPrint("Auth token expired/invalid. Cleared for guest access.");
+        }
+        return handler.next(e);
+      },
+    ));
   }
 
   void setAuthToken(String token) {
@@ -38,5 +51,58 @@ class ApiClient {
 
   void clearAuthToken() {
     dio.options.headers.remove('Authorization');
+  }
+  Future<void> uploadChapterAudio(int bookId, int chapterNumber, String filePath) async {
+    final formData = FormData.fromMap({
+      'audio_file': await MultipartFile.fromFile(
+        filePath,
+        filename: 'chapter_${chapterNumber}_audio.m4a',
+      ),
+      'chapter_number': chapterNumber,
+    });
+    await dio.post(
+      'core/books/$bookId/upload_audio/',
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> convertDocx({String? filePath, Uint8List? bytes, String? filename}) async {
+    MultipartFile file;
+    if (kIsWeb) {
+      if (bytes == null) throw Exception('Bytes required for web upload');
+      file = MultipartFile.fromBytes(bytes, filename: filename ?? 'document.docx');
+    } else {
+      if (filePath == null) throw Exception('FilePath required for mobile upload');
+      file = await MultipartFile.fromFile(
+        filePath,
+        filename: filename ?? filePath.split(Platform.pathSeparator).last,
+      );
+    }
+
+    final formData = FormData.fromMap({'file': file});
+    final response = await dio.post(
+      'core/books/convert_docx/',
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+        validateStatus: (status) => true,
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(response.data['error'] ?? 'Conversion failed');
+    }
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> importChapters(int bookId, List<Map<String, String>> chapters) async {
+    final response = await dio.post(
+      'core/books/$bookId/import_chapters/',
+      data: {'chapters': chapters},
+    );
+    return response.data;
   }
 }

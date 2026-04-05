@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import '../features/home/home_screen.dart';
 import '../features/audio/audio_library_screen.dart';
-import '../features/create/create_book_screen.dart';
+import '../features/search/search_screen.dart';
 import '../features/profile/profile_screen.dart';
 
 import '../providers/navigation_provider.dart';
@@ -18,8 +18,8 @@ class BottomNavShell extends StatefulWidget {
 class _BottomNavShellState extends State<BottomNavShell> {
   final List<Widget> _screens = [
     const HomeScreen(),
+    const SearchScreen(),
     const AudioLibraryScreen(),
-    const CreateBookScreen(),
     const ProfileScreen(),
   ];
 
@@ -32,8 +32,8 @@ class _BottomNavShellState extends State<BottomNavShell> {
           body: Stack(
             children: [
               _screens[selectedIndex],
-              if (selectedIndex != 2) // Hide nav bar during Author Studio creation
-                Positioned(
+              // Always show nav bar now
+              Positioned(
                   left: 20,
                   right: 20,
                   bottom: 25,
@@ -42,7 +42,7 @@ class _BottomNavShellState extends State<BottomNavShell> {
                     height: 70,
                     borderRadius: 35,
                     blur: 20,
-                    alignment: Alignment.bottomCenter,
+                    alignment: Alignment.center,
                     border: 2,
                     linearGradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -66,8 +66,8 @@ class _BottomNavShellState extends State<BottomNavShell> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildNavItem(ref, selectedIndex, 0, Icons.home_rounded, 'Home'),
-                          _buildNavItem(ref, selectedIndex, 1, Icons.headphones_rounded, 'Audio'),
-                          _buildNavItem(ref, selectedIndex, 2, Icons.add_box_rounded, 'Create'),
+                          _buildNavItem(ref, selectedIndex, 1, Icons.explore_rounded, 'Search'),
+                          _buildNavItem(ref, selectedIndex, 2, Icons.headphones_rounded, 'Audio'),
                           _buildNavItem(ref, selectedIndex, 3, Icons.person_rounded, 'Profile'),
                         ],
                       ),
@@ -92,18 +92,21 @@ class _BottomNavShellState extends State<BottomNavShell> {
           Icon(
             icon,
             color: isSelected ? const Color(0xFF6C63FF) : Colors.grey,
-            size: isSelected ? 30 : 25,
+            size: isSelected ? 28 : 24,
           ),
-          if (isSelected)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              width: 4,
-              height: 4,
+          const SizedBox(height: 6),
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isSelected ? 1.0 : 0.0,
+            child: Container(
+              width: 5,
+              height: 5,
               decoration: const BoxDecoration(
                 color: Color(0xFF6C63FF),
                 shape: BoxShape.circle,
               ),
             ),
+          ),
         ],
       ),
     );

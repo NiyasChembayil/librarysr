@@ -27,17 +27,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
   double _fontSize = 18.0;
   Color _backgroundColor = const Color(0xFF0F0F1E);
   Color _textColor = Colors.white70;
+  bool _isLoadingPrefs = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _currentChapterIndex = widget.initialChapterIndex;
-    _pageController = PageController(initialPage: _currentChapterIndex);
     _loadPreferences();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _fontSize = prefs.getDouble('reader_font_size') ?? 18.0;
       final themeIndex = prefs.getInt('reader_theme_index') ?? 0;
@@ -53,7 +62,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final bookmark = prefs.getInt('bookmark_${widget.bookId}');
       if (bookmark != null && bookmark < widget.chapters.length) {
         _currentChapterIndex = bookmark;
-        _pageController.jumpToPage(_currentChapterIndex);
+      }
+      
+      _pageController = PageController(initialPage: _currentChapterIndex);
+      _isLoadingPrefs = false;
+    });
+    
+    // Attempt to restore scroll position after a short delay for the current chapter
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted && _scrollController.hasClients) {
+        final scrollPos = prefs.getDouble('bookmark_scroll_${widget.bookId}_$_currentChapterIndex');
+        if (scrollPos != null) {
+          _scrollController.jumpTo(scrollPos);
+        }
+      }
+    });
+
+    _scrollController.addListener(() {
+      // Save scroll position as you read
+      if (_scrollController.hasClients) {
+        prefs.setDouble('bookmark_scroll_${widget.bookId}_$_currentChapterIndex', _scrollController.offset);
       }
     });
   }
@@ -83,6 +111,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingPrefs) {
+      return Scaffold(
+        backgroundColor: _backgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
@@ -113,6 +148,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               },
               itemBuilder: (context, index) {
                 return SingleChildScrollView(
+                  controller: index == _currentChapterIndex ? _scrollController : null,
                   padding: const EdgeInsets.all(25.0),
                   child: Text(
                     widget.chapters[index].content,

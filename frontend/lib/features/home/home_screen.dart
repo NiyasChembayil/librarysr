@@ -6,8 +6,8 @@ import '../../widgets/book_card.dart';
 import '../book/book_detail_screen.dart';
 import '../audio/audio_player_screen.dart';
 import '../../providers/book_provider.dart';
-import '../search/search_screen.dart';
 import '../notifications/notification_screen.dart';
+import '../../providers/notification_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +20,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(bookProvider.notifier).fetchBooks());
+    Future.microtask(() {
+      ref.read(bookProvider.notifier).fetchBooks();
+      ref.read(notificationProvider.notifier).fetchNotifications();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final feedState = ref.watch(bookProvider);
+    final notifications = ref.watch(notificationProvider);
+    final unreadCount = notifications.where((n) => n['is_read'] == false).length;
 
     return Scaffold(
       body: SafeArea(
@@ -48,17 +53,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   Row(
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
-                        },
-                        icon: const Icon(Icons.search_rounded, size: 28),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
-                        },
-                        icon: const Icon(Icons.notifications_none_rounded, size: 28),
+                      Stack(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                            },
+                            icon: const Icon(Icons.notifications_none_rounded, size: 28),
+                          ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.redAccent,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 18,
+                                  minHeight: 18,
+                                ),
+                                child: Text(
+                                  '$unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -109,21 +137,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   author: book.authorName,
                   coverUrl: book.coverUrl,
                   description: book.description,
-                  price: book.price,
                 ),
                 closedBuilder: (context, openContainer) => BookCard(
                   title: book.title,
                   author: book.authorName,
+                  authorProfileId: book.authorProfileId,
+                  isAuthorFollowing: book.isAuthorFollowing,
                   coverUrl: book.coverUrl,
                   likes: book.likesCount,
+                  downloads: book.downloadsCount,
                   onPlay: () {
+                    // Record a read event for the stats
+                    ref.read(bookProvider.notifier).recordRead(book.id);
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AudioPlayerScreen(
+                          bookId: book.id,
                           title: book.title,
                           author: book.authorName,
                           coverUrl: book.coverUrl,
+                          chapters: book.chapters,
                         ),
                       ),
                     );

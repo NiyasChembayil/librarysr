@@ -2,10 +2,10 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'dart:developer' as developer;
 
-class BookifyAudioHandler extends BaseAudioHandler with SeekHandler {
+class SrishtyAudioHandler extends BaseAudioHandler with SeekHandler {
   final _player = AudioPlayer();
 
-  BookifyAudioHandler() {
+  SrishtyAudioHandler() {
     // Forward events from the player to the system
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
   }

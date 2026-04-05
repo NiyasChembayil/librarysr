@@ -26,6 +26,17 @@
                 📍 Detecting Region...
             </div>
         </div>
+        <div class="nav-auth" id="nav-auth-container">
+            <div id="guest-nav">
+                <button class="btn-secondary" onclick="readerApp.openAuthModal()">Sign In</button>
+                <button class="btn-primary" onclick="readerApp.openAuthModal()">Start Writing</button>
+            </div>
+            <div id="auth-nav" class="hidden user-profile">
+                <span id="nav-username">Hello!</span>
+                <button class="btn-primary" onclick="window.location.href='studio.html'">Author Studio</button>
+                <button class="btn-secondary" onclick="readerApp.logout()">Logout</button>
+            </div>
+        </div>
     </nav>
 
     <!-- Hero Section -->
@@ -90,6 +101,38 @@
             &copy; 2026 Srishty Platform. All rights reserved.
         </div>
     </footer>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="readerApp.closeAuthModal()">&times;</button>
+            <h2 id="auth-title" style="margin-bottom: 20px;">Sign In</h2>
+            
+            <form id="auth-form" onsubmit="readerApp.handleAuthSubmit(event)">
+                <div class="form-group" id="username-group">
+                    <label>Username</label>
+                    <input type="text" id="auth-username" class="form-control" required>
+                </div>
+                <div class="form-group hidden" id="email-group">
+                    <label>Email</label>
+                    <input type="email" id="auth-email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" class="form-control" required>
+                </div>
+                
+                <p id="auth-error" style="color: #ff6b6b; margin-bottom: 15px; font-size: 14px; display: none;"></p>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;" id="auth-submit-btn">Sign In</button>
+            </form>
+            
+            <div style="margin-top: 20px; text-align: center; color: var(--text-secondary); font-size: 14px;">
+                <span id="auth-toggle-text">New to Srishty?</span> 
+                <a href="#" onclick="readerApp.toggleAuthMode(event)" style="color: var(--accent-blue); text-decoration: none; font-weight: bold;" id="auth-toggle-link">Create Account</a>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/web_client/app.js"></script>
 </body>

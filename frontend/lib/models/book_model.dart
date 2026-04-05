@@ -9,11 +9,19 @@ class BookModel {
   final int totalReads;
   final List<ChapterModel> chapters;
   final List<String> pages;
+  final bool isInLibrary;
+  final bool isLiked;
+  final int downloadsCount;
+
+  final int authorProfileId;
+  final bool isAuthorFollowing;
 
   BookModel({
     required this.id,
     required this.title,
     required this.authorName,
+    required this.authorProfileId,
+    required this.isAuthorFollowing,
     required this.coverUrl,
     required this.description,
     required this.price,
@@ -21,24 +29,68 @@ class BookModel {
     required this.totalReads,
     required this.chapters,
     this.pages = const [],
+    this.isInLibrary = false,
+    this.isLiked = false,
+    this.downloadsCount = 0,
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) {
     return BookModel(
       id: json['id'],
-      title: json['title'],
+      title: json['title'] ?? 'Untitled',
       authorName: json['author_name'] ?? 'Unknown Author',
+      authorProfileId: json['author_profile_id'] ?? 0,
+      isAuthorFollowing: json['is_author_following'] ?? false,
       coverUrl: json['cover'] ?? '',
       description: json['description'] ?? '',
-      price: double.tryParse(json['price'].toString()) ?? 0.0,
+      price: 0.0, // Platform is free
       likesCount: json['likes_count'] ?? 0,
       totalReads: json['total_reads'] ?? 0,
+      isInLibrary: json['is_in_library'] ?? false,
+      isLiked: json['is_liked'] ?? false,
+      downloadsCount: json['downloads_count'] ?? 0,
       chapters: (json['chapters'] as List? ?? [])
           .map((c) => ChapterModel.fromJson(c))
           .toList(),
       pages: (json['pages'] as List? ?? [])
           .map((p) => p.toString())
           .toList(),
+    );
+  }
+
+  BookModel copyWith({
+    int? id,
+    String? title,
+    String? authorName,
+    int? authorProfileId,
+    bool? isAuthorFollowing,
+    String? coverUrl,
+    String? description,
+    double? price,
+    int? likesCount,
+    int? totalReads,
+    List<ChapterModel>? chapters,
+    List<String>? pages,
+    bool? isInLibrary,
+    bool? isLiked,
+    int? downloadsCount,
+  }) {
+    return BookModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      authorName: authorName ?? this.authorName,
+      authorProfileId: authorProfileId ?? this.authorProfileId,
+      isAuthorFollowing: isAuthorFollowing ?? this.isAuthorFollowing,
+      coverUrl: coverUrl ?? this.coverUrl,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      likesCount: likesCount ?? this.likesCount,
+      totalReads: totalReads ?? this.totalReads,
+      chapters: chapters ?? this.chapters,
+      pages: pages ?? this.pages,
+      isInLibrary: isInLibrary ?? this.isInLibrary,
+      isLiked: isLiked ?? this.isLiked,
+      downloadsCount: downloadsCount ?? this.downloadsCount,
     );
   }
 }

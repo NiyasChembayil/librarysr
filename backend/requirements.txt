@@ -11,3 +11,4 @@ pillow
 psycopg2-binary
 djangorestframework-simplejwt
 drf-nested-routers
+mammoth

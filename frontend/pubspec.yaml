@@ -30,17 +30,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
   dio: ^5.8.0+1
   flutter_riverpod: ^2.6.1
   just_audio: ^0.9.45
   audio_service: ^0.18.17
+  record: ^6.2.0
   cached_network_image: ^3.4.1
   google_fonts: ^6.2.1
   fl_chart: ^0.70.2
   flutter_quill: ^11.0.1
   flutter_quill_extensions: 11.0.0
+  flutter_quill_delta_from_html: ^1.1.0
   intl: ^0.20.2
   font_awesome_flutter: ^10.8.0
   animations: ^2.0.11
@@ -51,6 +55,7 @@ dependencies:
   flutter_spinkit: ^5.2.1
   url_launcher: ^6.3.2
   image_picker: ^1.1.13
+  file_picker: ^8.1.6
 
 dev_dependencies:
   flutter_test:

@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../payment/checkout_screen.dart';
 import '../audio/audio_player_screen.dart';
 import 'reader_screen.dart';
 import '../../providers/book_provider.dart';
-import '../../providers/purchase_provider.dart';
 import '../../widgets/follow_button.dart';
 
 class BookDetailScreen extends ConsumerWidget {
@@ -15,7 +13,6 @@ class BookDetailScreen extends ConsumerWidget {
   final String author;
   final String coverUrl;
   final String description;
-  final double price;
 
   const BookDetailScreen({
     super.key,
@@ -24,16 +21,12 @@ class BookDetailScreen extends ConsumerWidget {
     required this.author,
     required this.coverUrl,
     required this.description,
-    required this.price,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookAsync = ref.watch(currentBookProvider(id));
-    // Check if the user actually purchased this book OR if it's free
-    final isPurchased = ref.watch(purchaseProvider.select((s) => s.contains(id)));
-    final isFree = price == 0.0;
-    final isOwned = isFree || isPurchased;
+    // All books are free and accessible now
 
     return bookAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -54,7 +47,11 @@ class BookDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (book) => Scaffold(
+      data: (book) {
+        if (book == null) {
+          return const Scaffold(body: Center(child: Text('Book not found')));
+        }
+        return Scaffold(
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -111,7 +108,11 @@ class BookDetailScreen extends ConsumerWidget {
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white70),
                           ),
                           const SizedBox(width: 15),
-                          FollowButton(authorUsername: author),
+                          FollowButton(
+                            authorUsername: author,
+                            authorProfileId: book.authorProfileId,
+                            initialIsFollowing: book.isAuthorFollowing,
+                          ),
                         ],
                       ),
                     ),
@@ -123,9 +124,10 @@ class BookDetailScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatColumn('${book?.likesCount ?? 0}', 'Likes'),
-                          _buildStatColumn('${book?.totalReads ?? 0}', 'Reads'),
-                          _buildStatColumn('${book?.chapters.length ?? 0}', 'Chapters'),
+                          _buildStatColumn('${book.likesCount}', 'Likes'),
+                          _buildStatColumn('${book.totalReads}', 'Reads'),
+                          _buildStatColumn('${book.downloadsCount}', 'Downloads'),
+                          _buildStatColumn('${book.chapters.length}', 'Chapters'),
                         ],
                       ),
                     ),
@@ -162,42 +164,33 @@ class BookDetailScreen extends ConsumerWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    if (isOwned) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ReaderScreen(
-                            bookId: id,
-                            title: title,
-                            chapters: book?.chapters ?? [],
-                          ),
+                    // Record a read event for the stats
+                    ref.read(bookProvider.notifier).recordRead(id);
+                    
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReaderScreen(
+                          bookId: id,
+                          title: title,
+                          chapters: book.chapters,
                         ),
-                      );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CheckoutScreen(
-                            bookId: id,
-                            title: title,
-                            price: price,
-                          ),
-                        ),
-                      );
-                    }
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isOwned ? const Color(0xFF6C63FF) : const Color(0xFF00D2FF),
+                    backgroundColor: const Color(0xFF6C63FF),
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
-                  child: Text(
-                    isOwned ? 'Read Now' : 'Buy for \$${price.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                  child: const Text(
+                    'Read Now',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 12),
+              // Like Button
               GlassmorphicContainer(
                 width: 70,
                 height: 70,
@@ -205,30 +198,136 @@ class BookDetailScreen extends ConsumerWidget {
                 blur: 10,
                 alignment: Alignment.center,
                 border: 1,
-                linearGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]),
-                borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.5), Colors.white.withValues(alpha: 0.2)]),
+                linearGradient: LinearGradient(colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
+                ]),
+                borderGradient: LinearGradient(colors: [
+                  book.isLiked
+                      ? Colors.redAccent.withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
+                ]),
+                child: IconButton(
+                  onPressed: () => ref.read(bookProvider.notifier).likeBook(id, ref),
+                  icon: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        book.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        color: book.isLiked ? Colors.redAccent : Colors.white,
+                        size: 24,
+                      ),
+                      Text(
+                        '${book.likesCount}',
+                        style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Download/Library Toggle Button
+              GlassmorphicContainer(
+                width: 70,
+                height: 70,
+                borderRadius: 20,
+                blur: 10,
+                alignment: Alignment.center,
+                border: 1,
+                linearGradient: LinearGradient(colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
+                ]),
+                borderGradient: LinearGradient(colors: [
+                  book.isInLibrary
+                      ? Colors.greenAccent.withValues(alpha: 0.5)
+                      : const Color(0xFF6C63FF).withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
+                ]),
+                child: IconButton(
+                  onPressed: () async {
+                    await ref.read(bookProvider.notifier).toggleLibrary(id, ref);
+                    if (context.mounted) {
+                      final message = book.isInLibrary 
+                        ? 'Story removed from Library' 
+                        : 'Story added to Library!';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(message),
+                          backgroundColor: book.isInLibrary ? Colors.black87 : const Color(0xFF6C63FF),
+                        ),
+                      );
+                    }
+                  },
+                  icon: Icon(
+                    book.isInLibrary
+                        ? Icons.task_alt_rounded
+                        : Icons.cloud_download_rounded,
+                    color: book.isInLibrary
+                        ? Colors.greenAccent
+                        : Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Audio Button
+              GlassmorphicContainer(
+                width: 70,
+                height: 70,
+                borderRadius: 20,
+                blur: 10,
+                alignment: Alignment.center,
+                border: 1,
+                linearGradient: LinearGradient(colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
+                ]),
+                borderGradient: LinearGradient(colors: [
+                  Colors.white.withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
+                ]),
                 child: IconButton(
                   onPressed: () {
+                    // Find first chapter with audio
+                    final chapters = book.chapters;
+                    final audioChapter = chapters.any((c) => c.audioUrl != null && c.audioUrl!.isNotEmpty)
+                        ? chapters.firstWhere((c) => c.audioUrl != null && c.audioUrl!.isNotEmpty)
+                        : null;
+
+                    if (audioChapter == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No audio available for this story yet.'))
+                      );
+                      return;
+                    }
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => AudioPlayerScreen(
+                          bookId: id,
                           title: title,
                           author: author,
                           coverUrl: coverUrl,
+                          audioUrl: audioChapter.audioUrl,
+                          chapters: book.chapters,
                         ),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.headphones_rounded, color: Colors.white, size: 30),
+                  icon: const Icon(Icons.headphones_rounded,
+                      color: Colors.white, size: 30),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   Widget _fadeIn({required Widget child, int delay = 0}) {
     return TweenAnimationBuilder<double>(

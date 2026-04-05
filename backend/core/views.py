@@ -1,10 +1,9 @@
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.db.models import Count
+from django.db.models import Count, Q
 from .models import Category, Book, Chapter, Purchase, ReadStats
 from .serializers import CategorySerializer, BookSerializer, ChapterSerializer, PurchaseSerializer
-from .utils import generate_voice_for_chapter
 from .payments import create_stripe_checkout_session, fulfill_purchase
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -12,20 +11,24 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 import stripe
 
-@method_decorator(cache_page(60 * 15), name='dispatch')
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
     lookup_field = 'slug'
 
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.filter(is_published=True).select_related('author', 'category').prefetch_related('chapters')
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filterset_fields = ['category', 'author']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'price']
+
+    def get_queryset(self):
+        qs = Book.objects.all().select_related('author', 'category').prefetch_related('chapters')
+        if self.request.user.is_authenticated:
+            return qs.filter(Q(is_published=True) | Q(author=self.request.user)).distinct()
+        return qs.filter(is_published=True)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -37,7 +40,6 @@ class BookViewSet(viewsets.ModelViewSet):
         ReadStats.objects.create(book=book, user=user)
         return Response({'status': 'read recorded'})
 
-    @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def trending(self, request):
         region = request.query_params.get('region')
@@ -57,6 +59,146 @@ class BookViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def discovery(self, request):
+        region = request.query_params.get('region', 'Global')
+        
+        # 1. Mostly Read Category
+        # Find category with most read stats
+        top_category_stats = Category.objects.annotate(
+            total_reads=Count('books__read_stats')
+        ).order_by('-total_reads').first()
+        
+        mostly_read_category = []
+        category_name = "Trending"
+        if top_category_stats:
+            category_name = top_category_stats.name
+            mostly_read_category = Book.objects.filter(
+                category=top_category_stats, 
+                is_published=True
+            ).annotate(
+                reads=Count('read_stats')
+            ).order_by('-reads')[:6]
+
+        # 3. New Arrivals (latest published books)
+        new_arrivals = Book.objects.filter(is_published=True).order_for_discovery().order_by('-created_at')[:10]
+
+        return Response({
+            'mostly_read': {
+                'category_name': category_name,
+                'books': self.get_serializer(mostly_read_category, many=True).data
+            },
+            'local_hits': self.get_serializer(local_hits, many=True).data,
+            'new_arrivals': self.get_serializer(new_arrivals, many=True).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def toggle_library(self, request, pk=None):
+        from .models import UserLibrary
+        book = self.get_object()
+        user = request.user
+        
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        library_item, created = UserLibrary.objects.get_or_create(user=user, book=book)
+        
+        if not created:
+            library_item.delete()
+            return Response({'status': 'removed', 'is_in_library': False})
+            
+        return Response({'status': 'added', 'is_in_library': True})
+
+    @action(detail=False, methods=['get'])
+    def my_books(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Books user authored, completed purchases, OR added to library
+        from .models import UserLibrary
+        ordered_book_ids = Purchase.objects.filter(user=user, status='COMPLETED').values_list('book_id', flat=True)
+        library_book_ids = UserLibrary.objects.filter(user=user).values_list('book_id', flat=True)
+        
+        books = Book.objects.filter(
+            Q(author=user) | Q(id__in=ordered_book_ids) | Q(id__in=library_book_ids)
+        ).distinct().select_related('author', 'category').prefetch_related('chapters')
+        
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='convert_docx')
+    def convert_docx(self, request):
+        import mammoth
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            result = mammoth.convert_to_html(file)
+            return Response({'html': result.value})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def import_chapters(self, request, pk=None):
+        """
+        Accepts a list of chapters in JSON format.
+        Expected format: {'chapters': [{'title': '...', 'content': '...'}, ...]}
+        """
+        book = self.get_object()
+        chapters_data = request.data.get('chapters')
+        
+        if not chapters_data or not isinstance(chapters_data, list):
+            return Response({'error': 'No valid chapters list provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            chapters_created = []
+            # Optionally clear existing chapters if you want a fresh import
+            # book.chapters.all().delete() 
+            
+            for index, item in enumerate(chapters_data):
+                title = item.get('title', f'Chapter {index + 1}')
+                content = item.get('content', '')
+                
+                chapter = Chapter.objects.create(
+                    book=book,
+                    title=title,
+                    content=content,
+                    order=book.chapters.count()
+                )
+                chapters_created.append({
+                    'id': chapter.id,
+                    'title': chapter.title,
+                    'order': chapter.order
+                })
+            
+            return Response({
+                'status': 'chapters imported',
+                'count': len(chapters_created),
+                'chapters': chapters_created
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def upload_audio(self, request, pk=None):
+        book = self.get_object()
+        chapter_number = request.data.get('chapter_number')
+        audio_file = request.FILES.get('audio_file')
+
+        if not chapter_number or not audio_file:
+            return Response({'error': 'chapter_number and audio_file are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # chapter_number from frontend is 1-indexed, match it with 0-indexed 'order'
+            chapter = book.chapters.get(order=int(chapter_number) - 1)
+            chapter.audio_file = audio_file
+            chapter.save()
+            return Response({'status': 'audio uploaded', 'url': chapter.audio_file.url})
+        except (Chapter.DoesNotExist, ValueError):
+            return Response({'error': f'Chapter {chapter_number} not found'}, status=status.HTTP_404_NOT_FOUND)
+
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all().select_related('book')
     serializer_class = ChapterSerializer
@@ -66,22 +208,8 @@ class ChapterViewSet(viewsets.ModelViewSet):
         return Chapter.objects.filter(book_id=self.kwargs['book_pk'])
 
     def perform_create(self, serializer):
-        chapter = serializer.save(book_id=self.kwargs['book_pk'])
-        # Automate voice generation for new chapters
-        try:
-            generate_voice_for_chapter(chapter)
-        except Exception as e:
-            # Log error but don't fail chapter creation
-            print(f"Voice generation failed: {e}")
+        serializer.save(book_id=self.kwargs['book_pk'])
 
-    @action(detail=True, methods=['post'])
-    def generate_voice(self, request, book_pk=None, pk=None):
-        chapter = self.get_object()
-        if not chapter.content:
-            return Response({'error': 'Chapter has no content'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        audio_url = generate_voice_for_chapter(chapter)
-        return Response({'status': 'audio generated', 'url': audio_url})
 
 class PurchaseViewSet(viewsets.ModelViewSet):
     queryset = Purchase.objects.all().select_related('user', 'book')

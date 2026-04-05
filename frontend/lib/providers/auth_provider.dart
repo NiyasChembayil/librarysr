@@ -105,10 +105,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> updateProfile({String? bio, String? avatar}) async {
+    try {
+      final Map<String, dynamic> data = {
+        'bio': bio,
+        'avatar': avatar,
+      }..removeWhere((key, value) => value == null);
+      final response = await _apiClient.dio.patch('accounts/profile/me/', data: data);
+      final updatedProfile = ProfileModel.fromJson(response.data);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        token: state.token,
+        profile: updatedProfile,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Auth: Update profile error: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     _apiClient.clearAuthToken();
     state = AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  /// Manually update the current user's profile statistics (following, followers etc.)
+  void updateFollowingCount(int delta) {
+    if (state.profile == null) return;
+    
+    final currentProfile = state.profile!;
+    final newProfile = ProfileModel(
+      id: currentProfile.id,
+      username: currentProfile.username,
+      role: currentProfile.role,
+      bio: currentProfile.bio,
+      avatar: currentProfile.avatar,
+      followersCount: currentProfile.followersCount,
+      followingCount: currentProfile.followingCount + delta,
+    );
+    
+    state = AuthState(
+      status: state.status,
+      token: state.token,
+      profile: newProfile,
+      errorMessage: state.errorMessage,
+    );
   }
 }

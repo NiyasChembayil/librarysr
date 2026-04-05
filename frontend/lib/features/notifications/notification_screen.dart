@@ -46,74 +46,94 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   }
 
   Widget _buildNotificationTile(dynamic notif) {
-    IconData icon;
-    Color color;
-
-    switch (notif['action_type']) {
-      case 'LIKE':
-        icon = Icons.favorite_rounded;
-        color = Colors.redAccent;
-        break;
-      case 'COMMENT':
-        icon = Icons.comment_rounded;
-        color = Colors.blueAccent;
-        break;
-      case 'NEW_BOOK':
-        icon = Icons.auto_stories_rounded;
-        color = Colors.greenAccent;
-        break;
-      case 'FOLLOW':
-        icon = Icons.person_add_rounded;
-        color = const Color(0xFF00D2FF);
-        break;
-      default:
-        icon = Icons.notifications_rounded;
-        color = const Color(0xFF6C63FF);
-    }
+    final timeAgo = _getTimeAgo(notif['created_at']);
+    final actorName = notif['actor_name'] ?? 'System';
+    final initial = actorName.isNotEmpty ? actorName[0].toUpperCase() : 'S';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: notif['is_read'] ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: notif['is_read'] ? Colors.transparent : Colors.white10),
-      ),
+      margin: const EdgeInsets.only(bottom: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+      color: notif['is_read'] ? Colors.transparent : Colors.white.withValues(alpha: 0.05),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Avatar
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    children: [
-                      TextSpan(text: notif['actor_name'] ?? 'System', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      TextSpan(text: _getActionText(notif['action_type'])),
-                      if (notif['book_title'] != null)
-                        TextSpan(text: notif['book_title'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00D2FF))),
-                    ],
-                  ),
-                ),
-                if (notif['message'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Text(notif['message'], style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                  ),
-                const SizedBox(height: 5),
-                Text('2 hours ago', style: const TextStyle(color: Colors.white24, fontSize: 11)),
-              ],
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF6C63FF), Color(0xFF00D2FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
-          if (!notif['is_read'])
-            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF6C63FF), shape: BoxShape.circle)),
+          const SizedBox(width: 12),
+          // Content
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.3),
+                children: [
+                  TextSpan(text: actorName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  TextSpan(text: _getActionText(notif['action_type'])),
+                  if (notif['book_title'] != null && notif['action_type'] != 'LIKE')
+                    TextSpan(text: notif['book_title'], style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
+                  if (notif['message'] != null && notif['action_type'] == 'COMMENT')
+                    TextSpan(text: ' "${notif['message']}"', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.white70)),
+                  TextSpan(
+                    text: '  $timeAgo',
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Trailing Action/Indicator
+          if (notif['action_type'] == 'FOLLOW')
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: notif['is_read'] ? Colors.white10 : const Color(0xFF6C63FF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                minimumSize: const Size(0, 32),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(notif['is_read'] ? 'Following' : 'Follow Back', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            )
+          else if (notif['action_type'] == 'LIKE' || notif['action_type'] == 'COMMENT' || notif['action_type'] == 'NEW_BOOK')
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                notif['action_type'] == 'LIKE' 
+                    ? Icons.favorite_rounded 
+                    : notif['action_type'] == 'COMMENT' ? Icons.comment_rounded : Icons.auto_stories_rounded,
+                color: notif['action_type'] == 'LIKE' 
+                    ? Colors.redAccent 
+                    : notif['action_type'] == 'COMMENT' ? Colors.blueAccent : Colors.greenAccent,
+                size: 20,
+              ),
+            ),
+            
+          if (!notif['is_read'] && notif['action_type'] != 'FOLLOW' && notif['action_type'] != 'LIKE' && notif['action_type'] != 'COMMENT')
+            Container(width: 8, height: 8, margin: const EdgeInsets.only(left: 8), decoration: const BoxDecoration(color: Color(0xFF6C63FF), shape: BoxShape.circle)),
         ],
       ),
     );
@@ -121,11 +141,25 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
   String _getActionText(String? type) {
     switch (type) {
-      case 'LIKE': return ' liked ';
-      case 'COMMENT': return ' commented on ';
-      case 'FOLLOW': return ' started following you';
+      case 'LIKE': return ' liked your book.';
+      case 'COMMENT': return ' commented:';
+      case 'FOLLOW': return ' started following you.';
       case 'NEW_BOOK': return ' published a new book: ';
-      default: return ' sent a notification ';
+      default: return ' sent a notification. ';
+    }
+  }
+
+  String _getTimeAgo(String? timestamp) {
+    if (timestamp == null) return '1h';
+    try {
+      final date = DateTime.parse(timestamp);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 0) return '${diff.inDays}d';
+      if (diff.inHours > 0) return '${diff.inHours}h';
+      if (diff.inMinutes > 0) return '${diff.inMinutes}m';
+      return 'Just now';
+    } catch (_) {
+      return '2h';
     }
   }
 

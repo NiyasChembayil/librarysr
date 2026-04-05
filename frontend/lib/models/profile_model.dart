@@ -6,6 +6,7 @@ class ProfileModel {
   final String? avatar;
   final int followersCount;
   final int followingCount;
+  final bool isFollowing;
 
   ProfileModel({
     required this.id,
@@ -15,6 +16,7 @@ class ProfileModel {
     this.avatar,
     required this.followersCount,
     required this.followingCount,
+    this.isFollowing = false,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class ProfileModel {
       // 'followed_by' is the correct field name on the model
       followersCount: (json['followed_by'] as List?)?.length ?? json['followers_count'] ?? 0,
       followingCount: json['following_count'] ?? 0,
+      isFollowing: json['is_following'] ?? false,
     );
   }
 

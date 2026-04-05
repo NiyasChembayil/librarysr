@@ -189,8 +189,11 @@ class ProfileScreen extends ConsumerWidget {
               child: BookCard(
                 title: book.title,
                 author: book.authorName,
+                authorProfileId: book.authorProfileId,
+                isAuthorFollowing: book.isAuthorFollowing,
                 coverUrl: book.coverUrl,
                 likes: book.likesCount,
+                downloads: book.downloadsCount,
                 onPlay: () {},
                 onTap: () {
                   Navigator.push(
@@ -202,7 +205,6 @@ class ProfileScreen extends ConsumerWidget {
                         author: book.authorName,
                         coverUrl: book.coverUrl,
                         description: book.description,
-                        price: book.price,
                       ),
                     ),
                   );

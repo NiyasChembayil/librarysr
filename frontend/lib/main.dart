@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:audio_service/audio_service.dart';
 import 'core/services/audio_handler.dart';
 import 'providers/audio_provider.dart';
@@ -23,7 +25,7 @@ void main() async {
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: const BookifyApp(),
+      child: const SrishtyApp(),
     ),
   );
 }
@@ -31,9 +33,9 @@ void main() async {
 Future<void> _initAudioService(ProviderContainer container) async {
   try {
     final handler = await AudioService.init(
-      builder: () => BookifyAudioHandler(),
+      builder: () => SrishtyAudioHandler(),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.booksrishty.audio',
+        androidNotificationChannelId: 'com.srishty.audio',
         androidNotificationChannelName: 'Srishty Playback',
         androidStopForegroundOnPause: true,
       ),
@@ -46,8 +48,8 @@ Future<void> _initAudioService(ProviderContainer container) async {
   }
 }
 
-class BookifyApp extends ConsumerWidget {
-  const BookifyApp({super.key});
+class SrishtyApp extends ConsumerWidget {
+  const SrishtyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,6 +65,15 @@ class BookifyApp extends ConsumerWidget {
       title: 'Srishty',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        FlutterQuillLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+      ],
       home: _getHome(authState.status),
     );
   }

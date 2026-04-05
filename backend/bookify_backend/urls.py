@@ -32,6 +32,8 @@ router.register(r'admin-stats', AdminDashboardViewSet, basename='admin-stats')
 urlpatterns = [
     # Frontend Apps
     path('', TemplateView.as_view(template_name='web_client/index.html'), name='public-ui'),
+    path('index.html', TemplateView.as_view(template_name='web_client/index.html')),
+    path('studio.html', TemplateView.as_view(template_name='web_client/studio.html'), name='studio-ui'),
     path('portal/', TemplateView.as_view(template_name='web_admin/index.html'), name='admin-ui'),
 
     path('admin/', admin.site.urls),

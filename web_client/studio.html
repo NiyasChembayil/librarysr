@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author Studio | Srishty</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/web_client/style.css">
+    <link rel="icon" href="/static/assets/logo.png" type="image/x-icon">
+</head>
+<body>
+    <nav class="studio-nav glass" style="margin: 20px auto; width: 90%; max-width: 1200px; position: relative;">
+        <div class="nav-brand">
+            <span class="nav-title">Srishty Studio</span>
+        </div>
+        <div class="wizard-steps">
+            <div class="step active" id="step-nav-1">1. Details</div>
+            <div class="step" id="step-nav-2">2. Editor</div>
+            <div class="step" id="step-nav-3">3. Publish</div>
+        </div>
+        <button class="btn-secondary" onclick="window.location.href='index.html'">Exit Studio</button>
+    </nav>
+
+    <div class="container studio-container glass" style="padding: 40px;">
+        <!-- Step 1 -->
+        <div id="step-1" class="studio-section active">
+            <h2>Book Details</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">Let's start with the basics of your story.</p>
+            
+            <div class="form-group">
+                <label>Book Title</label>
+                <input type="text" id="book-title" class="form-control" placeholder="Enter a catchy title..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="book-category" class="form-control" required style="background-color: var(--bg-dark); color: white;">
+                    <option value="">Loading categories...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="book-desc" class="form-control" rows="4" placeholder="What is your story about?" required></textarea>
+            </div>
+
+            <button class="btn-primary large" onclick="studioApp.createBook()" id="btn-next-1" style="float: right;">Next: Write Story</button>
+            <div style="clear: both;"></div>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step-2" class="studio-section">
+            <h2>The Power Editor</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Write directly here, or import a Word (.docx) file. <b>Use "Heading 1" to mark Chapter titles!</b></p>
+            
+            <div class="import-zone" onclick="document.getElementById('docx-upload').click()">
+                <h3>Import Word Document (.docx)</h3>
+                <p>Click here to automatically convert your manuscript.</p>
+                <input type="file" id="docx-upload" accept=".docx" style="display: none;" onchange="studioApp.handleDocxUpload(event)">
+            </div>
+            
+            <div class="quill-container">
+                <div id="editor"></div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+                <button class="btn-secondary" onclick="studioApp.goToStep(1)">Back</button>
+                <button class="btn-primary large" onclick="studioApp.processChapters()" id="btn-next-2">Process Chapters & Next</button>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="step-3" class="studio-section">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h2 style="font-size: 36px; margin-bottom: 15px;">You're Almost Done!</h2>
+                <p style="color: var(--text-secondary);">Your masterpiece is ready to be shared with the Srishty community.</p>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; margin-bottom: 30px;">
+                <h3>Summary</h3>
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                <p style="margin-bottom: 10px;"><strong>Title:</strong> <span id="summary-title" style="color: var(--accent-blue);"></span></p>
+                <p><strong>Chapters Processed:</strong> <span id="summary-chapters" style="color: var(--accent-blue);">0</span></p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between;">
+                <button class="btn-secondary" onclick="studioApp.goToStep(2)">Back to Editor</button>
+                <button class="btn-primary large" onclick="studioApp.publishBook()" id="btn-publish">Publish to Srishty!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/web_client/app.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="/static/web_client/studio.js"></script>
+</body>
+</html>
