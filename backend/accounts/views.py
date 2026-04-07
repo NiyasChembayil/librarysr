@@ -2,8 +2,10 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.contrib.auth.models import User
+from django.utils import timezone
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer, RegisterSerializer, UserListSerializer
+from core.models import ReadStats
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
@@ -50,6 +52,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(profile)
             return Response(serializer.data)
+            
+        # Handle User model updates if present in data
+        user_updated = False
+        user = request.user
+        if 'username' in request.data and request.data['username']:
+            user.username = request.data['username']
+            user_updated = True
+        if 'email' in request.data and request.data['email']:
+            user.email = request.data['email']
+            user_updated = True
+        if 'password' in request.data and request.data['password']:
+            user.set_password(request.data['password'])
+            user_updated = True
+            
+        if user_updated:
+            user.save()
+
+        # Handle Profile model updates
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -83,3 +103,38 @@ class ProfileViewSet(viewsets.ModelViewSet):
         following_users = [p.user for p in following_profiles]
         serializer = UserListSerializer(following_users, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def activity(self, request, pk=None):
+        profile = self.get_object()
+        
+        # Calculate daily activity for the last 7 days ending today
+        today = timezone.localdate()
+        # Create a list for Mon-Sun (0-6)
+        # Note: FlChart X-axis is often 0=Mon, 1=Tue, but we can match whatever the frontend expects.
+        # Let's align today's index and fill backwards.
+        
+        counts = [0] * 7 # Mon=0, Sun=6
+        
+        # Fetch stats for the last 7 days
+        start_date = today - timezone.timedelta(days=7)
+        stats = ReadStats.objects.filter(
+            user=profile.user,
+            timestamp__date__gte=start_date
+        )
+        
+        for stat in stats:
+            # stat.timestamp.date().weekday() returns 0 for Monday, 6 for Sunday
+            day_index = stat.timestamp.date().weekday()
+            counts[day_index] += 1
+            
+        return Response({"activity": counts})
+
+    @action(detail=False, methods=['post'])
+    def upgrade_role(self, request):
+        profile = request.user.profile
+        if profile.role == 'reader':
+            profile.role = 'author'
+            profile.save()
+            return Response({"status": "success", "role": profile.role})
+        return Response({"status": "already_author", "role": profile.role})

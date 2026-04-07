@@ -39,6 +39,40 @@
                     <option value="">Loading categories...</option>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label>Book Cover Image</label>
+                <div class="cover-upload-container">
+                    <div class="cover-preview-wrapper" id="cover-preview-container">
+                        <img id="cover-preview" class="cover-preview-img" src="" alt="Cover preview">
+                        <div id="cover-placeholder" class="cover-placeholder">
+                            <span>No cover selected.<br>Tap to browse.</span>
+                        </div>
+                    </div>
+                    <div class="cover-upload-fields">
+                        <input type="file" id="book-cover" class="file-input-custom" accept="image/*" onchange="studioApp.handleCoverPreview(event)">
+                        <label for="book-cover" class="file-label-custom"> Choose Cover Image</label>
+                        <p class="cover-help-text">Recommended: 2:3 ratio (e.g. 600x900px). Max 5MB.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Author Photo (Your Profile Picture)</label>
+                <div class="author-upload-container">
+                    <div class="author-preview-wrapper" id="author-preview-container">
+                        <img id="author-preview" class="author-preview-img" src="" alt="Author preview">
+                        <div id="author-placeholder" class="author-placeholder">
+                            <span>No photo</span>
+                        </div>
+                    </div>
+                    <div class="author-upload-fields">
+                        <input type="file" id="author-photo" class="file-input-custom" accept="image/*" onchange="studioApp.handleAuthorPreview(event)">
+                        <label for="author-photo" class="file-label-custom">Update Profile Photo</label>
+                        <p class="cover-help-text">JPG/PNG. Recommended: Square ratio.</p>
+                    </div>
+                </div>
+            </div>
             
             <div class="form-group">
                 <label>Description</label>

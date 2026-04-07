@@ -83,12 +83,25 @@ class BookViewSet(viewsets.ModelViewSet):
         # 3. New Arrivals (latest published books)
         new_arrivals = Book.objects.filter(is_published=True).order_for_discovery().order_by('-created_at')[:10]
 
+        # 4. Local Hits (Books from the same region)
+        local_hits = Book.objects.filter(is_published=True, region=region).order_for_discovery()[:6]
+
+        # 4. Mutual Friends' Books (Social Discovery)
+        social_hits = []
+        if request.user.is_authenticated:
+            following_ids = request.user.following.values_list('followed_id', flat=True)
+            social_hits = Book.objects.filter(
+                likes__user_id__in=following_ids,
+                is_published=True
+            ).exclude(author=request.user).distinct()[:6]
+
         return Response({
             'mostly_read': {
                 'category_name': category_name,
                 'books': self.get_serializer(mostly_read_category, many=True).data
             },
             'local_hits': self.get_serializer(local_hits, many=True).data,
+            'social_hits': self.get_serializer(social_hits, many=True).data,
             'new_arrivals': self.get_serializer(new_arrivals, many=True).data
         })
 

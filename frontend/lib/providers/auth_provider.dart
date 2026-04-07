@@ -125,11 +125,43 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> updateAccount(String key, String value) async {
+    try {
+      final Map<String, dynamic> data = {key: value};
+      final response = await _apiClient.dio.patch('accounts/profile/me/', data: data);
+      final updatedProfile = ProfileModel.fromJson(response.data);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        token: state.token,
+        profile: updatedProfile,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Auth: Update account error: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     _apiClient.clearAuthToken();
     state = AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  Future<bool> upgradeToAuthor() async {
+    try {
+      final response = await _apiClient.dio.post('accounts/profile/upgrade_role/');
+      if (response.data['status'] == 'success' || response.data['status'] == 'already_author') {
+        final profile = await _fetchProfile();
+        state = AuthState(status: AuthStatus.authenticated, token: state.token, profile: profile);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Auth: Upgrade to author error: $e');
+      return false;
+    }
   }
 
   /// Manually update the current user's profile statistics (following, followers etc.)

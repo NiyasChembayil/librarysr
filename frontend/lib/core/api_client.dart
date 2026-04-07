@@ -10,7 +10,7 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Example: 'https://api.srishty.com/api/'
 // Using localhost (127.0.0.1) will NOT work on real devices!
 const String _baseUrl = kDebugMode
-    ? 'http://192.168.1.18:8000/api/' // Updated for mobile testing with computer's local IP
+    ? 'http://localhost:8000/api/' // Updated for local testing
     : 'https://your-production-api.com/api/'; // ← REPLACE THIS before release!
 
 class ApiClient {

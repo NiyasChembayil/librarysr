@@ -63,6 +63,46 @@ class StudioApp {
         document.getElementById(`step-nav-${step}`).classList.add('active');
     }
 
+    handleCoverPreview(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('cover-preview');
+        const placeholder = document.getElementById('cover-placeholder');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    }
+
+    handleAuthorPreview(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('author-preview');
+        const placeholder = document.getElementById('author-placeholder');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    }
+
     async createBook() {
         const title = document.getElementById('book-title').value;
         const categoryId = document.getElementById('book-category').value;
@@ -78,12 +118,33 @@ class StudioApp {
         btn.textContent = 'Creating...';
 
         try {
+            // 1. Sync Author Photo if provided
+            const authorPhotoFile = document.getElementById('author-photo').files[0];
+            if (authorPhotoFile) {
+                const profileData = new FormData();
+                profileData.append('avatar', authorPhotoFile);
+                await window.readerApp.fetchAPI('/accounts/profile/me/', {
+                    method: 'PATCH',
+                    body: profileData
+                });
+            }
+
+            // 2. Create Book with Cover
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('category', categoryId);
+            formData.append('price', '0.0');
+            formData.append('is_published', 'false');
+
+            const coverFile = document.getElementById('book-cover').files[0];
+            if (coverFile) {
+                formData.append('cover', coverFile);
+            }
+
             const data = await window.readerApp.fetchAPI('/core/books/', {
                 method: 'POST',
-                body: JSON.stringify({
-                    title, description, category: parseInt(categoryId),
-                    price: 0.0, is_published: false
-                })
+                body: formData
             });
 
             if (data && data.id) {
@@ -207,7 +268,7 @@ class StudioApp {
                 body: JSON.stringify({ is_published: true })
             });
             
-            alert('Congratulations! Your story is now live on Srishty!');
+            alert('Congratulations! Your story is now live on Srishty! You can now find it in the Discovery gallery under its genre.');
             window.location.href = 'index.html';
         } catch (err) {
             alert('Failed to publish: ' + err.message);

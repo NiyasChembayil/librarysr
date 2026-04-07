@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glassmorphism/glassmorphism.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../profile/edit_profile_screen.dart';
+
+final cacheSizeProvider = FutureProvider.autoDispose<String>((ref) async {
+  try {
+    final tempDir = await getTemporaryDirectory();
+    int totalSize = 0;
+    if (tempDir.existsSync()) {
+      tempDir.listSync(recursive: true, followLinks: false).forEach((FileSystemEntity entity) {
+        if (entity is File) {
+          totalSize += entity.lengthSync();
+        }
+      });
+    }
+    final sizeInMb = totalSize / (1024 * 1024);
+    return '${sizeInMb.toStringAsFixed(2)} MB';
+  } catch (e) {
+    return '0.00 MB';
+  }
+});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -37,11 +57,37 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.edit,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
                 ),
-                _buildListTile('Change Username', icon: Icons.alternate_email, subtitle: 'Currently: ${authState.profile?.username ?? ""}'),
-                _buildListTile('Change Email', icon: Icons.email_outlined),
-                _buildListTile('Change Password', icon: Icons.lock_outline),
+                _buildListTile(
+                  'Change Username', 
+                  icon: Icons.alternate_email, 
+                  subtitle: 'Currently: ${authState.profile?.username ?? ""}',
+                  onTap: () => _showUpdateDialog(context, ref, 'username', 'Change Username', authState.profile?.username ?? ''),
+                ),
+                _buildListTile(
+                  'Change Email', 
+                  icon: Icons.email_outlined,
+                  onTap: () => _showUpdateDialog(context, ref, 'email', 'Change Email', ''),
+                ),
+                _buildListTile(
+                  'Change Password', 
+                  icon: Icons.lock_outline,
+                  onTap: () => _showUpdateDialog(context, ref, 'password', 'Change Password', '', isPassword: true),
+                ),
                 if (!isAuthor)
-                  _buildListTile('Switch to Author Account', icon: Icons.workspace_premium, iconColor: Colors.amber, textColor: Colors.amber),
+                  _buildListTile(
+                    'Switch to Author Account', 
+                    icon: Icons.workspace_premium, 
+                    iconColor: Colors.amber, 
+                    textColor: Colors.amber,
+                    onTap: () async {
+                      final success = await ref.read(authProvider.notifier).upgradeToAuthor();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(success ? 'Welcome to the Creator Program!' : 'Failed to upgrade account.')),
+                        );
+                      }
+                    }
+                  ),
               ],
             ),
 
@@ -123,11 +169,31 @@ class SettingsScreen extends ConsumerWidget {
                 _buildListTile(
                   'Clear cache', 
                   icon: Icons.delete_sweep_outlined,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cache cleared locally.')));
+                  onTap: () async {
+                    try {
+                      final tempDir = await getTemporaryDirectory();
+                      if (tempDir.existsSync()) {
+                        tempDir.listSync().forEach((entity) {
+                          if (entity is File) entity.deleteSync();
+                        });
+                      }
+                      ref.invalidate(cacheSizeProvider);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Device cache cleared!')));
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to clear cache.')));
+                      }
+                    }
                   }
                 ),
-                _buildListTile('Storage usage', subtitle: '0 MB', icon: Icons.storage),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final cacheSize = ref.watch(cacheSizeProvider);
+                    return _buildListTile('Storage usage', subtitle: cacheSize.value ?? 'Loading...', icon: Icons.storage);
+                  },
+                ),
               ],
             ),
 
@@ -168,9 +234,10 @@ class SettingsScreen extends ConsumerWidget {
                   textColor: Colors.redAccent,
                   iconColor: Colors.redAccent,
                   onTap: () async {
-                    final nav = Navigator.of(context);
                     await ref.read(authProvider.notifier).logout();
-                    if (nav.canPop()) nav.pop(); 
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                    }
                   }
                 ),
                 _buildListTile(
@@ -259,6 +326,79 @@ class SettingsScreen extends ConsumerWidget {
       value: value,
       onChanged: onChanged,
       activeThumbColor: const Color(0xFF00D2FF),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context, WidgetRef ref, String key, String title, String initialValue, {bool isPassword = false}) {
+    final controller = TextEditingController(text: initialValue);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassmorphicContainer(
+            width: double.infinity,
+            height: 220,
+            borderRadius: 20,
+            blur: 20,
+            alignment: Alignment.center,
+            border: 1,
+            linearGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]),
+            borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0)]),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: controller,
+                    obscureText: isPassword,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                      hintText: 'Enter new $key...',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6C63FF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () async {
+                          if (controller.text.trim().isEmpty) return;
+                          final nav = Navigator.of(context);
+                          final scaffoldMsg = ScaffoldMessenger.of(context);
+                          final success = await ref.read(authProvider.notifier).updateAccount(key, controller.text.trim());
+                          nav.pop();
+                          scaffoldMsg.showSnackBar(
+                            SnackBar(content: Text(success ? '$title updated successfully!' : 'Failed to update $key. Please try again.')),
+                          );
+                        },
+                        child: const Text('Save', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

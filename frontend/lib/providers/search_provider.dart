@@ -9,6 +9,7 @@ class SearchState {
   final List<BookModel> mostlyReadBooks;
   final String mostlyReadCategoryName;
   final List<BookModel> localHits;
+  final List<BookModel> socialHits;
   final bool isLoading;
 
   SearchState({
@@ -17,6 +18,7 @@ class SearchState {
     this.mostlyReadBooks = const [],
     this.mostlyReadCategoryName = '',
     this.localHits = const [],
+    this.socialHits = const [],
     this.isLoading = false,
   });
 
@@ -25,7 +27,8 @@ class SearchState {
     profiles: [], 
     mostlyReadBooks: [], 
     mostlyReadCategoryName: '', 
-    localHits: []
+    localHits: [],
+    socialHits: []
   );
 }
 
@@ -51,6 +54,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       mostlyReadBooks: state.mostlyReadBooks,
       mostlyReadCategoryName: state.mostlyReadCategoryName,
       localHits: state.localHits,
+      socialHits: state.socialHits,
       isLoading: true
     );
     
@@ -69,6 +73,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         mostlyReadBooks: state.mostlyReadBooks,
         mostlyReadCategoryName: state.mostlyReadCategoryName,
         localHits: state.localHits,
+        socialHits: state.socialHits,
         isLoading: false,
       );
     } catch (e) {
@@ -90,6 +95,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       mostlyReadBooks: state.mostlyReadBooks,
       mostlyReadCategoryName: state.mostlyReadCategoryName,
       localHits: state.localHits,
+      socialHits: state.socialHits,
       isLoading: true
     );
 
@@ -105,7 +111,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
         profiles: [],
         mostlyReadBooks: mostlyRead.map((j) => BookModel.fromJson(j)).toList(),
         mostlyReadCategoryName: data['mostly_read']['category_name'] ?? 'Trending',
-        localHits: localHits.map((j) => BookModel.fromJson(j)).toList(),
+        localHits: (data['local_hits'] as List? ?? []).map((j) => BookModel.fromJson(j)).toList(),
+        socialHits: (data['social_hits'] as List? ?? []).map((j) => BookModel.fromJson(j)).toList(),
         isLoading: false,
       );
     } catch (e) {

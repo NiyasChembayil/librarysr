@@ -35,13 +35,21 @@ class BookModel {
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) {
+    String cover = json['cover'] ?? '';
+    // If the URL is relative (starts with /), prepend the server base URL
+    if (cover.isNotEmpty && !cover.startsWith('http')) {
+      // Assuming server is at localhost:8000 for local dev
+      // In production, this would use a config/env variable
+      cover = 'http://localhost:8000$cover';
+    }
+
     return BookModel(
       id: json['id'],
       title: json['title'] ?? 'Untitled',
       authorName: json['author_name'] ?? 'Unknown Author',
       authorProfileId: json['author_profile_id'] ?? 0,
       isAuthorFollowing: json['is_author_following'] ?? false,
-      coverUrl: json['cover'] ?? '',
+      coverUrl: cover,
       description: json['description'] ?? '',
       price: 0.0, // Platform is free
       likesCount: json['likes_count'] ?? 0,

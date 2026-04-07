@@ -8,7 +8,13 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class BookQuerySet(models.QuerySet):
+    def order_for_discovery(self):
+        # Placeholder for complex discovery logic (e.g. promoting high-rated books)
+        return self.order_by('?') 
+
 class Book(models.Model):
+    objects = BookQuerySet.as_manager()
     title = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, null=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')

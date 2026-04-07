@@ -8,6 +8,22 @@ import '../../widgets/book_card.dart';
 import '../settings/settings_screen.dart';
 import '../book/book_detail_screen.dart';
 import 'user_list_screen.dart';
+import '../../core/api_client.dart';
+
+final activityProvider = FutureProvider.autoDispose<List<int>>((ref) async {
+  final apiClient = ref.read(apiClientProvider);
+  final auth = ref.watch(authProvider);
+  final profileId = auth.profile?.id;
+  if (profileId == null) return List.filled(7, 0);
+  
+  try {
+    final response = await apiClient.dio.get('accounts/profile/$profileId/activity/');
+    final data = response.data['activity'] as List;
+    return data.map((e) => e as int).toList();
+  } catch (e) {
+    return List.filled(7, 0);
+  }
+});
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -20,16 +36,25 @@ class ProfileScreen extends ConsumerWidget {
 
     // Filter books by this author
     final myBooks = bookState.books.where((b) => b.authorName == profile?.username).toList();
+    
+    // Calculate total reads across all of the author's books
+    final totalAuthorReads = myBooks.fold<int>(0, (sum, book) => sum + book.totalReads);
 
     if (authState.status == AuthStatus.loading || authState.status == AuthStatus.initial) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(bookProvider.notifier).fetchBooks();
+          ref.invalidate(activityProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
             const SizedBox(height: 50),
             // Header with Settings button
             Row(
@@ -109,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildStatItem('Total Reads', '0'),
+                  _buildStatItem('Total Reads', '$totalAuthorReads'),
                   _buildVerticalDivider(),
                   _buildStatItem(
                     'Followers',
@@ -152,7 +177,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 30),
 
             // Analytics Chart
-            _buildChartSection(),
+            _buildChartSection(ref),
             const SizedBox(height: 30),
 
             // My Books section — now visible for everyone to encourage creation
@@ -236,7 +261,19 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildVerticalDivider() => Container(height: 35, width: 1, color: Colors.white10);
 
-  Widget _buildChartSection() {
+  Widget _buildChartSection(WidgetRef ref) {
+    final activityAsync = ref.watch(activityProvider);
+    
+    // Default zero state
+    List<int> spotsData = List.filled(7, 0);
+    
+    if (activityAsync.hasValue && activityAsync.value != null) {
+      spotsData = activityAsync.value!;
+    }
+    
+    final maxVal = spotsData.reduce((curr, next) => curr > next ? curr : next).toDouble();
+    final chartMaxY = maxVal > 10 ? maxVal + 2 : 10.0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -262,10 +299,16 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Connect backend ReadStats to see real activity here.',
-            style: TextStyle(color: Colors.white38, fontSize: 12),
-          ),
+          if (activityAsync.isLoading)
+            const Text(
+              'Loading your activity...',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            )
+          else
+            const Text(
+              'Your actual story interactions this week.',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
           const SizedBox(height: 20),
           SizedBox(
             height: 180,
@@ -296,16 +339,9 @@ class ProfileScreen extends ConsumerWidget {
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    // Placeholder data — replace with real ReadStats from backend
-                    spots: const [
-                      FlSpot(0, 0),
-                      FlSpot(1, 0),
-                      FlSpot(2, 0),
-                      FlSpot(3, 0),
-                      FlSpot(4, 0),
-                      FlSpot(5, 0),
-                      FlSpot(6, 0),
-                    ],
+                    spots: List.generate(7, (index) {
+                      return FlSpot(index.toDouble(), spotsData[index].toDouble());
+                    }),
                     isCurved: true,
                     color: const Color(0xFF6C63FF),
                     barWidth: 3,
@@ -317,7 +353,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
                 minY: 0,
-                maxY: 10,
+                maxY: chartMaxY,
               ),
             ),
           ),

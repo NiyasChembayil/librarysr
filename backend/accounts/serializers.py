@@ -1,9 +1,30 @@
+import base64
+import uuid
+from django.core.files.base import ContentFile
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
 
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            # format: data:image/jpeg;base64,...
+            header, data_str = data.split(';base64,')
+            try:
+                decoded_file = base64.b64decode(data_str)
+            except TypeError:
+                self.fail('invalid_image')
+            
+            ext = header.split('/')[-1]
+            if ext == 'jpeg':
+                ext = 'jpg'
+            file_name = f"{uuid.uuid4()}.{ext}"
+            data = ContentFile(decoded_file, name=file_name)
+            
+        return super().to_internal_value(data)
 
 class ProfileSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=False, allow_null=True)
     username = serializers.ReadOnlyField(source='user.username')
     email = serializers.ReadOnlyField(source='user.email')
     followers_count = serializers.SerializerMethodField()
