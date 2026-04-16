@@ -18,12 +18,8 @@ class NotificationService {
     final token = _ref.read(authProvider).token;
     if (token == null) return;
 
-    String host = '127.0.0.1:8000';
-    if (!kIsWeb && kDebugMode && (defaultTargetPlatform == TargetPlatform.android)) {
-      host = '10.0.2.2:8000';
-    }
-    
-    final wsUrl = 'ws://$host/ws/notifications/';
+    // Route WebSocket traffic to the live production server using secure WSS
+    final wsUrl = 'wss://srishty-backend.onrender.com/ws/notifications/';
     
     try {
       _channel = WebSocketChannel.connect(

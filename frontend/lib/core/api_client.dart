@@ -11,12 +11,8 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Using localhost (127.0.0.1) will NOT work on real devices!
 // Using localhost (127.0.0.1) will NOT work on real physical devices or Android emulators!
 String get _baseUrl {
-  if (kReleaseMode) return 'https://your-production-api.com/api/';
-  
-  if (!kIsWeb) {
-    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8000/api/';
-  }
-  return 'http://127.0.0.1:8000/api/';
+  // Now routing to your live production Render database and API!
+  return 'https://srishty-backend.onrender.com/api/';
 }
 
 class ApiClient {
