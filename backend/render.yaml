@@ -13,6 +13,7 @@ services:
   - type: web
     name: srishty-backend
     env: python
+    rootDir: backend
     buildCommand: "./build.sh"
     startCommand: "daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
     plan: free
