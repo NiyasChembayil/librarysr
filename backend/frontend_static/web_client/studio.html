@@ -17,7 +17,8 @@
         <div class="wizard-steps">
             <div class="step active" id="step-nav-1">1. Details</div>
             <div class="step" id="step-nav-2">2. Editor</div>
-            <div class="step" id="step-nav-3">3. Publish</div>
+            <div class="step" id="step-nav-3">3. Audio</div>
+            <div class="step" id="step-nav-4">4. Publish</div>
         </div>
         <button class="btn-secondary" onclick="window.location.href='index.html'">Exit Studio</button>
     </nav>
@@ -104,8 +105,23 @@
             </div>
         </div>
 
-        <!-- Step 3 -->
+        <!-- Step 3: Audio Setup -->
         <div id="step-3" class="studio-section">
+            <h2>Audiobook Setup</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">Give your readers an immersive experience by uploading audio for each chapter.</p>
+            
+            <div id="chapter-audio-list" class="audio-list-container">
+                <!-- Chapters will be listed here dynamically -->
+            </div>
+
+            <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+                <button class="btn-secondary" onclick="studioApp.goToStep(2)">Back to Editor</button>
+                <button class="btn-primary large" onclick="studioApp.goToStep(4)">Finish & Review</button>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div id="step-4" class="studio-section">
             <div style="text-align: center; margin-bottom: 40px;">
                 <h2 style="font-size: 36px; margin-bottom: 15px;">You're Almost Done!</h2>
                 <p style="color: var(--text-secondary);">Your masterpiece is ready to be shared with the Srishty community.</p>
@@ -119,7 +135,7 @@
             </div>
 
             <div style="display: flex; justify-content: space-between;">
-                <button class="btn-secondary" onclick="studioApp.goToStep(2)">Back to Editor</button>
+                <button class="btn-secondary" onclick="studioApp.goToStep(3)">Back to Audio Setup</button>
                 <button class="btn-primary large" onclick="studioApp.publishBook()" id="btn-publish">Publish to Srishty!</button>
             </div>
         </div>

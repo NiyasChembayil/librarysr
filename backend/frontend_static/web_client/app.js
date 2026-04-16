@@ -190,6 +190,13 @@ class SrishtyReaderApp {
                 ...options,
                 headers
             });
+            
+            if (response.status === 401) {
+                console.warn('Session expired. Logging out.');
+                this.logout();
+                return null;
+            }
+
             if (!response.ok) throw new Error('Network response was not ok');
             return await response.json();
         } catch (error) {

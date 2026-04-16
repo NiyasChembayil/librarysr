@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../models/book_model.dart';
 import '../models/profile_model.dart';
+import 'package:dio/dio.dart';
+import '../models/post_model.dart';
 
 class SearchState {
   final List<BookModel> books;
@@ -10,6 +12,7 @@ class SearchState {
   final String mostlyReadCategoryName;
   final List<BookModel> localHits;
   final List<BookModel> socialHits;
+  final List<PostModel> trendingPosts;
   final bool isLoading;
 
   SearchState({
@@ -19,6 +22,7 @@ class SearchState {
     this.mostlyReadCategoryName = '',
     this.localHits = const [],
     this.socialHits = const [],
+    this.trendingPosts = const [],
     this.isLoading = false,
   });
 
@@ -28,7 +32,8 @@ class SearchState {
     mostlyReadBooks: [], 
     mostlyReadCategoryName: '', 
     localHits: [],
-    socialHits: []
+    socialHits: [],
+    trendingPosts: []
   );
 }
 
@@ -100,28 +105,45 @@ class SearchNotifier extends StateNotifier<SearchState> {
     );
 
     try {
-      final response = await _apiClient.dio.get('core/books/discovery/?region=$region');
-      final data = response.data;
+      // Fetch books and social trending separately to prevent one from breaking the other
+      Response<dynamic>? bookResp;
+      try { bookResp = await _apiClient.dio.get('core/books/discovery/?region=$region'); } catch(_) {}
+      
+      Response<dynamic>? socialResp;
+      try { socialResp = await _apiClient.dio.get('social/posts/trending/'); } catch(_) {}
 
-      final mostlyRead = data['mostly_read']['books'] as List? ?? [];
-      final localHits = data['local_hits'] as List? ?? [];
+      final bookData = bookResp?.data;
+      final socialData = socialResp?.data;
 
-      state = SearchState(
-        books: [], // Clear search results when showing discovery
-        profiles: [],
-        mostlyReadBooks: mostlyRead.map((j) => BookModel.fromJson(j)).toList(),
-        mostlyReadCategoryName: data['mostly_read']['category_name'] ?? 'Trending',
-        localHits: (data['local_hits'] as List? ?? []).map((j) => BookModel.fromJson(j)).toList(),
-        socialHits: (data['social_hits'] as List? ?? []).map((j) => BookModel.fromJson(j)).toList(),
-        isLoading: false,
-      );
+      if (bookData != null) {
+        final mostlyRead = bookData['mostly_read']['books'] as List? ?? [];
+        final localHits = bookData['local_hits'] as List? ?? [];
+
+        state = SearchState(
+          books: [], 
+          profiles: [],
+          mostlyReadBooks: mostlyRead.map((j) => BookModel.fromJson(j)).toList(),
+          mostlyReadCategoryName: bookData['mostly_read']['category_name'] ?? 'Trending',
+          localHits: localHits.map((j) => BookModel.fromJson(j)).toList(),
+          socialHits: (bookData['social_hits'] as List? ?? []).map((j) => BookModel.fromJson(j)).toList(),
+          trendingPosts: (socialData != null && socialData['trending_posts'] != null)
+              ? (socialData['trending_posts'] as List).map((j) => PostModel.fromJson(j)).toList()
+              : state.trendingPosts,
+          isLoading: false,
+        );
+      } else {
+        state = SearchState(
+          books: state.books,
+          profiles: state.profiles,
+          mostlyReadBooks: state.mostlyReadBooks,
+          isLoading: false
+        );
+      }
     } catch (e) {
       state = SearchState(
         books: state.books, 
         profiles: state.profiles, 
         mostlyReadBooks: state.mostlyReadBooks,
-        mostlyReadCategoryName: state.mostlyReadCategoryName,
-        localHits: state.localHits,
         isLoading: false
       );
     }

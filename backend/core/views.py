@@ -20,15 +20,39 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filterset_fields = ['category', 'author']
+    filterset_fields = ['category']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'price']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         qs = Book.objects.all().select_related('author', 'category').prefetch_related('chapters')
-        if self.request.user.is_authenticated:
-            return qs.filter(Q(is_published=True) | Q(author=self.request.user)).distinct()
-        return qs.filter(is_published=True)
+        
+        author_id = self.request.query_params.get('author')
+        user = self.request.user
+        
+        # 1. Start with visibility filtering
+        if user.is_authenticated:
+            # If the user is logged in, they see all published books + their own drafts
+            qs = qs.filter(Q(is_published=True) | Q(author=user))
+        else:
+            # Guest users only see published books
+            qs = qs.filter(is_published=True)
+
+        # 2. Apply author filter manually (since we removed it from filterset_fields)
+        if author_id:
+            if author_id == 'me':
+                if user.is_authenticated:
+                    return qs.filter(author=user)
+                else:
+                    return qs.none()
+            else:
+                try:
+                    return qs.filter(author_id=author_id)
+                except (ValueError, TypeError):
+                    return qs.none()
+            
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -39,6 +63,14 @@ class BookViewSet(viewsets.ModelViewSet):
         user = request.user if request.user.is_authenticated else None
         ReadStats.objects.create(book=book, user=user)
         return Response({'status': 'read recorded'})
+
+    @action(detail=False, methods=['get'])
+    def my_books(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        books = Book.objects.filter(author=request.user).select_related('author', 'category').prefetch_related('chapters')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def trending(self, request):
@@ -71,7 +103,7 @@ class BookViewSet(viewsets.ModelViewSet):
         
         mostly_read_category = []
         category_name = "Trending"
-        if top_category_stats:
+        if top_category_stats and top_category_stats.total_reads > 0:
             category_name = top_category_stats.name
             mostly_read_category = Book.objects.filter(
                 category=top_category_stats, 
@@ -80,11 +112,16 @@ class BookViewSet(viewsets.ModelViewSet):
                 reads=Count('read_stats')
             ).order_by('-reads')[:6]
 
+        if not mostly_read_category:
+            mostly_read_category = Book.objects.filter(is_published=True).order_by('?')[:6]
+
         # 3. New Arrivals (latest published books)
-        new_arrivals = Book.objects.filter(is_published=True).order_for_discovery().order_by('-created_at')[:10]
+        new_arrivals = Book.objects.filter(is_published=True).order_by('-created_at')[:10]
 
         # 4. Local Hits (Books from the same region)
-        local_hits = Book.objects.filter(is_published=True, region=region).order_for_discovery()[:6]
+        local_hits = Book.objects.filter(is_published=True, region__iexact=region)[:6]
+        if not local_hits:
+            local_hits = Book.objects.filter(is_published=True).order_by('?')[:6]
 
         # 4. Mutual Friends' Books (Social Discovery)
         social_hits = []
@@ -94,6 +131,9 @@ class BookViewSet(viewsets.ModelViewSet):
                 likes__user_id__in=following_ids,
                 is_published=True
             ).exclude(author=request.user).distinct()[:6]
+        
+        if not social_hits:
+             social_hits = Book.objects.filter(is_published=True).order_by('?')[:6]
 
         return Response({
             'mostly_read': {
@@ -150,6 +190,30 @@ class BookViewSet(viewsets.ModelViewSet):
         try:
             result = mammoth.convert_to_html(file)
             return Response({'html': result.value})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='convert_pdf')
+    def convert_pdf(self, request):
+        import pdfplumber
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with pdfplumber.open(file) as pdf:
+                full_text = ""
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        full_text += text + "\n"
+            
+            # Simple conversion to HTML paragraphs
+            # We split by single newlines but preserve blocks
+            paragraphs = full_text.split('\n')
+            html = "".join([f"<p>{p}</p>" for p in paragraphs if p.strip()])
+            
+            return Response({'html': html})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

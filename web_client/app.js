@@ -1,41 +1,51 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 class SrishtyReaderApp {
     constructor() {
         this.categories = [];
         this.token = localStorage.getItem('access_token');
         this.isSignUpMode = false;
+        this.ws = null;
         this.init();
     }
 
     init() {
         this.checkAuth();
-        this.detectLocation();
         this.bindEvents();
-        this.loadTrendingBooks();
-        this.loadCategories().then(() => {
-            // Load the first category or default 'sci-fi'
-            if (this.categories.length > 0) {
-                const defaultCat = this.categories.find(c => c.slug === 'sci-fi') || this.categories[0];
-                this.loadCategoryBooks(defaultCat.slug);
-            }
-        });
+
+        if (this.token) {
+            this.initNotifications();
+            this.loadMyWorks();
+        }
     }
 
     checkAuth() {
         const guestNav = document.getElementById('guest-nav');
         const authNav = document.getElementById('auth-nav');
         const usernameDisplay = document.getElementById('nav-username');
-        
-        if (!guestNav || !authNav) return; // Not on index.html
+        const heroBtn = document.getElementById('hero-main-btn');
         
         if (this.token) {
-            guestNav.classList.add('hidden');
-            authNav.classList.remove('hidden');
-            usernameDisplay.textContent = localStorage.getItem('username') || 'Author';
+            if (guestNav) guestNav.classList.add('hidden');
+            if (authNav) authNav.classList.remove('hidden');
+            if (usernameDisplay) usernameDisplay.textContent = localStorage.getItem('username') || 'Author';
+            if (heroBtn) {
+                heroBtn.textContent = 'Go to Author Studio';
+                heroBtn.onclick = () => window.location.href = 'studio.html';
+            }
+            if (document.getElementById('my-works-section')) {
+                document.getElementById('my-works-section').classList.remove('hidden');
+            }
         } else {
-            guestNav.classList.remove('hidden');
-            authNav.classList.add('hidden');
+            if (guestNav) guestNav.classList.remove('hidden');
+            if (authNav) authNav.classList.add('hidden');
+            if (heroBtn) {
+                heroBtn.textContent = 'Sign In to Start Writing';
+                heroBtn.onclick = () => this.openAuthModal();
+            }
+            if (document.getElementById('my-works-section')) {
+                document.getElementById('my-works-section').classList.add('hidden');
+            }
         }
     }
 
@@ -127,7 +137,14 @@ class SrishtyReaderApp {
         localStorage.setItem('username', username);
         
         this.checkAuth();
+        this.initNotifications();
+        this.loadMyWorks();
         this.closeAuthModal();
+
+        // Redirect to studio after successful login
+        setTimeout(() => {
+            window.location.href = 'studio.html';
+        }, 500);
     }
 
     logout() {
@@ -136,6 +153,10 @@ class SrishtyReaderApp {
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('username');
         this.checkAuth();
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
         if (window.location.pathname.includes('studio.html')) {
             window.location.href = 'index.html';
         }
@@ -252,6 +273,82 @@ class SrishtyReaderApp {
         } else {
             container.innerHTML = '<div class="loading-spinner" style="grid-column: 1/-1;">No books found in this genre yet. Be the first to write one!</div>';
         }
+    }
+
+    async loadMyWorks() {
+        const container = document.getElementById('my-books-container');
+        const section = document.getElementById('my-works-section');
+        if (!container || !this.token) return;
+
+        container.innerHTML = '<div class="loading-spinner">Waking up your stories...</div>';
+        
+        const data = await this.fetchAPI('/core/books/my_books/');
+        
+        if (data && data.length > 0) {
+            section.classList.remove('hidden');
+            container.innerHTML = data.map(book => {
+                const draftBadge = !book.is_published ? '<span class="draft-badge">Draft</span>' : '';
+                const baseCard = this.createBookCardHTML(book);
+                // Inject draft badge if needed
+                return baseCard.replace('</article>', `${draftBadge}</article>`);
+            }).join('');
+        } else {
+            container.innerHTML = `
+                <div class="loading-spinner" style="grid-column: 1/-1; padding: 60px;">
+                    <div style="font-size: 40px; margin-bottom: 20px;">✍️</div>
+                    <div style="color: white; font-size: 20px; font-weight: 700; margin-bottom: 10px;">Your shelf is waiting...</div>
+                    <p style="margin-bottom: 30px;">Start your author journey today by creating your first book.</p>
+                    <button class="btn-primary" onclick="window.location.href='studio.html'">Create New Book</button>
+                </div>
+            `;
+        }
+    }
+
+    initNotifications() {
+        if (this.ws) this.ws.close();
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // Use relative URL for simple host mapping
+        this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/notifications/?token=${this.token}`);
+
+        this.ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.type === 'notification') {
+                this.showToast(data.notification);
+            }
+        };
+
+        this.ws.onclose = () => {
+            console.log('Notification WebSocket closed. Reconnecting in 5s...');
+            setTimeout(() => {
+                if (this.token) this.initNotifications();
+            }, 5000);
+        };
+    }
+
+    showToast(notification) {
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast glass';
+        toast.innerHTML = `
+            <div style="font-weight: 800; color: var(--accent-blue); margin-bottom: 4px;">New Notification</div>
+            <div>${notification.message}</div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Animate in and out
+        setTimeout(() => toast.classList.add('active'), 10);
+        setTimeout(() => {
+            toast.classList.remove('active');
+            setTimeout(() => toast.remove(), 500);
+        }, 5000);
     }
 }
 

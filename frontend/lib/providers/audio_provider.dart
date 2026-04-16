@@ -1,7 +1,7 @@
-import 'package:audio_service/audio_service.dart';
+// import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final audioHandlerProvider = StateProvider<AudioHandler?>((ref) {
+final audioHandlerProvider = StateProvider<dynamic>((ref) {
   return null;
 });
 
@@ -11,7 +11,7 @@ class PlayerState {
   final PlayerStatus status;
   final Duration position;
   final Duration totalDuration;
-  final MediaItem? currentMediaItem;
+  final dynamic currentMediaItem;
   final double playbackSpeed;
 
   PlayerState({
@@ -26,7 +26,7 @@ class PlayerState {
     PlayerStatus? status,
     Duration? position,
     Duration? totalDuration,
-    MediaItem? currentMediaItem,
+    dynamic currentMediaItem,
     double? playbackSpeed,
   }) {
     return PlayerState(
@@ -40,50 +40,15 @@ class PlayerState {
 }
 
 class PlayerNotifier extends StateNotifier<PlayerState> {
-  final AudioHandler _handler;
+  PlayerNotifier() : super(PlayerState());
 
-  PlayerNotifier(this._handler) : super(PlayerState()) {
-    _listenToPlaybackState();
-    _listenToMediaItem();
-  }
-
-  void _listenToPlaybackState() {
-    _handler.playbackState.listen((state) {
-      this.state = this.state.copyWith(
-        status: state.playing ? PlayerStatus.playing : PlayerStatus.paused,
-        position: state.updatePosition,
-        playbackSpeed: state.speed,
-      );
-    });
-  }
-
-  void _listenToMediaItem() {
-    _handler.mediaItem.listen((item) {
-      state = state.copyWith(
-        currentMediaItem: item,
-        totalDuration: item?.duration ?? Duration.zero,
-      );
-    });
-  }
-
-  void play(MediaItem item) => _handler.playMediaItem(item);
-  void togglePlay() {
-    if (state.status == PlayerStatus.playing) {
-      _handler.pause();
-    } else {
-      _handler.play();
-    }
-  }
-  void seek(Duration pos) => _handler.seek(pos);
-  void setSpeed(double speed) => _handler.setSpeed(speed);
+  void play(dynamic item) {}
+  void togglePlay() {}
+  void seek(Duration pos) {}
+  void setSpeed(double speed) {}
 }
 
 final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((ref) {
-  final handler = ref.watch(audioHandlerProvider);
-  if (handler == null) {
-    return PlayerNotifier(MockAudioHandler()); // Minimal fallback or handle in UI
-  }
-  return PlayerNotifier(handler);
+  return PlayerNotifier();
 });
 
-class MockAudioHandler extends BaseAudioHandler {}

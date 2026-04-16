@@ -8,28 +8,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/web_client/style.css">
-    <link rel="icon" href="/static/assets/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="../frontend/assets/logo.png" type="image/x-icon">
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar glass">
         <div class="nav-brand">
-            <img src="/static/assets/logo.png" alt="Srishty Logo" class="nav-logo">
+            <img src="../frontend/assets/logo.png" alt="Srishty Logo" class="nav-logo">
             <span class="nav-title">Srishty</span>
-        </div>
-        <div class="nav-links">
-            <a href="#trending">Trending</a>
-            <a href="#sci-fi">Sci-Fi</a>
-            <a href="#fiction">Fiction</a>
-            <div class="location-badge" id="user-location">
-                📍 Detecting Region...
-            </div>
         </div>
         <div class="nav-auth" id="nav-auth-container">
             <div id="guest-nav">
-                <button class="btn-secondary" onclick="readerApp.openAuthModal()">Sign In</button>
-                <button class="btn-primary" onclick="readerApp.openAuthModal()">Start Writing</button>
+                <button class="btn-primary" onclick="readerApp.openAuthModal()">Sign In to Write</button>
             </div>
             <div id="auth-nav" class="hidden user-profile">
                 <span id="nav-username">Hello!</span>
@@ -41,69 +32,40 @@
 
     <!-- Hero Section -->
     <header class="hero">
+        <div class="book-container animate-up">
+            <div class="book">
+                <div class="book-cover"></div>
+                <div class="book-page page-1"></div>
+                <div class="book-page page-2"></div>
+                <div class="book-page page-3"></div>
+                <div class="book-page page-4"></div>
+                <div class="book-back"></div>
+            </div>
+        </div>
         <div class="hero-content">
-            <h1 class="animate-up">Discover Worlds Beyond Imagination</h1>
-            <p class="animate-up" style="animation-delay: 0.1s;">Read trending stories from authors near you or dive into the best Sci-Fi and Fiction Srishty has to offer.</p>
-            <div class="hero-actions animate-up" style="animation-delay: 0.2s;">
-                <button class="btn-primary large">Explore Library</button>
+            <h1 class="animate-up">Your Stories, Amplified.</h1>
+            <p class="animate-up" style="animation-delay: 0.1s;">Join a community of authors. Sign in to start writing and sharing your masterpieces with the world.</p>
+            <div class="hero-actions animate-up" style="animation-delay: 0.2s;" id="hero-cta-container">
+                <button class="btn-primary large" id="hero-main-btn" onclick="readerApp.openAuthModal()">Sign In to Start Writing</button>
             </div>
         </div>
         <div class="hero-glow"></div>
     </header>
 
     <main class="container">
-        <!-- Trending Banner -->
-        <section id="trending" class="book-section">
+        <!-- My Works Section (Visible when logged in) -->
+        <section id="my-works-section" class="hidden animate-up" style="margin-bottom: 60px;">
             <div class="section-header">
-                <h2>🔥 Trending Right Now <span id="local-trend-indicator">Globally</span></h2>
-                <a href="#" class="view-all">View All →</a>
+                <h2>My Masterpieces</h2>
+                <div class="section-dash"></div>
             </div>
-            <div class="carousel-container glass" id="trending-carousel">
-                <div class="loading-spinner">Loading trending books...</div>
-                <!-- Dynamic Content Here -->
+            <div class="book-grid" id="my-books-container">
+                <!-- My books will be injected here -->
             </div>
         </section>
 
-        <!-- Categories Section -->
-        <section id="categories" class="book-section">
-            <div class="section-header">
-                <h2>Browse by Genre</h2>
-            </div>
-            <div class="category-tabs">
-                <button class="tab-btn active" data-category="sci-fi">Sci-Fi</button>
-                <button class="tab-btn" data-category="fiction">Fiction</button>
-                <button class="tab-btn" data-category="fantasy">Fantasy</button>
-                <button class="tab-btn" data-category="mystery">Mystery</button>
-                <button class="tab-btn" data-category="romance">Romance</button>
-                <button class="tab-btn" data-category="thriller">Thriller</button>
-                <button class="tab-btn" data-category="non-fiction">Non-Fiction</button>
-            </div>
-            
-            <div class="grid-container" id="category-books">
-                <div class="loading-spinner">Select a category to explore...</div>
-                <!-- Dynamic Content Here -->
-            </div>
-        </section>
+        <!-- Explorer content removed to focus on writers -->
     </main>
-
-    <!-- Footer -->
-    <footer class="footer glass">
-        <div class="footer-content">
-            <div class="footer-brand">
-                <span class="nav-title">Srishty</span>
-                <p>The premium storytelling platform.</p>
-            </div>
-            <div class="footer-links">
-                <a href="#">About</a>
-                <a href="#">Authors</a>
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2026 Srishty Platform. All rights reserved.
-        </div>
-    </footer>
 
     <!-- Auth Modal -->
     <div class="modal-overlay" id="auth-modal">
@@ -137,6 +99,6 @@
         </div>
     </div>
 
-    <script src="/static/web_client/app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

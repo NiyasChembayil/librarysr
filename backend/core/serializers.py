@@ -45,7 +45,8 @@ class BookSerializer(serializers.ModelSerializer):
     def get_is_author_following(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.author.profile.followed_by.filter(id=request.user.id).exists()
+            # Check if the current user follows the author
+            return obj.author.followers.filter(follower=request.user).exists()
         return False
 
     def get_likes_count(self, obj):

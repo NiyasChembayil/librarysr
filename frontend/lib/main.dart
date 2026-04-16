@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:audio_service/audio_service.dart';
-import 'core/services/audio_handler.dart';
-import 'providers/audio_provider.dart';
+// import 'package:audio_service/audio_service.dart';
+// import 'core/services/audio_handler.dart';
+// import 'providers/audio_provider.dart';
 import 'core/theme.dart';
 import 'widgets/bottom_nav_shell.dart';
 import 'features/auth/login_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/purchase_provider.dart';
+import 'services/notification_service.dart';
 
 // No longer needed: AudioHandler is managed via Riverpod provider now.
 
@@ -19,8 +20,8 @@ void main() async {
   // Use a manual container to allow background initialization after runApp
   final container = ProviderContainer();
 
-  debugPrint('Main: Starting background AudioService initialization...');
-  _initAudioService(container);
+  debugPrint('Main: AudioService initialization disabled for Web testing.');
+  // _initAudioService(container);
 
   runApp(
     UncontrolledProviderScope(
@@ -31,6 +32,7 @@ void main() async {
 }
 
 Future<void> _initAudioService(ProviderContainer container) async {
+  /*
   try {
     final handler = await AudioService.init(
       builder: () => SrishtyAudioHandler(),
@@ -46,6 +48,7 @@ Future<void> _initAudioService(ProviderContainer container) async {
   } catch (e) {
     debugPrint('Main: AudioService background error: $e');
   }
+  */
 }
 
 class SrishtyApp extends ConsumerWidget {
@@ -59,6 +62,11 @@ class SrishtyApp extends ConsumerWidget {
     // Warm up purchase provider once authenticated so isOwned() works immediately
     if (authState.status == AuthStatus.authenticated) {
       ref.watch(purchaseProvider);
+      // Initialize Real-time Notifications
+      ref.read(notificationServiceProvider).init();
+    } else {
+      // Disconnect if no longer authenticated
+      ref.read(notificationServiceProvider).disconnect();
     }
 
     return MaterialApp(
@@ -69,7 +77,7 @@ class SrishtyApp extends ConsumerWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-        FlutterQuillLocalizations.delegate,
+        // FlutterQuillLocalizations.delegate,
       ],
       supportedLocales: const [
         Locale('en', 'US'),
@@ -109,7 +117,7 @@ class SplashScreen extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.2),
+                color: Colors.blue.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.book, size: 50, color: Colors.blue),

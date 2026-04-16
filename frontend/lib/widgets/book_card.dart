@@ -40,7 +40,7 @@ class BookCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -80,7 +80,7 @@ class BookCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.8),
+                      Colors.black.withOpacity(0.8),
                     ],
                   ),
                 ),
@@ -95,8 +95,10 @@ class BookCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -104,11 +106,15 @@ class BookCard extends StatelessWidget {
                     const SizedBox(height: 5),
                     Row(
                       children: [
-                        Text(
-                          'by $author',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white70,
+                        Expanded(
+                          child: Text(
+                            'by $author',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -124,40 +130,46 @@ class BookCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 18),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$likes',
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 16),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '$likes',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.cloud_download_rounded, color: Color(0xFF00D2FF), size: 16),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '$downloads',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 15),
-                            const Icon(Icons.cloud_download_rounded, color: Color(0xFF00D2FF), size: 18),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$downloads',
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
-                            ),
-                          ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         GlassmorphicContainer(
-                          width: 120,
-                          height: 50,
+                          width: 100,
+                          height: 40,
                           borderRadius: 25,
                           blur: 10,
                           alignment: Alignment.center,
                           border: 1,
                           linearGradient: LinearGradient(
                             colors: [
-                              Colors.white.withValues(alpha: 0.1),
-                              Colors.white.withValues(alpha: 0.05),
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.05),
                             ],
                           ),
                           borderGradient: LinearGradient(
                             colors: [
-                              const Color(0xFF6C63FF).withValues(alpha: 0.5),
-                              const Color(0xFF00D2FF).withValues(alpha: 0.5),
+                              const Color(0xFF6C63FF).withOpacity(0.5),
+                              const Color(0xFF00D2FF).withOpacity(0.5),
                             ],
                           ),
                           child: InkWell(
@@ -165,9 +177,9 @@ class BookCard extends StatelessWidget {
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.play_arrow_rounded, color: Colors.white),
-                                SizedBox(width: 5),
-                                Text('Listen', style: TextStyle(color: Colors.white)),
+                                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                                SizedBox(width: 2),
+                                Text('Listen', style: TextStyle(color: Colors.white, fontSize: 13)),
                               ],
                             ),
                           ),

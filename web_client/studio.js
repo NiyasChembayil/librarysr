@@ -13,11 +13,12 @@ class StudioApp {
                 clearInterval(waitForApp);
                 if (!window.readerApp.token) {
                     alert('You must be logged in to access the Author Studio.');
-                    window.location.href = '/index.html';
+                    window.location.href = 'index.html';
                     return;
                 }
                 this.initEditor();
                 this.loadCategories();
+                this.initDashboard();
             }
         }, 50);
     }
@@ -59,8 +60,94 @@ class StudioApp {
         document.querySelectorAll('.studio-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
         
-        document.getElementById(`step-${step}`).classList.add('active');
-        document.getElementById(`step-nav-${step}`).classList.add('active');
+        const navBar = document.getElementById('studio-nav-bar');
+        if (step === 0) {
+            navBar.classList.add('hidden');
+        } else {
+            navBar.classList.remove('hidden');
+            const navItem = document.getElementById(`step-nav-${step}`);
+            if (navItem) navItem.classList.add('active');
+        }
+
+        const section = document.getElementById(`step-${step}`);
+        if (section) section.classList.add('active');
+
+        if (step === 3) {
+            this.renderAudioChapters();
+        }
+    }
+
+    async initDashboard() {
+        const container = document.getElementById('author-dashboard-gallery');
+        if (!container) return;
+
+        container.innerHTML = '<div class="loading-spinner">Waking up your stories...</div>';
+        
+        try {
+            const data = await window.readerApp.fetchAPI('/core/books/my_books/');
+            
+            if (data && data.length > 0) {
+                container.innerHTML = data.map(book => {
+                    const status = book.is_published ? 'Published' : 'Draft';
+                    const coverImg = book.cover || '../frontend/assets/logo.png';
+                    
+                    return `
+                        <article class="book-card dashboard-card" onclick="studioApp.resumeBook(${JSON.stringify(book).replace(/"/g, '&quot;')})">
+                            <img src="${coverImg}" alt="${book.title}" class="book-cover">
+                            <div class="book-title">${book.title}</div>
+                            <div class="book-author">${status}</div>
+                            ${!book.is_published ? '<div class="draft-badge">Edit</div>' : ''}
+                        </article>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px; background: rgba(255,255,255,0.02); border-radius: 20px;">
+                        <h3 style="margin-bottom: 10px;">Your gallery is empty</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">Every great author starts with a single word. Start yours today!</p>
+                        <button class="btn-primary" onclick="studioApp.startNewBook()">Begin Your First Masterpiece</button>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            container.innerHTML = `<div class="loading-spinner">Error loading library: ${err.message}</div>`;
+        }
+    }
+
+    startNewBook() {
+        // Reset state for new book
+        this.bookId = null;
+        this.chaptersData = [];
+        document.getElementById('book-title').value = '';
+        document.getElementById('book-desc').value = '';
+        document.getElementById('book-category').value = '';
+        document.getElementById('cover-preview').src = '';
+        document.getElementById('cover-preview').style.display = 'none';
+        document.getElementById('cover-placeholder').style.display = 'flex';
+        
+        this.goToStep(1);
+    }
+
+    resumeBook(book) {
+        this.bookId = book.id;
+        this.chaptersData = book.chapters || [];
+        
+        // Fill details in Step 1 just in case they go back
+        document.getElementById('book-title').value = book.title;
+        document.getElementById('book-desc').value = book.description || '';
+        document.getElementById('book-category').value = book.category || '';
+        if (book.cover) {
+            const preview = document.getElementById('cover-preview');
+            preview.src = book.cover;
+            preview.style.display = 'block';
+            document.getElementById('cover-placeholder').style.display = 'none';
+        }
+
+        document.getElementById('summary-title').textContent = book.title;
+
+        // If it already has chapters, we could potentially try to reload them 
+        // into the editor, but for now we'll go to the "Editor" step to allow additions.
+        this.goToStep(1);
     }
 
     handleCoverPreview(event) {
@@ -186,6 +273,30 @@ class StudioApp {
         }
     }
 
+    async handlePdfUpload(e) {
+        const file = e.target.files[0];
+        if (!file || !this.bookId) return;
+
+        alert('Importing PDF Document... this may take a moment.');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const data = await window.readerApp.fetchAPI('/core/books/convert_pdf/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (data && data.html) {
+                this.quill.clipboard.dangerouslyPasteHTML(data.html);
+                alert('Import successful! Text has been extracted from your PDF.');
+            }
+        } catch (err) {
+            alert('Import failed: ' + err.message);
+        }
+    }
+
     async processChapters() {
         if (!this.bookId) return;
         const btn = document.getElementById('btn-next-2');
@@ -244,7 +355,7 @@ class StudioApp {
             if (res && res.status === 'chapters imported') {
                 this.chaptersData = res.chapters;
                 document.getElementById('summary-chapters').textContent = this.chaptersData.length;
-                this.goToStep(3);
+                this.goToStep(3); // Go to Audio Step
             } else {
                 throw new Error('Unexpected response format');
             }
@@ -252,7 +363,74 @@ class StudioApp {
             alert('Failed to split chapters: ' + err.message);
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Process Chapters & Next';
+            btn.textContent = 'Next: Audio Studio';
+        }
+    }
+
+    renderAudioChapters() {
+        const container = document.getElementById('audio-chapters-list');
+        if (!this.chaptersData || this.chaptersData.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px;">No chapters found to attach audio to.</div>';
+            return;
+        }
+
+        container.innerHTML = this.chaptersData.map((ch, idx) => `
+            <div class="audio-row" id="audio-row-${idx + 1}">
+                <div class="audio-info">
+                    <span class="chapter-name">Chapter ${idx + 1}: ${ch.title}</span>
+                    <span class="upload-status" id="status-${idx + 1}">Ready to upload</span>
+                </div>
+                <div class="audio-actions">
+                    <div class="audio-progress-bar" id="progress-bar-${idx + 1}">
+                        <div class="audio-progress-fill" id="progress-fill-${idx + 1}"></div>
+                    </div>
+                    <input type="file" id="audio-input-${idx + 1}" accept="audio/*" style="display: none;" 
+                           onchange="studioApp.handleAudioUpload(${idx + 1}, event)">
+                    <button class="btn-primary" onclick="document.getElementById('audio-input-${idx + 1}').click()">
+                        Upload Audio
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async handleAudioUpload(chapterNumber, event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const statusEl = document.getElementById(`status-${chapterNumber}`);
+        const progressContainer = document.getElementById(`progress-bar-${chapterNumber}`);
+        const progressFill = document.getElementById(`progress-fill-${chapterNumber}`);
+        const row = document.getElementById(`audio-row-${chapterNumber}`);
+
+        statusEl.textContent = 'Uploading...';
+        statusEl.className = 'upload-status';
+        progressContainer.style.display = 'block';
+        progressFill.style.width = '0%';
+
+        const formData = new FormData();
+        formData.append('audio_file', file);
+        formData.append('chapter_number', chapterNumber);
+
+        try {
+            // Using a simple fetch for progress tracking or just wait
+            const response = await window.readerApp.fetchAPI(`/core/books/${this.bookId}/upload_audio/`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response && response.status === 'audio uploaded') {
+                statusEl.textContent = '✓ Audio Uploaded Successfully';
+                statusEl.classList.add('success');
+                progressFill.style.width = '100%';
+                setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+            } else {
+                throw new Error(response.error || 'Upload failed');
+            }
+        } catch (err) {
+            statusEl.textContent = '⚠ ' + err.message;
+            statusEl.classList.add('error');
+            progressFill.style.width = '0%';
         }
     }
 

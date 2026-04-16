@@ -6,25 +6,42 @@
     <title>Author Studio | Srishty</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/web_client/style.css">
-    <link rel="icon" href="/static/assets/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="../frontend/assets/logo.png" type="image/x-icon">
 </head>
 <body>
-    <nav class="studio-nav glass" style="margin: 20px auto; width: 90%; max-width: 1200px; position: relative;">
+    <nav id="studio-nav-bar" class="studio-nav glass hidden" style="margin: 20px auto; width: 90%; max-width: 1200px; position: relative;">
         <div class="nav-brand">
             <span class="nav-title">Srishty Studio</span>
         </div>
         <div class="wizard-steps">
             <div class="step active" id="step-nav-1">1. Details</div>
             <div class="step" id="step-nav-2">2. Editor</div>
-            <div class="step" id="step-nav-3">3. Publish</div>
+            <div class="step" id="step-nav-3">3. Audio</div>
+            <div class="step" id="step-nav-4">4. Publish</div>
         </div>
         <button class="btn-secondary" onclick="window.location.href='index.html'">Exit Studio</button>
     </nav>
 
     <div class="container studio-container glass" style="padding: 40px;">
+        <!-- Step 0: Dashboard/Gallery -->
+        <div id="step-0" class="studio-section active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+                <div>
+                    <h1 style="font-size: 32px; background: linear-gradient(to right, #fff, #a09df0); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">My Work Gallery</h1>
+                    <p style="color: var(--text-secondary);">Manage your masterpieces or start a new journey.</p>
+                </div>
+                <button class="btn-primary large" onclick="studioApp.startNewBook()">+ Create New Book</button>
+            </div>
+            
+            <div id="author-dashboard-gallery" class="book-grid">
+                <!-- Existing books will be loaded here -->
+                <div class="loading-spinner">Loading your library...</div>
+            </div>
+        </div>
+
         <!-- Step 1 -->
-        <div id="step-1" class="studio-section active">
+        <div id="step-1" class="studio-section">
             <h2>Book Details</h2>
             <p style="color: var(--text-secondary); margin-bottom: 30px;">Let's start with the basics of your story.</p>
             
@@ -88,10 +105,17 @@
             <h2>The Power Editor</h2>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">Write directly here, or import a Word (.docx) file. <b>Use "Heading 1" to mark Chapter titles!</b></p>
             
-            <div class="import-zone" onclick="document.getElementById('docx-upload').click()">
-                <h3>Import Word Document (.docx)</h3>
-                <p>Click here to automatically convert your manuscript.</p>
-                <input type="file" id="docx-upload" accept=".docx" style="display: none;" onchange="studioApp.handleDocxUpload(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div class="import-zone" onclick="document.getElementById('docx-upload').click()">
+                    <h3>Import Word (.docx)</h3>
+                    <p>Auto-convert your Word manuscript.</p>
+                    <input type="file" id="docx-upload" accept=".docx" style="display: none;" onchange="studioApp.handleDocxUpload(event)">
+                </div>
+                <div class="import-zone" onclick="document.getElementById('pdf-upload').click()" style="border-color: var(--accent-blue);">
+                    <h3>Import PDF (.pdf)</h3>
+                    <p>Extra text from your PDF book.</p>
+                    <input type="file" id="pdf-upload" accept=".pdf" style="display: none;" onchange="studioApp.handlePdfUpload(event)">
+                </div>
             </div>
             
             <div class="quill-container">
@@ -100,12 +124,38 @@
 
             <div style="margin-top: 30px; display: flex; justify-content: space-between;">
                 <button class="btn-secondary" onclick="studioApp.goToStep(1)">Back</button>
-                <button class="btn-primary large" onclick="studioApp.processChapters()" id="btn-next-2">Process Chapters & Next</button>
+                <button class="btn-primary large" onclick="studioApp.processChapters()" id="btn-next-2">Next: Audio Studio</button>
             </div>
         </div>
 
-        <!-- Step 3 -->
+        <!-- Step 3: Audiobook Studio -->
         <div id="step-3" class="studio-section">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+                <div>
+                    <h2>Audiobook Studio</h2>
+                    <p style="color: var(--text-secondary);">Bring your story to life! Upload an audio file for each chapter.</p>
+                </div>
+                <div class="location-badge">BETA</div>
+            </div>
+
+            <div id="audio-chapters-list" class="audio-list-container">
+                <!-- Chapters with audio upload rows will be injected here -->
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    Loading chapters...
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+                <button class="btn-secondary" onclick="studioApp.goToStep(2)">Back to Editor</button>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn-secondary" onclick="studioApp.goToStep(4)">Skip Audio</button>
+                    <button class="btn-primary large" onclick="studioApp.goToStep(4)" id="btn-next-3">Next: Review & Publish</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div id="step-4" class="studio-section">
             <div style="text-align: center; margin-bottom: 40px;">
                 <h2 style="font-size: 36px; margin-bottom: 15px;">You're Almost Done!</h2>
                 <p style="color: var(--text-secondary);">Your masterpiece is ready to be shared with the Srishty community.</p>
@@ -119,14 +169,14 @@
             </div>
 
             <div style="display: flex; justify-content: space-between;">
-                <button class="btn-secondary" onclick="studioApp.goToStep(2)">Back to Editor</button>
+                <button class="btn-secondary" onclick="studioApp.goToStep(3)">Back to Audio</button>
                 <button class="btn-primary large" onclick="studioApp.publishBook()" id="btn-publish">Publish to Srishty!</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/web_client/app.js"></script>
+    <script src="app.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    <script src="/static/web_client/studio.js"></script>
+    <script src="studio.js"></script>
 </body>
 </html>

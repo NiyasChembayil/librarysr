@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:audio_service/audio_service.dart';
+// import 'package:audio_service/audio_service.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/audio_provider.dart';
@@ -43,8 +43,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       String playUrl = widget.audioUrl!;
       if (playUrl.startsWith('/')) {
-        playUrl = 'http://192.168.1.3:8000$playUrl';
+        playUrl = 'http://127.0.0.1:8000$playUrl';
       }
+      /*
       ref.read(playerNotifierProvider.notifier).play(
         MediaItem(
           id: playUrl,
@@ -54,6 +55,8 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           artUri: Uri.parse(widget.coverUrl),
         ),
       );
+      */
+      debugPrint('Playback requested for: $playUrl (Audio service currently disabled)');
     });
   }
 
@@ -87,7 +90,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
             blur: 40,
             alignment: Alignment.center,
             border: 0,
-            linearGradient: LinearGradient(colors: [Colors.black.withValues(alpha: 0.55), Colors.black.withValues(alpha: 0.75)]),
+            linearGradient: LinearGradient(colors: [Colors.black.withOpacity(0.55), Colors.black.withOpacity(0.75)]),
             borderGradient: const LinearGradient(colors: [Colors.transparent, Colors.transparent]),
           ),
           SafeArea(
@@ -114,7 +117,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                     height: MediaQuery.of(context).size.width * 0.75,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 30, offset: const Offset(0, 15))],
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 30, offset: const Offset(0, 15))],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(30),
@@ -157,8 +160,8 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(_formatDuration(playerState.position), style: const TextStyle(color: Colors.white54)),
-                            Text(_formatDuration(playerState.totalDuration), style: const TextStyle(color: Colors.white54)),
+                            Text(_formatDuration(playerState.position), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(_formatDuration(playerState.totalDuration), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 13)),
                           ],
                         ),
                       ],
@@ -180,7 +183,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      IconButton(onPressed: () => playerNotifier.seek(playerState.position + const Duration(seconds: 30)), icon: const Icon(Icons.forward_30_rounded, size: 35, color: Colors.white)),
+                      IconButton(onPressed: () => playerNotifier.seek(playerState.position + const Duration(seconds: 10)), icon: const Icon(Icons.forward_10_rounded, size: 35, color: Colors.white)),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -198,7 +201,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                     margin: const EdgeInsets.symmetric(horizontal: 40),
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.white.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.white12),
                     ),

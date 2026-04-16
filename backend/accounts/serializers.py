@@ -25,27 +25,55 @@ class Base64ImageField(serializers.ImageField):
 
 class ProfileSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True)
-    username = serializers.ReadOnlyField(source='user.username')
-    email = serializers.ReadOnlyField(source='user.email')
-    followers_count = serializers.SerializerMethodField()
-    following_count = serializers.SerializerMethodField()
-    is_following = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username', required=False)
+    email = serializers.EmailField(source='user.email', required=False)
+    # Password is write-only for the 'Change Password' feature
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
+    user_id = serializers.ReadOnlyField(source='user.id')
 
     class Meta:
         model = Profile
-        fields = ['id', 'username', 'email', 'role', 'bio', 'avatar', 'followed_by', 'followers_count', 'following_count', 'is_following']
-        read_only_fields = ['id', 'followed_by', 'username', 'email', 'followers_count', 'following_count', 'is_following']
+        fields = [
+            'id', 'user_id', 'username', 'email', 'password', 'role', 'bio', 'avatar', 
+            'followers_count', 'following_count', 'is_following',
+            'is_private', 'notify_new_follower', 'notify_likes', 'notify_comments', 
+            'notify_new_books', 'font_size', 'reader_theme', 'playback_speed'
+        ]
+        read_only_fields = ['id', 'user_id', 'role', 'followers_count', 'following_count', 'is_following']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        password = validated_data.pop('password', None)
+        
+        # Update Profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update User fields (username, email)
+        user = instance.user
+        if 'username' in user_data:
+            user.username = user_data['username']
+        if 'email' in user_data:
+            user.email = user_data['email']
+        
+        # Handle password update
+        if password:
+            user.set_password(password)
+            
+        user.save()
+        return instance
 
     def get_followers_count(self, obj):
-        return obj.followed_by.count()
+        return obj.user.followers.count()
 
     def get_following_count(self, obj):
-        return obj.user.following_profiles.count()
+        return obj.user.following.count()
 
     def get_is_following(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.followed_by.filter(id=request.user.id).exists()
+            return obj.user.followers.filter(follower=request.user).exists()
         return False
 
 

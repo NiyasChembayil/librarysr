@@ -6,6 +6,7 @@ from django.utils import timezone
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer, RegisterSerializer, UserListSerializer
 from core.models import ReadStats
+from social.models import Follow
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
@@ -81,26 +82,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if profile.user == request.user:
             return Response({"error": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
         
-        if profile.followed_by.filter(id=request.user.id).exists():
-            profile.followed_by.remove(request.user)
+        follow_rel = Follow.objects.filter(follower=request.user, followed=profile.user)
+        if follow_rel.exists():
+            follow_rel.delete()
             return Response({"status": "unfollowed"})
         else:
-            profile.followed_by.add(request.user)
+            Follow.objects.create(follower=request.user, followed=profile.user)
             return Response({"status": "followed"})
 
     @action(detail=True, methods=['get'])
     def followers(self, request, pk=None):
         profile = self.get_object()
-        followers = profile.followed_by.all()
-        serializer = UserListSerializer(followers, many=True)
+        # Users who are following this profile's owner
+        follows = Follow.objects.filter(followed=profile.user).select_related('follower')
+        followers_users = [f.follower for f in follows]
+        serializer = UserListSerializer(followers_users, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def following(self, request, pk=None):
         profile = self.get_object()
-        # Get users that this profile's owner is following
-        following_profiles = profile.user.following_profiles.all()
-        following_users = [p.user for p in following_profiles]
+        # Users who this profile's owner is following
+        follows = Follow.objects.filter(follower=profile.user).select_related('followed')
+        following_users = [f.followed for f in follows]
         serializer = UserListSerializer(following_users, many=True)
         return Response(serializer.data)
 
@@ -108,27 +112,32 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def activity(self, request, pk=None):
         profile = self.get_object()
         
-        # Calculate daily activity for the last 7 days ending today
+        # Calculate daily activity for the ACTUAL last 7 days (trailing)
         today = timezone.localdate()
-        # Create a list for Mon-Sun (0-6)
-        # Note: FlChart X-axis is often 0=Mon, 1=Tue, but we can match whatever the frontend expects.
-        # Let's align today's index and fill backwards.
+        results = []
         
-        counts = [0] * 7 # Mon=0, Sun=6
-        
-        # Fetch stats for the last 7 days
-        start_date = today - timezone.timedelta(days=7)
-        stats = ReadStats.objects.filter(
-            user=profile.user,
-            timestamp__date__gte=start_date
-        )
-        
-        for stat in stats:
-            # stat.timestamp.date().weekday() returns 0 for Monday, 6 for Sunday
-            day_index = stat.timestamp.date().weekday()
-            counts[day_index] += 1
+        # We iterate backwards from today for 7 days
+        for i in range(6, -1, -1):
+            date = today - timezone.timedelta(days=i)
+            count = ReadStats.objects.filter(
+                user=profile.user,
+                timestamp__date=date
+            ).count()
+            results.append({
+                "date": date.isoformat(),
+                "count": count
+            })
             
-        return Response({"activity": counts})
+        return Response({"activity": results})
+    
+    @action(detail=False, methods=['get'], url_path='by_user/(?P<user_id>[0-9]+)')
+    def by_user(self, request, user_id=None):
+        try:
+            profile = Profile.objects.get(user_id=user_id)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['post'])
     def upgrade_role(self, request):

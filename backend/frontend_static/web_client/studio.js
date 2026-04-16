@@ -244,6 +244,7 @@ class StudioApp {
             if (res && res.status === 'chapters imported') {
                 this.chaptersData = res.chapters;
                 document.getElementById('summary-chapters').textContent = this.chaptersData.length;
+                this.renderAudioList();
                 this.goToStep(3);
             } else {
                 throw new Error('Unexpected response format');
@@ -253,6 +254,66 @@ class StudioApp {
         } finally {
             btn.disabled = false;
             btn.textContent = 'Process Chapters & Next';
+        }
+    }
+
+    renderAudioList() {
+        const list = document.getElementById('chapter-audio-list');
+        if (!list) return;
+
+        list.innerHTML = this.chaptersData.map((ch, idx) => `
+            <div class="chapter-audio-row" id="audio-row-${idx + 1}">
+                <div class="chapter-info">
+                    <span class="chapter-name">${idx + 1}. ${ch.title}</span>
+                    <span class="audio-status status-ready" id="audio-status-${idx + 1}">No audio uploaded</span>
+                </div>
+                <div class="audio-actions">
+                    <input type="file" id="audio-input-${idx + 1}" accept="audio/mp3,audio/wav,audio/m4a" style="display: none;" 
+                        onchange="studioApp.handleAudioUpload(${idx + 1}, event)">
+                    <button class="audio-upload-btn" id="audio-btn-${idx + 1}" onclick="document.getElementById('audio-input-${idx + 1}').click()">
+                        Import Audio
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async handleAudioUpload(chapterNumber, event) {
+        const file = event.target.files[0];
+        if (!file || !this.bookId) return;
+
+        const statusEl = document.getElementById(`audio-status-${chapterNumber}`);
+        const btn = document.getElementById(`audio-btn-${chapterNumber}`);
+        const row = document.getElementById(`audio-row-${chapterNumber}`);
+
+        statusEl.textContent = 'Uploading...';
+        statusEl.className = 'audio-status status-uploading';
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('chapter_number', chapterNumber);
+        formData.append('audio_file', file);
+
+        try {
+            const data = await window.readerApp.fetchAPI(`/core/books/${this.bookId}/upload_audio/`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (data && data.status === 'audio uploaded') {
+                statusEl.textContent = 'Synced ✅';
+                statusEl.className = 'audio-status status-synced';
+                btn.textContent = 'Replace Audio';
+                btn.classList.add('synced');
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (err) {
+            statusEl.textContent = 'Error: ' + err.message;
+            statusEl.className = 'audio-status status-ready';
+            alert(`Failed to upload audio for Chapter ${chapterNumber}: ${err.message}`);
+        } finally {
+            btn.disabled = false;
         }
     }
 

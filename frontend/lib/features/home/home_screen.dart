@@ -8,6 +8,7 @@ import '../audio/audio_player_screen.dart';
 import '../../providers/book_provider.dart';
 import '../notifications/notification_screen.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/navigation_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,17 +21,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    Future.microtask(() async {
       ref.read(bookProvider.notifier).fetchBooks();
       ref.read(notificationProvider.notifier).fetchNotifications();
+      final count = await ref.read(notificationProvider.notifier).fetchUnreadCount();
+      ref.read(unreadNotificationCountProvider.notifier).state = count;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final feedState = ref.watch(bookProvider);
-    final notifications = ref.watch(notificationProvider);
-    final unreadCount = notifications.where((n) => n['is_read'] == false).length;
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -53,6 +55,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   Row(
                     children: [
+                      IconButton(
+                        onPressed: () {
+                          ref.read(navigationProvider.notifier).state = 2;
+                        },
+                        icon: const Icon(Icons.search_rounded, size: 28, color: Colors.white70),
+                      ),
                       Stack(
                         children: [
                           IconButton(
@@ -150,6 +158,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Record a read event for the stats
                     ref.read(bookProvider.notifier).recordRead(book.id);
                     
+                    // Find first chapter with audio
+                    final firstAudioChapter = book.chapters.firstWhere(
+                      (c) => c.audioUrl != null && c.audioUrl!.isNotEmpty,
+                      orElse: () => book.chapters.first,
+                    );
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -159,6 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           author: book.authorName,
                           coverUrl: book.coverUrl,
                           chapters: book.chapters,
+                          audioUrl: firstAudioChapter.audioUrl,
                         ),
                       ),
                     );

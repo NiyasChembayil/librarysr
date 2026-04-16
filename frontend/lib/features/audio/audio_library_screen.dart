@@ -90,6 +90,12 @@ class _AudioLibraryScreenState extends ConsumerState<AudioLibraryScreen> {
               // Record a read event for the stats
               ref.read(bookProvider.notifier).recordRead(book.id);
               
+              // Find first chapter with audio
+              final firstAudioChapter = book.chapters.firstWhere(
+                (c) => c.audioUrl != null && c.audioUrl!.isNotEmpty,
+                orElse: () => book.chapters.first,
+              );
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -99,6 +105,7 @@ class _AudioLibraryScreenState extends ConsumerState<AudioLibraryScreen> {
                     author: book.authorName,
                     coverUrl: book.coverUrl,
                     chapters: book.chapters,
+                    audioUrl: firstAudioChapter.audioUrl,
                   ),
                 ),
               );

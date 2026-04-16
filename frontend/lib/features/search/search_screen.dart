@@ -10,6 +10,10 @@ import '../../widgets/book_card.dart';
 import '../book/book_detail_screen.dart';
 import '../audio/audio_player_screen.dart';
 import '../../models/book_model.dart';
+import '../../models/post_model.dart';
+import '../feed/widgets/post_card.dart';
+import '../profile/profile_screen.dart';
+import '../../models/profile_model.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -70,10 +74,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         linearGradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]
+          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]
         ),
         borderGradient: LinearGradient(
-          colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0.05)]
+          colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0.05)]
         ),
         child: TextField(
           controller: _searchController,
@@ -113,28 +117,87 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final List<_ExploreTileData> allTiles = uniqueTiles.values.toList();
 
-    if (allTiles.isEmpty) {
+    if (allTiles.isEmpty && state.trendingPosts.isEmpty) {
       return const Center(
-        child: Text('Start searching to discover worlds.', style: TextStyle(color: Colors.white24)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.explore_outlined, size: 60, color: Colors.white10),
+            SizedBox(height: 16),
+            Text('Discover new worlds...', style: TextStyle(color: Colors.white24, fontSize: 16)),
+          ],
+        ),
       );
     }
 
     return RefreshIndicator(
       onRefresh: () => ref.read(searchProvider.notifier).fetchDiscovery(),
       color: const Color(0xFF6C63FF),
-      child: MasonryGridView.count(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        itemCount: allTiles.length,
-        itemBuilder: (context, index) {
-          final data = allTiles[index];
-          // Simple rule for "big" tiles (Instagram style)
-          final bool isBig = index % 7 == 0;
-          
-          return _buildExploreTile(data, index, isBig: isBig);
-        },
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 100),
+        children: [
+          // 1. Famous Feed Section
+          if (state.trendingPosts.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                'Famous Feed',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 280,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                scrollDirection: Axis.horizontal,
+                itemCount: state.trendingPosts.length,
+                itemBuilder: (context, index) {
+                  final post = state.trendingPosts[index];
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.85,
+                    child: PostCard(post: post),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // 2. Discover Stories Header
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text(
+              'Discover Stories',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+
+          // 3. Books Grid
+          MasonryGridView.count(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: allTiles.length,
+            itemBuilder: (context, index) {
+              final data = allTiles[index];
+              final bool isBig = index % 7 == 0;
+              return _buildExploreTile(data, index, isBig: isBig);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -146,20 +209,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            CachedNetworkImage(
-              imageUrl: data.book.coverUrl,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                height: 150,
-                color: Colors.white.withValues(alpha: 0.05),
-                child: const Center(child: Icon(Icons.book, color: Colors.white12)),
-              ),
-              errorWidget: (context, url, error) => Container(
-                height: 150,
-                color: Colors.white.withValues(alpha: 0.05),
-                child: const Center(child: Icon(Icons.error_outline, color: Colors.white24)),
-              ),
-            ),
+            data.book.coverUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: data.book.coverUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 150,
+                      color: Colors.white.withOpacity(0.05),
+                      child: const Center(child: Icon(Icons.book, color: Colors.white12)),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 150,
+                      color: Colors.white.withOpacity(0.05),
+                      child: const Center(child: Icon(Icons.error_outline, color: Colors.white24)),
+                    ),
+                  )
+                : Container(
+                    height: 150,
+                    color: Colors.white.withOpacity(0.05),
+                    child: const Center(child: Icon(Icons.book, color: Colors.white24, size: 40)),
+                  ),
             // Gradient Overlay
             Positioned.fill(
               child: Container(
@@ -168,8 +237,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.1),
-                      Colors.black.withValues(alpha: 0.6),
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.6),
                     ],
                   ),
                 ),
@@ -182,7 +251,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: data.color.withValues(alpha: 0.8),
+                  color: data.color.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -211,23 +280,61 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       children: [
+        if (state.profiles.isNotEmpty) ...[
+          const Text('Users',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+          const SizedBox(height: 15),
+          ...state.profiles.map((profile) => Padding(
+                padding: const EdgeInsets.only(bottom: 15),
+                child: ListTile(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => ProfileScreen(targetUserId: profile.userId)),
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF6C63FF),
+                    backgroundImage: profile.avatar != null
+                        ? NetworkImage(profile.avatar!)
+                        : null,
+                    child: profile.avatar == null
+                        ? Text(profile.username.isNotEmpty ? profile.username[0].toUpperCase() : '?',
+                            style: const TextStyle(color: Colors.white))
+                        : null,
+                  ),
+                  title: Text(profile.username,
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: Text(profile.role,
+                      style: const TextStyle(color: Colors.white70)),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+                ),
+              )),
+          const SizedBox(height: 20),
+        ],
         if (state.books.isNotEmpty) ...[
-          const Text('Stories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text('Stories',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
           const SizedBox(height: 15),
           ...state.books.map((book) => Padding(
-            padding: const EdgeInsets.only(bottom: 15),
-            child: BookCard(
-              title: book.title, 
-              author: book.authorName, 
-              authorProfileId: book.authorProfileId, 
-              isAuthorFollowing: book.isAuthorFollowing, 
-              coverUrl: book.coverUrl, 
-              likes: book.likesCount, 
-              downloads: book.downloadsCount, 
-              onPlay: () => _playVoice(book), 
-              onTap: () => _navigateToDetail(book)
-            ),
-          )),
+                padding: const EdgeInsets.only(bottom: 15),
+                child: BookCard(
+                    title: book.title,
+                    author: book.authorName,
+                    authorProfileId: book.authorProfileId,
+                    isAuthorFollowing: book.isAuthorFollowing,
+                    coverUrl: book.coverUrl,
+                    likes: book.likesCount,
+                    downloads: book.downloadsCount,
+                    onPlay: () => _playVoice(book),
+                    onTap: () => _navigateToDetail(book)),
+              )),
         ],
       ],
     );
@@ -265,8 +372,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildShimmerLoading() {
     return Shimmer.fromColors(
-      baseColor: Colors.white.withValues(alpha: 0.1),
-      highlightColor: Colors.white.withValues(alpha: 0.2),
+      baseColor: Colors.white.withOpacity(0.1),
+      highlightColor: Colors.white.withOpacity(0.2),
       child: MasonryGridView.count(
         padding: const EdgeInsets.all(10),
         crossAxisCount: 3,

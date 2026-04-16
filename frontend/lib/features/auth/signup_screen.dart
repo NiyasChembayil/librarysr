@@ -144,9 +144,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
+                            color: Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                            border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
                           ),
                           child: Row(
                             children: [
@@ -179,11 +179,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       hintStyle: const TextStyle(color: Colors.white38),
       prefixIcon: Icon(icon, color: Colors.white54),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.05),
+      fillColor: Colors.white.withOpacity(0.05),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
@@ -205,7 +205,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       alignment: Alignment.center,
       border: 1,
       linearGradient: const LinearGradient(colors: [Color(0xFF00D2FF), Color(0xFF6C63FF)]),
-      borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.5), Colors.white.withValues(alpha: 0.2)]),
+      borderGradient: LinearGradient(colors: [Colors.white.withOpacity(0.5), Colors.white.withOpacity(0.2)]),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: _submit,

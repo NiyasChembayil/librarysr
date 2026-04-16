@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../core/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile_model.dart';
@@ -47,6 +48,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> refreshProfile() async {
+    final profile = await _fetchProfile();
+    if (profile != null) {
+      state = AuthState(status: AuthStatus.authenticated, token: state.token, profile: profile);
+    }
+  }
+
   Future<ProfileModel?> _fetchProfile() async {
     try {
       final response = await _apiClient.dio.get('accounts/profile/me/');
@@ -72,8 +80,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final profile = await _fetchProfile();
       state = AuthState(status: AuthStatus.authenticated, token: token, profile: profile);
     } catch (e) {
-      // Parse friendly error from DioException if available
       String message = 'Login failed. Please check your credentials.';
+      
+      // Better error detection
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout || 
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError) {
+          message = 'Server unreachable. Check if current IP in api_client.dart matches your computer\'s IP.';
+        } else if (e.response?.statusCode == 401) {
+          message = 'Invalid username or password.';
+        } else if (e.response?.data is Map) {
+          final data = e.response?.data as Map;
+          if (data.containsKey('detail')) {
+            message = data['detail'];
+          }
+        }
+      }
+      
       state = AuthState(status: AuthStatus.error, errorMessage: message);
     }
   }
@@ -125,7 +150,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> updateAccount(String key, String value) async {
+  Future<Map<String, dynamic>> updateAccount(String key, String value) async {
     try {
       final Map<String, dynamic> data = {key: value};
       final response = await _apiClient.dio.patch('accounts/profile/me/', data: data);
@@ -135,10 +160,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: state.token,
         profile: updatedProfile,
       );
-      return true;
+      return {'success': true};
     } catch (e) {
       debugPrint('Auth: Update account error: $e');
-      return false;
+      String message = 'Failed to update $key.';
+      if (e is DioException && e.response?.data is Map) {
+        final errorData = e.response?.data as Map;
+        // Check for nested user errors (e.g., {'user': {'username': ['...']}})
+        if (errorData.containsKey('user') && errorData['user'] is Map) {
+          final userErrors = errorData['user'] as Map;
+          if (userErrors.containsKey(key)) {
+            message = (userErrors[key] as List).first.toString();
+          }
+        } else if (errorData.containsKey(key)) {
+          message = (errorData[key] as List).first.toString();
+        }
+      }
+      return {'success': false, 'message': message};
     }
   }
 
@@ -177,6 +215,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       avatar: currentProfile.avatar,
       followersCount: currentProfile.followersCount,
       followingCount: currentProfile.followingCount + delta,
+      userId: currentProfile.userId,
     );
     
     state = AuthState(

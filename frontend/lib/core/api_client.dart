@@ -1,4 +1,4 @@
-import 'dart:io';
+// import 'dart:io'; (Avoid for Web)
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +9,15 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Replace the baseUrl below with your actual deployed backend URL.
 // Example: 'https://api.srishty.com/api/'
 // Using localhost (127.0.0.1) will NOT work on real devices!
-const String _baseUrl = kDebugMode
-    ? 'http://localhost:8000/api/' // Updated for local testing
-    : 'https://your-production-api.com/api/'; // ← REPLACE THIS before release!
+// Using localhost (127.0.0.1) will NOT work on real physical devices or Android emulators!
+String get _baseUrl {
+  if (kReleaseMode) return 'https://your-production-api.com/api/';
+  
+  if (!kIsWeb) {
+    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8000/api/';
+  }
+  return 'http://127.0.0.1:8000/api/';
+}
 
 class ApiClient {
   final Dio dio = Dio(
@@ -78,7 +84,7 @@ class ApiClient {
       if (filePath == null) throw Exception('FilePath required for mobile upload');
       file = await MultipartFile.fromFile(
         filePath,
-        filename: filename ?? filePath.split(Platform.pathSeparator).last,
+        filename: filename ?? filePath.split('/').last,
       );
     }
 

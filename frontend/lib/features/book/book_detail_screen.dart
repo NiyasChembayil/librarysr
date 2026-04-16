@@ -6,6 +6,7 @@ import '../audio/audio_player_screen.dart';
 import 'reader_screen.dart';
 import '../../providers/book_provider.dart';
 import '../../widgets/follow_button.dart';
+import '../profile/profile_screen.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   final int id;
@@ -62,12 +63,12 @@ class BookDetailScreen extends ConsumerWidget {
                   fit: StackFit.expand,
                   children: [
                     Hero(
-                      tag: 'book-cover-$title',
+                      tag: 'book-cover-${book.id}',
                       child: CachedNetworkImage(
-                        imageUrl: coverUrl,
+                        imageUrl: book.coverUrl,
                         fit: BoxFit.cover,
-                        placeholder: (_, _) => const ColoredBox(color: Color(0xFF1E1E2E)),
-                        errorWidget: (_, _, _) => const ColoredBox(
+                        placeholder: (_, __) => const ColoredBox(color: Color(0xFF1E1E2E)),
+                        errorWidget: (_, __, ___) => const ColoredBox(
                           color: Color(0xFF1E1E2E),
                           child: Icon(Icons.menu_book_rounded, size: 80, color: Colors.white24),
                         ),
@@ -96,20 +97,34 @@ class BookDetailScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _fadeIn(
-                      child: Text(title, style: Theme.of(context).textTheme.displayLarge),
+                      child: Text(book.title, style: Theme.of(context).textTheme.displayLarge),
                     ),
                     const SizedBox(height: 10),
                     _fadeIn(
                       delay: 100,
                       child: Row(
                         children: [
-                          Text(
-                            'by $author',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white70),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProfileScreen(targetUserId: book.authorProfileId),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'by ${book.authorName}',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: const Color(0xFF6C63FF),
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 15),
                           FollowButton(
-                            authorUsername: author,
+                            authorUsername: book.authorName,
                             authorProfileId: book.authorProfileId,
                             initialIsFollowing: book.isAuthorFollowing,
                           ),
@@ -144,7 +159,7 @@ class BookDetailScreen extends ConsumerWidget {
                     _fadeIn(
                       delay: 400,
                       child: Text(
-                        description,
+                        book.description,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
                       ),
                     ),
@@ -158,7 +173,7 @@ class BookDetailScreen extends ConsumerWidget {
         bottomSheet: Container(
           height: 100,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
+          color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
           child: Row(
             children: [
               Expanded(
@@ -172,7 +187,7 @@ class BookDetailScreen extends ConsumerWidget {
                       MaterialPageRoute(
                         builder: (_) => ReaderScreen(
                           bookId: id,
-                          title: title,
+                          title: book.title,
                           chapters: book.chapters,
                         ),
                       ),
@@ -199,14 +214,14 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.05)
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
                   book.isLiked
-                      ? Colors.redAccent.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.5),
-                  Colors.white.withValues(alpha: 0.2)
+                      ? Colors.redAccent.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.5),
+                  Colors.white.withOpacity(0.2)
                 ]),
                 child: IconButton(
                   onPressed: () => ref.read(bookProvider.notifier).likeBook(id, ref),
@@ -236,14 +251,14 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.05)
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
                   book.isInLibrary
-                      ? Colors.greenAccent.withValues(alpha: 0.5)
-                      : const Color(0xFF6C63FF).withValues(alpha: 0.5),
-                  Colors.white.withValues(alpha: 0.2)
+                      ? Colors.greenAccent.withOpacity(0.5)
+                      : const Color(0xFF6C63FF).withOpacity(0.5),
+                  Colors.white.withOpacity(0.2)
                 ]),
                 child: IconButton(
                   onPressed: () async {
@@ -281,12 +296,12 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.05)
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
-                  Colors.white.withValues(alpha: 0.5),
-                  Colors.white.withValues(alpha: 0.2)
+                  Colors.white.withOpacity(0.5),
+                  Colors.white.withOpacity(0.2)
                 ]),
                 child: IconButton(
                   onPressed: () {
@@ -308,9 +323,9 @@ class BookDetailScreen extends ConsumerWidget {
                       MaterialPageRoute(
                         builder: (_) => AudioPlayerScreen(
                           bookId: id,
-                          title: title,
-                          author: author,
-                          coverUrl: coverUrl,
+                          title: book.title,
+                          author: book.authorName,
+                          coverUrl: book.coverUrl,
                           audioUrl: audioChapter.audioUrl,
                           chapters: book.chapters,
                         ),

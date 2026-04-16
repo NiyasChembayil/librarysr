@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glassmorphism/glassmorphism.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:ui';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../profile/edit_profile_screen.dart';
@@ -33,7 +34,8 @@ class SettingsScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final settings = ref.watch(settingsProvider);
     final settingsNotifier = ref.read(settingsProvider.notifier);
-    final isAuthor = authState.profile?.role == 'author';
+    // All users are creators now, no need for separate role flagging
+    const isAuthor = true;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1E),
@@ -63,33 +65,20 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Currently: ${authState.profile?.username ?? ""}',
                   onTap: () => _showUpdateDialog(context, ref, 'username', 'Change Username', authState.profile?.username ?? ''),
                 ),
-                _buildListTile(
-                  'Change Email', 
-                  icon: Icons.email_outlined,
-                  onTap: () => _showUpdateDialog(context, ref, 'email', 'Change Email', ''),
-                ),
-                _buildListTile(
-                  'Change Password', 
-                  icon: Icons.lock_outline,
-                  onTap: () => _showUpdateDialog(context, ref, 'password', 'Change Password', '', isPassword: true),
-                ),
-                if (!isAuthor)
-                  _buildListTile(
-                    'Switch to Author Account', 
-                    icon: Icons.workspace_premium, 
-                    iconColor: Colors.amber, 
-                    textColor: Colors.amber,
-                    onTap: () async {
-                      final success = await ref.read(authProvider.notifier).upgradeToAuthor();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(success ? 'Welcome to the Creator Program!' : 'Failed to upgrade account.')),
-                        );
-                      }
-                    }
-                  ),
-              ],
-            ),
+                 _buildListTile(
+                   'Change Email', 
+                   icon: Icons.email_outlined,
+                   subtitle: 'Email: ${authState.profile?.email ?? ""}',
+                   onTap: () => _showUpdateDialog(context, ref, 'email', 'Change Email', authState.profile?.email ?? ''),
+                 ),
+                 _buildListTile(
+                   'Change Password', 
+                   icon: Icons.lock_outline,
+                   onTap: () => _showUpdateDialog(context, ref, 'password', 'Change Password', '', isPassword: true),
+                 ),
+
+               ],
+             ),
 
             _buildSectionHeader('2. PRIVACY & SECURITY', Icons.security),
             _buildGlassCard(
@@ -134,7 +123,12 @@ class SettingsScreen extends ConsumerWidget {
             _buildSectionHeader('4. AUDIO SETTINGS', Icons.headset_mic_outlined),
             _buildGlassCard(
               children: [
-                _buildListTile('Default playback speed', subtitle: '${settings.playbackSpeed}x', icon: Icons.speed),
+                _buildListTile(
+                  'Default playback speed', 
+                  subtitle: '${settings.playbackSpeed}x', 
+                  icon: Icons.speed,
+                  onTap: () => _showSelectionDialog(context, ref, 'playbackSpeed', 'Playback Speed', [0.5, 0.75, 1.0, 1.25, 1.5, 2.0], settings.playbackSpeed),
+                ),
                 _buildSwitchTile(
                   'Auto-play next chapter', 
                   settings.audioAutoPlay, 
@@ -156,9 +150,19 @@ class SettingsScreen extends ConsumerWidget {
             _buildSectionHeader('5. READING SETTINGS', Icons.menu_book),
             _buildGlassCard(
               children: [
-                _buildListTile('Font size', subtitle: '${settings.fontSize.toInt()} px', icon: Icons.format_size),
+                _buildListTile(
+                  'Font size', 
+                  subtitle: '${settings.fontSize.toInt()} px', 
+                  icon: Icons.format_size,
+                  onTap: () => _showSelectionDialog(context, ref, 'fontSize', 'Font Size', [12.0, 14.0, 16.0, 18.0, 20.0, 24.0], settings.fontSize),
+                ),
                 _buildListTile('Font style', subtitle: 'Inter', icon: Icons.font_download_outlined),
-                _buildListTile('Theme', subtitle: settings.readerTheme, icon: Icons.palette_outlined),
+                _buildListTile(
+                  'Theme', 
+                  subtitle: settings.readerTheme, 
+                  icon: Icons.palette_outlined,
+                  onTap: () => _showSelectionDialog(context, ref, 'readerTheme', 'Theme', ['Light', 'Dark', 'Sepia'], settings.readerTheme),
+                ),
               ],
             ),
 
@@ -205,8 +209,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
 
-            if (isAuthor) ...[
-              _buildSectionHeader('8. AUTHOR SETTINGS', Icons.draw_outlined),
+            _buildSectionHeader('8. CREATOR SETTINGS', Icons.draw_outlined),
               _buildGlassCard(
                 children: [
                   _buildListTile('Payment account', subtitle: 'UPI / Bank', icon: Icons.account_balance),
@@ -214,7 +217,7 @@ class SettingsScreen extends ConsumerWidget {
                   _buildListTile('Upload preferences', icon: Icons.cloud_upload_outlined),
                 ],
               ),
-            ],
+
 
             _buildSectionHeader('9. HELP & SUPPORT', Icons.help_outline),
             _buildGlassCard(
@@ -235,9 +238,6 @@ class SettingsScreen extends ConsumerWidget {
                   iconColor: Colors.redAccent,
                   onTap: () async {
                     await ref.read(authProvider.notifier).logout();
-                    if (context.mounted) {
-                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-                    }
                   }
                 ),
                 _buildListTile(
@@ -279,31 +279,22 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildGlassCard({required List<Widget> children}) {
-    return GlassmorphicContainer(
+    return Container(
       width: double.infinity,
-      height: children.length * 60.0, 
-      borderRadius: 16,
-      blur: 20,
-      alignment: Alignment.center,
-      border: 1,
-      linearGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFFffffff).withValues(alpha: 0.08),
-            const Color(0xFFffffff).withValues(alpha: 0.03),
-          ]),
-      borderGradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          const Color(0xFFffffff).withValues(alpha: 0.15),
-          const Color(0xFFffffff).withValues(alpha: 0.0),
-        ],
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children.map((widget) => SizedBox(height: 60, child: widget)).toList(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
+          ),
+        ),
       ),
     );
   }
@@ -325,7 +316,7 @@ class SettingsScreen extends ConsumerWidget {
       title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
       value: value,
       onChanged: onChanged,
-      activeThumbColor: const Color(0xFF00D2FF),
+      activeColor: const Color(0xFF00D2FF),
     );
   }
 
@@ -343,8 +334,8 @@ class SettingsScreen extends ConsumerWidget {
             blur: 20,
             alignment: Alignment.center,
             border: 1,
-            linearGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]),
-            borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0)]),
+            linearGradient: LinearGradient(colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]),
+            borderGradient: LinearGradient(colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0)]),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -392,6 +383,71 @@ class SettingsScreen extends ConsumerWidget {
                         child: const Text('Save', style: TextStyle(color: Colors.white)),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSelectionDialog<T>(BuildContext context, WidgetRef ref, String key, String title, List<T> options, T currentValue) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassmorphicContainer(
+            width: double.infinity,
+            height: 350,
+            borderRadius: 20,
+            blur: 20,
+            alignment: Alignment.center,
+            border: 1,
+            linearGradient: LinearGradient(colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]),
+            borderGradient: LinearGradient(colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0)]),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 15),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        final isSelected = option == currentValue;
+                        final displayValue = key == 'playbackSpeed' ? '${option}x' : (key == 'fontSize' ? '${(option as double).toInt()} px' : option.toString());
+                        return ListTile(
+                          title: Text(displayValue, style: TextStyle(color: isSelected ? const Color(0xFF00D2FF) : Colors.white)),
+                          trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF00D2FF)) : null,
+                          onTap: () async {
+                            final scaffoldMsg = ScaffoldMessenger.of(context);
+                            final nav = Navigator.of(context);
+                            final success = await ref.read(settingsProvider.notifier).updateSetting(key, option);
+                            nav.pop();
+                            if (!success) {
+                              scaffoldMsg.showSnackBar(
+                                const SnackBar(content: Text('Failed to update setting.')),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                    ),
                   ),
                 ],
               ),

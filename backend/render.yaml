@@ -1,0 +1,37 @@
+databases:
+  - name: srishty-db
+    databaseName: srishty
+    user: srishty_user
+    plan: free
+
+services:
+  - type: redis
+    name: srishty-redis
+    plan: free
+    ipAllowList: [] # only allow internal connections
+
+  - type: web
+    name: srishty-backend
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: srishty-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: srishty-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: USE_S3
+        value: "False"
+      # IMPORTANT: To use Cloudinary for permanent image hosting, configure this value in your Render dashboard after deployment:
+      # - key: CLOUDINARY_URL
+      #   value: "cloudinary://<your_api_key>:<your_api_secret>@<your_cloud_name>"

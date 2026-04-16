@@ -631,3 +631,75 @@ button {
      text-align: center;
      font-size: 12px;
  }
+ 
+ /* Audio List Styles */
+ .audio-list-container {
+     display: flex;
+     flex-direction: column;
+     gap: 15px;
+     margin-top: 20px;
+ }
+ 
+ .chapter-audio-row {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 20px;
+     background: rgba(255, 255, 255, 0.05);
+     border: 1px solid rgba(255, 255, 255, 0.1);
+     border-radius: 12px;
+     transition: var(--transition);
+ }
+ 
+ .chapter-audio-row:hover {
+     background: rgba(255, 255, 255, 0.08);
+     transform: translateX(5px);
+ }
+ 
+ .chapter-info {
+     display: flex;
+     flex-direction: column;
+ }
+ 
+ .chapter-name {
+     font-weight: 700;
+     font-size: 18px;
+     color: var(--text-primary);
+ }
+ 
+ .audio-status {
+     font-size: 14px;
+     margin-top: 4px;
+ }
+ 
+ .status-ready { color: var(--text-secondary); }
+ .status-uploading { color: var(--accent-blue); font-weight: 600; }
+ .status-synced { color: #4CAF50; font-weight: 700; }
+ 
+ .audio-actions {
+     display: flex;
+     align-items: center;
+     gap: 15px;
+ }
+ 
+ .audio-upload-btn {
+     background: rgba(108, 99, 255, 0.2);
+     color: var(--accent-purple);
+     border: 1px solid rgba(108, 99, 255, 0.4);
+     padding: 8px 16px;
+     border-radius: 8px;
+     font-weight: 600;
+     font-size: 14px;
+     transition: var(--transition);
+ }
+ 
+ .audio-upload-btn:hover {
+     background: var(--accent-purple);
+     color: white;
+ }
+ 
+ .audio-upload-btn.synced {
+     background: rgba(76, 175, 80, 0.1);
+     border-color: #4CAF50;
+     color: #4CAF50;
+ }

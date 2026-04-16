@@ -11,5 +11,13 @@ pillow
 psycopg2-binary
 djangorestframework-simplejwt
 drf-nested-routers
+daphne
+channels
+channels-redis
 mammoth
 whitenoise
+pdfplumber
+dj-database-url
+gunicorn
+cloudinary
+django-cloudinary-storage
