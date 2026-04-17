@@ -49,7 +49,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def me(self, request):
-        profile = request.user.profile
+        profile, created = Profile.objects.get_or_create(user=request.user)
         if request.method == 'GET':
             serializer = self.get_serializer(profile)
             return Response(serializer.data)

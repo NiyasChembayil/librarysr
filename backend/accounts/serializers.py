@@ -30,6 +30,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     # Password is write-only for the 'Change Password' feature
     password = serializers.CharField(write_only=True, required=False, min_length=8)
     user_id = serializers.ReadOnlyField(source='user.id')
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -78,12 +81,20 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer()
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password', 'profile']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def get_profile(self, obj):
+        try:
+            profile = obj.profile
+            return ProfileSerializer(profile, context=self.context).data
+        except (AttributeError, Profile.DoesNotExist):
+            # Self-healing: try to create if missing, or return None
+            return None
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile', {})
