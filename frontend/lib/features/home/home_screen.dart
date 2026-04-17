@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animations/animations.dart';
 import '../../widgets/book_card.dart';
+import '../../widgets/mini_book_card.dart';
 import '../book/book_detail_screen.dart';
 import '../audio/audio_player_screen.dart';
 import '../../providers/book_provider.dart';
@@ -125,15 +126,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildErrorState(feedState.error);
 
       case BookFeedStatus.loaded:
+        final allBooks = List.of(feedState.books);
+        
+        // Prepare sub-lists
+        final topPicks = allBooks.take(10).toList();
+        
+        // Sort by likes for Top 10 in India
+        final top10Books = List.of(allBooks)
+          ..sort((a, b) => b.likesCount.compareTo(a.likesCount));
+        final top10 = top10Books.take(10).toList();
+        
+        // Remaining books or random for Secret Obsessions
+        final obsessions = allBooks.length > 20 
+            ? allBooks.skip(20).toList() 
+            : allBooks.reversed.toList();
+
         return RefreshIndicator(
           color: const Color(0xFF6C63FF),
           backgroundColor: const Color(0xFF1E1E2E),
           onRefresh: () => ref.read(bookProvider.notifier).fetchBooks(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 120, top: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHorizontalSection(
+                  context,
+                  title: 'Top picks for you',
+                  books: topPicks,
+                ),
+                const SizedBox(height: 30),
+                _buildHorizontalSection(
+                  context,
+                  title: 'Top 10 in India',
+                  books: top10,
+                  showRank: true,
+                ),
+                const SizedBox(height: 30),
+                _buildHorizontalSection(
+                  context,
+                  title: 'Secret obsessions 🖤',
+                  subtitle: 'Unraveling the darkest truths',
+                  books: obsessions,
+                ),
+              ],
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildHorizontalSection(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required List books,
+    bool showRank = false,
+  }) {
+    if (books.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              subtitle,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 270, // To comfortably fit image + number shadow + text row
           child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 120),
-            itemCount: feedState.books.length,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            itemCount: books.length,
             itemBuilder: (context, index) {
-              final book = feedState.books[index];
+              final book = books[index];
               return OpenContainer(
                 closedColor: Colors.transparent,
                 openColor: Theme.of(context).scaffoldBackgroundColor,
@@ -146,14 +232,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   coverUrl: book.coverUrl,
                   description: book.description,
                 ),
-                closedBuilder: (context, openContainer) => BookCard(
+                closedBuilder: (context, openContainer) => MiniBookCard(
                   title: book.title,
-                  author: book.authorName,
-                  authorProfileId: book.authorProfileId,
-                  isAuthorFollowing: book.isAuthorFollowing,
                   coverUrl: book.coverUrl,
-                  likes: book.likesCount,
-                  downloads: book.downloadsCount,
+                  categoryName: book.categoryName,
+                  views: book.totalReads > 0 ? book.totalReads : book.likesCount,
+                  rank: showRank ? (index + 1) : null,
+                  onTap: openContainer,
                   onPlay: () {
                     // Record a read event for the stats
                     ref.read(bookProvider.notifier).recordRead(book.id);
@@ -178,13 +263,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     );
                   },
-                  onTap: openContainer,
                 ),
               );
             },
           ),
-        );
-    }
+        ),
+      ],
+    );
   }
 
   Widget _buildShimmerLoading() {

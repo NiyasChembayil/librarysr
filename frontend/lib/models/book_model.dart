@@ -2,6 +2,7 @@ class BookModel {
   final int id;
   final String title;
   final String authorName;
+  final String categoryName;
   final String coverUrl;
   final String description;
   final double price;
@@ -20,6 +21,7 @@ class BookModel {
     required this.id,
     required this.title,
     required this.authorName,
+    required this.categoryName,
     required this.authorProfileId,
     required this.isAuthorFollowing,
     required this.coverUrl,
@@ -47,6 +49,7 @@ class BookModel {
       id: json['id'],
       title: json['title'] ?? 'Untitled',
       authorName: json['author_name'] ?? 'Unknown Author',
+      categoryName: json['category_name'] ?? 'Novel',
       authorProfileId: json['author_profile_id'] ?? 0,
       isAuthorFollowing: json['is_author_following'] ?? false,
       coverUrl: cover,
@@ -70,6 +73,7 @@ class BookModel {
     int? id,
     String? title,
     String? authorName,
+    String? categoryName,
     int? authorProfileId,
     bool? isAuthorFollowing,
     String? coverUrl,
@@ -87,6 +91,7 @@ class BookModel {
       id: id ?? this.id,
       title: title ?? this.title,
       authorName: authorName ?? this.authorName,
+      categoryName: categoryName ?? this.categoryName,
       authorProfileId: authorProfileId ?? this.authorProfileId,
       isAuthorFollowing: isAuthorFollowing ?? this.isAuthorFollowing,
       coverUrl: coverUrl ?? this.coverUrl,
