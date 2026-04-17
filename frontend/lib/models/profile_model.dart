@@ -15,6 +15,8 @@ class ProfileModel {
   final double fontSize;
   final String readerTheme;
   final double playbackSpeed;
+  final int userId;
+  final String? email;
 
   ProfileModel({
     required this.id,
@@ -26,6 +28,7 @@ class ProfileModel {
     required this.followingCount,
     this.isFollowing = false,
     required this.userId,
+    this.email,
     this.isPrivate = false,
     this.notifyNewFollower = true,
     this.notifyLikes = true,
@@ -51,6 +54,7 @@ class ProfileModel {
       followingCount: json['following_count'] ?? 0,
       isFollowing: json['is_following'] ?? false,
       userId: json['user_id'] ?? json['user']?['id'] ?? 0,
+      email: user?['email'] ?? json['email'],
       isPrivate: json['is_private'] ?? false,
       notifyNewFollower: json['notify_new_follower'] ?? true,
       notifyLikes: json['notify_likes'] ?? true,
@@ -72,6 +76,7 @@ class ProfileModel {
       'followers_count': followersCount,
       'following_count': followingCount,
       'user_id': userId,
+      'email': email,
       'is_private': isPrivate,
       'notify_new_follower': notifyNewFollower,
       'notify_likes': notifyLikes,

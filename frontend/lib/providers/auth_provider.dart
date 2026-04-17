@@ -216,6 +216,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       followersCount: currentProfile.followersCount,
       followingCount: currentProfile.followingCount + delta,
       userId: currentProfile.userId,
+      email: currentProfile.email,
     );
     
     state = AuthState(

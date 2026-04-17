@@ -130,6 +130,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
-        user.profile.role = role
-        user.profile.save()
+        # Ensure profile exists and set role
+        if hasattr(user, 'profile'):
+            user.profile.role = role
+            user.profile.save()
         return user

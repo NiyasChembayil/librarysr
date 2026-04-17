@@ -374,10 +374,11 @@ class SettingsScreen extends ConsumerWidget {
                           if (controller.text.trim().isEmpty) return;
                           final nav = Navigator.of(context);
                           final scaffoldMsg = ScaffoldMessenger.of(context);
-                          final success = await ref.read(authProvider.notifier).updateAccount(key, controller.text.trim());
+                          final result = await ref.read(authProvider.notifier).updateAccount(key, controller.text.trim());
+                          final success = result['success'] == true;
                           nav.pop();
                           scaffoldMsg.showSnackBar(
-                            SnackBar(content: Text(success ? '$title updated successfully!' : 'Failed to update $key. Please try again.')),
+                            SnackBar(content: Text(success ? '$title updated successfully!' : (result['message'] ?? 'Failed to update $key. Please try again.'))),
                           );
                         },
                         child: const Text('Save', style: TextStyle(color: Colors.white)),

@@ -126,3 +126,4 @@ dependency_overrides:
   win32: ^5.5.0
   flutter_web_plugins:
     path: ../dummy_flutter_web_plugins
+  flutter_inappwebview: ^6.0.0
