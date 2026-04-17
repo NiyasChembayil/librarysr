@@ -23,40 +23,23 @@ class SrishtyReaderApp {
         const guestNav = document.getElementById('guest-nav');
         const authNav = document.getElementById('auth-nav');
         const usernameDisplay = document.getElementById('nav-username');
-        const heroBtn = document.getElementById('hero-main-btn');
+        const authSection = document.getElementById('auth-section');
+        const worksSection = document.getElementById('my-works-section');
         
         if (this.token) {
             if (guestNav) guestNav.classList.add('hidden');
             if (authNav) authNav.classList.remove('hidden');
             if (usernameDisplay) usernameDisplay.textContent = localStorage.getItem('username') || 'Author';
-            if (heroBtn) {
-                heroBtn.textContent = 'Go to Author Studio';
-                heroBtn.onclick = () => window.location.href = 'studio.html';
-            }
-            if (document.getElementById('my-works-section')) {
-                document.getElementById('my-works-section').classList.remove('hidden');
-            }
+            
+            if (authSection) authSection.classList.add('hidden');
+            if (worksSection) worksSection.classList.remove('hidden');
         } else {
             if (guestNav) guestNav.classList.remove('hidden');
             if (authNav) authNav.classList.add('hidden');
-            if (heroBtn) {
-                heroBtn.textContent = 'Sign In to Start Writing';
-                heroBtn.onclick = () => this.openAuthModal();
-            }
-            if (document.getElementById('my-works-section')) {
-                document.getElementById('my-works-section').classList.add('hidden');
-            }
+            
+            if (authSection) authSection.classList.remove('hidden');
+            if (worksSection) worksSection.classList.add('hidden');
         }
-    }
-
-    openAuthModal() {
-        document.getElementById('auth-modal').classList.add('active');
-    }
-
-    closeAuthModal() {
-        document.getElementById('auth-modal').classList.remove('active');
-        document.getElementById('auth-error').style.display = 'none';
-        document.getElementById('auth-form').reset();
     }
 
     toggleAuthMode(e) {
@@ -139,12 +122,6 @@ class SrishtyReaderApp {
         this.checkAuth();
         this.initNotifications();
         this.loadMyWorks();
-        this.closeAuthModal();
-
-        // Redirect to studio after successful login
-        setTimeout(() => {
-            window.location.href = 'studio.html';
-        }, 500);
     }
 
     logout() {
@@ -219,6 +196,16 @@ class SrishtyReaderApp {
         }
     }
 
+    openBookInStudio(bookObj) {
+        localStorage.setItem('activeStudioBook', JSON.stringify(bookObj));
+        window.location.href = 'studio.html';
+    }
+
+    startNewBook() {
+        localStorage.removeItem('activeStudioBook');
+        window.location.href = 'studio.html';
+    }
+
     createBookCardHTML(book) {
         // Fallback for missing cover
         const coverHtml = book.cover 
@@ -226,7 +213,7 @@ class SrishtyReaderApp {
             : `<div class="book-cover placeholder-cover">📖</div>`;
             
         return `
-            <article class="book-card" onclick="alert('Opening reading view for: ${book.title}')">
+            <article class="book-card dashboard-card" onclick="readerApp.openBookInStudio(${JSON.stringify(book).replace(/"/g, '&quot;')})">
                 ${coverHtml}
                 <div class="book-title" title="${book.title}">${book.title}</div>
                 <div class="book-author">by ${book.author_name || 'Unknown'}</div>
@@ -287,7 +274,7 @@ class SrishtyReaderApp {
         if (data && data.length > 0) {
             section.classList.remove('hidden');
             container.innerHTML = data.map(book => {
-                const draftBadge = !book.is_published ? '<span class="draft-badge">Draft</span>' : '';
+                const draftBadge = !book.is_published ? '<span class="draft-badge" style="position:absolute; top:10px; right:10px; background:var(--accent-blue); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Draft</span>' : '';
                 const baseCard = this.createBookCardHTML(book);
                 // Inject draft badge if needed
                 return baseCard.replace('</article>', `${draftBadge}</article>`);
@@ -296,9 +283,9 @@ class SrishtyReaderApp {
             container.innerHTML = `
                 <div class="loading-spinner" style="grid-column: 1/-1; padding: 60px;">
                     <div style="font-size: 40px; margin-bottom: 20px;">✍️</div>
-                    <div style="color: white; font-size: 20px; font-weight: 700; margin-bottom: 10px;">Your shelf is waiting...</div>
-                    <p style="margin-bottom: 30px;">Start your author journey today by creating your first book.</p>
-                    <button class="btn-primary" onclick="window.location.href='studio.html'">Create New Book</button>
+                    <div style="color: white; font-size: 20px; font-weight: 700; margin-bottom: 10px;">Your gallery is empty</div>
+                    <p style="margin-bottom: 30px;">Every great author starts with a single word. Start yours today!</p>
+                    <button class="btn-primary" onclick="readerApp.startNewBook()">Begin Your First Masterpiece</button>
                 </div>
             `;
         }

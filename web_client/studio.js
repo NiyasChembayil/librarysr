@@ -17,8 +17,19 @@ class StudioApp {
                     return;
                 }
                 this.initEditor();
-                this.loadCategories();
-                this.initDashboard();
+                this.loadCategories().then(() => {
+                    const activeBookJSON = localStorage.getItem('activeStudioBook');
+                    if (activeBookJSON && activeBookJSON !== 'null') {
+                        try {
+                            const book = JSON.parse(activeBookJSON);
+                            this.resumeBook(book);
+                        } catch (e) {
+                            this.startNewBook();
+                        }
+                    } else {
+                        this.startNewBook();
+                    }
+                });
             }
         }, 50);
     }
@@ -61,13 +72,10 @@ class StudioApp {
         document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
         
         const navBar = document.getElementById('studio-nav-bar');
-        if (step === 0) {
-            navBar.classList.add('hidden');
-        } else {
-            navBar.classList.remove('hidden');
-            const navItem = document.getElementById(`step-nav-${step}`);
-            if (navItem) navItem.classList.add('active');
-        }
+        navBar.classList.remove('hidden');
+        
+        const navItem = document.getElementById(`step-nav-${step}`);
+        if (navItem) navItem.classList.add('active');
 
         const section = document.getElementById(`step-${step}`);
         if (section) section.classList.add('active');
@@ -77,42 +85,7 @@ class StudioApp {
         }
     }
 
-    async initDashboard() {
-        const container = document.getElementById('author-dashboard-gallery');
-        if (!container) return;
 
-        container.innerHTML = '<div class="loading-spinner">Waking up your stories...</div>';
-        
-        try {
-            const data = await window.readerApp.fetchAPI('/core/books/my_books/');
-            
-            if (data && data.length > 0) {
-                container.innerHTML = data.map(book => {
-                    const status = book.is_published ? 'Published' : 'Draft';
-                    const coverImg = book.cover || '../frontend/assets/logo.png';
-                    
-                    return `
-                        <article class="book-card dashboard-card" onclick="studioApp.resumeBook(${JSON.stringify(book).replace(/"/g, '&quot;')})">
-                            <img src="${coverImg}" alt="${book.title}" class="book-cover">
-                            <div class="book-title">${book.title}</div>
-                            <div class="book-author">${status}</div>
-                            ${!book.is_published ? '<div class="draft-badge">Edit</div>' : ''}
-                        </article>
-                    `;
-                }).join('');
-            } else {
-                container.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px; background: rgba(255,255,255,0.02); border-radius: 20px;">
-                        <h3 style="margin-bottom: 10px;">Your gallery is empty</h3>
-                        <p style="color: var(--text-secondary); margin-bottom: 20px;">Every great author starts with a single word. Start yours today!</p>
-                        <button class="btn-primary" onclick="studioApp.startNewBook()">Begin Your First Masterpiece</button>
-                    </div>
-                `;
-            }
-        } catch (err) {
-            container.innerHTML = `<div class="loading-spinner">Error loading library: ${err.message}</div>`;
-        }
-    }
 
     startNewBook() {
         // Reset state for new book
