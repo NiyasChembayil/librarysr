@@ -8,7 +8,7 @@ class PostAuthor {
   factory PostAuthor.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://localhost:8000$avatar';
+      avatar = 'https://srishty-backend.onrender.com$avatar';
     }
     return PostAuthor(
       id: json['user'] ?? 0,
@@ -68,11 +68,11 @@ class PostModel {
   factory PostModel.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://localhost:8000$avatar';
+      avatar = 'https://srishty-backend.onrender.com$avatar';
     }
     String? cover = json['book_cover'];
     if (cover != null && cover.isNotEmpty && !cover.startsWith('http')) {
-      cover = 'http://localhost:8000$cover';
+      cover = 'https://srishty-backend.onrender.com$cover';
     }
 
     PostModel? parent;
@@ -185,7 +185,7 @@ class PostCommentModel {
   factory PostCommentModel.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://localhost:8000$avatar';
+      avatar = 'https://srishty-backend.onrender.com$avatar';
     }
     return PostCommentModel(
       id: json['id'],

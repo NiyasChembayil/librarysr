@@ -42,7 +42,7 @@ class BookModel {
     if (cover.isNotEmpty && !cover.startsWith('http')) {
       // Assuming server is at localhost:8000 for local dev
       // In production, this would use a config/env variable
-      cover = 'http://localhost:8000$cover';
+      cover = 'https://srishty-backend.onrender.com$cover';
     }
 
     return BookModel(
