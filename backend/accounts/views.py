@@ -6,7 +6,7 @@ from django.utils import timezone
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer, RegisterSerializer, UserListSerializer
 from core.models import ReadStats
-from social.models import Follow
+from social.models import Follow, Notification
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
@@ -88,6 +88,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response({"status": "unfollowed"})
         else:
             Follow.objects.create(follower=request.user, followed=profile.user)
+            Notification.objects.create(
+                recipient=profile.user,
+                actor=request.user,
+                action_type='FOLLOW',
+                message=f"{request.user.username} started following you."
+            )
             return Response({"status": "followed"})
 
     @action(detail=True, methods=['get'])
