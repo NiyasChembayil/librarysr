@@ -51,7 +51,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       colors: [Color(0xFF6C63FF), Color(0xFFFF6584)],
                     ).createShader(bounds),
                     child: const Text(
-                      'Feed',
+                      'Krithi',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -70,21 +70,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ),
               ],
             ),
+            SliverToBoxAdapter(
+              child: _buildFilterChips(state),
+            ),
           ],
           body: _buildFeedTab(state),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreatePostScreen()),
-          );
-          ref.read(postFeedProvider.notifier).loadFeed();
-        },
-        backgroundColor: const Color(0xFF6C63FF),
-        icon: const Icon(Icons.edit_rounded, color: Colors.white),
-        label: const Text('Post', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -135,11 +126,65 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     }
     return RefreshIndicator(
       color: const Color(0xFF6C63FF),
-      onRefresh: () => ref.read(postFeedProvider.notifier).loadFeed(),
+      onRefresh: () => ref.read(postFeedProvider.notifier).loadFeed(type: state.selectedFilter),
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 8, bottom: 100),
         itemCount: state.feed.length,
         itemBuilder: (context, index) => PostCard(post: state.feed[index]),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(PostFeedState state) {
+    final filters = [
+      {'label': 'All', 'value': null, 'icon': Icons.all_inclusive_rounded},
+      {'label': 'Audio', 'value': 'AUDIO', 'icon': Icons.mic_rounded},
+      {'label': 'Excerpts', 'value': 'QUOTE', 'icon': Icons.format_quote_rounded},
+      {'label': 'Updates', 'value': 'UPDATE', 'icon': Icons.edit_note_rounded},
+    ];
+
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isSelected = state.selectedFilter == filter['value'];
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              showCheckmark: false,
+              avatar: Icon(
+                filter['icon'] as IconData,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.white54,
+              ),
+              label: Text(filter['label'] as String),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  ref.read(postFeedProvider.notifier).loadFeed(type: filter['value'] as String?);
+                }
+              },
+              selectedColor: const Color(0xFF6C63FF),
+              backgroundColor: const Color(0xFF1E1E2E),
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              side: BorderSide(
+                color: isSelected ? const Color(0xFF6C63FF) : Colors.white.withValues(alpha: 0.08),
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+          );
+        },
       ),
     );
   }
@@ -272,7 +317,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                           fit: BoxFit.cover,
                                         )
                                       : null,
-                                  color: Colors.white.withOpacity(0.05),
+                                  color: Colors.white.withValues(alpha: 0.05),
                                 ),
                                 child: book.coverUrl == null
                                     ? const Center(child: Icon(Icons.book, color: Colors.white24))

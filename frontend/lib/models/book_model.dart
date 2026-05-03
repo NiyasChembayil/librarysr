@@ -13,6 +13,10 @@ class BookModel {
   final bool isInLibrary;
   final bool isLiked;
   final int downloadsCount;
+  final String shelfStatus;
+  final bool isFavorite;
+  final bool isFeatured;
+  final String? recommendedMood;
 
   final int authorProfileId;
   final bool isAuthorFollowing;
@@ -34,15 +38,16 @@ class BookModel {
     this.isInLibrary = false,
     this.isLiked = false,
     this.downloadsCount = 0,
+    this.shelfStatus = 'TO_READ',
+    this.isFavorite = false,
+    this.isFeatured = false,
+    this.recommendedMood,
   });
 
   factory BookModel.fromJson(Map<String, dynamic> json) {
     String cover = json['cover'] ?? '';
-    // If the URL is relative (starts with /), prepend the server base URL
     if (cover.isNotEmpty && !cover.startsWith('http')) {
-      // Assuming server is at localhost:8000 for local dev
-      // In production, this would use a config/env variable
-      cover = 'https://srishty-backend.onrender.com$cover';
+      cover = 'http://127.0.0.1:8000$cover';
     }
 
     return BookModel(
@@ -54,12 +59,16 @@ class BookModel {
       isAuthorFollowing: json['is_author_following'] ?? false,
       coverUrl: cover,
       description: json['description'] ?? '',
-      price: 0.0, // Platform is free
+      price: 0.0,
       likesCount: json['likes_count'] ?? 0,
       totalReads: json['total_reads'] ?? 0,
       isInLibrary: json['is_in_library'] ?? false,
       isLiked: json['is_liked'] ?? false,
       downloadsCount: json['downloads_count'] ?? 0,
+      shelfStatus: json['shelf_status'] ?? 'TO_READ',
+      isFavorite: json['is_favorite_book'] ?? false,
+      isFeatured: json['is_featured'] ?? false,
+      recommendedMood: json['recommended_mood'],
       chapters: (json['chapters'] as List? ?? [])
           .map((c) => ChapterModel.fromJson(c))
           .toList(),
@@ -86,6 +95,10 @@ class BookModel {
     bool? isInLibrary,
     bool? isLiked,
     int? downloadsCount,
+    String? shelfStatus,
+    bool? isFavorite,
+    bool? isFeatured,
+    String? recommendedMood,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -104,6 +117,10 @@ class BookModel {
       isInLibrary: isInLibrary ?? this.isInLibrary,
       isLiked: isLiked ?? this.isLiked,
       downloadsCount: downloadsCount ?? this.downloadsCount,
+      shelfStatus: shelfStatus ?? this.shelfStatus,
+      isFavorite: isFavorite ?? this.isFavorite,
+      isFeatured: isFeatured ?? this.isFeatured,
+      recommendedMood: recommendedMood ?? this.recommendedMood,
     );
   }
 }

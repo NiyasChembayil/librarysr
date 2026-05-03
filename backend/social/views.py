@@ -1,11 +1,12 @@
+import logging
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from django.db.models import Count
 from django.contrib.auth.models import User
-from .models import Like, Comment, Notification, Follow, Post, PostLike, PostComment, PostCommentLike
-from .serializers import LikeSerializer, CommentSerializer, NotificationSerializer, FollowSerializer, PostSerializer, PostCommentSerializer
+from .models import Like, Comment, Notification, Follow, Post, PostLike, PostComment, PostCommentLike, Poll, PollOption, PollVote
+from .serializers import LikeSerializer, CommentSerializer, NotificationSerializer, FollowSerializer, PostSerializer, PostCommentSerializer, PollSerializer
 from core.models import Book
 from core.serializers import BookSerializer
 from accounts.models import Profile
@@ -17,13 +18,63 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        post = serializer.save(user=self.request.user)
+        # Handle Poll creation
+        if post.post_type == 'POLL':
+            question = self.request.data.get('poll_question')
+            options = self.request.data.get('poll_options') # Expected as a list
+            if isinstance(options, str):
+                import json
+                options = json.loads(options)
+            
+            if question and options:
+                poll = Poll.objects.create(post=post, question=question)
+                for opt_text in options:
+                    PollOption.objects.create(poll=poll, text=opt_text)
+
+    @action(detail=True, methods=['post'])
+    def vote(self, request, pk=None):
+        post = self.get_object()
+        if post.post_type != 'POLL' or not hasattr(post, 'poll'):
+            return Response({'error': 'Post is not a poll'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        option_id = request.data.get('option_id')
+        if not option_id:
+            return Response({'error': 'option_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            option = PollOption.objects.get(id=option_id, poll=post.poll)
+            vote, created = PollVote.objects.get_or_create(
+                user=request.user, 
+                poll=post.poll, 
+                defaults={'option': option}
+            )
+            if not created:
+                return Response({'error': 'You have already voted in this poll'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Poll Milestone Notification
+            vote_count = post.poll.votes.count()
+            if vote_count == 20:
+                Notification.objects.create(
+                    recipient=post.user,
+                    action_type='POLL_RESULT',
+                    post=post,
+                    message=f"🗳️ Your poll '{post.poll.question}' has reached 20 votes! The community is highly engaged."
+                )
+
+            return Response({
+                'status': 'voted', 
+                'poll_data': PollSerializer(post.poll, context={'request': request}).data
+            })
+        except PollOption.DoesNotExist:
+            return Response({'error': 'Invalid option'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def feed(self, request):
+        post_type = request.query_params.get('type')
         if not request.user.is_authenticated:
             # If not authenticated, just return trending posts as feed
-            posts = Post.objects.annotate(like_count=Count('likes')).order_by('-like_count')[:50]
+            posts = Post.objects.annotate(like_count=Count('likes')).order_by('-like_count')
         else:
             # Home feed: Posts from people I follow + My posts
             following_ids = Follow.objects.filter(follower=request.user).values_list('followed_id', flat=True)
@@ -32,10 +83,14 @@ class PostViewSet(viewsets.ModelViewSet):
             # If followed posts are few, mix with trending
             if followed_posts.count() < 10:
                 trending_posts = Post.objects.annotate(like_count=Count('likes')).order_by('?')[:20]
-                posts = (followed_posts | trending_posts).distinct().order_by('?')[:50]
+                posts = (followed_posts | trending_posts).distinct()
             else:
-                posts = followed_posts.order_by('?')[:50]
-                
+                posts = followed_posts
+
+        if post_type:
+            posts = posts.filter(post_type=post_type)
+            
+        posts = posts.order_by('?')[:50]
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
 
@@ -47,6 +102,18 @@ class PostViewSet(viewsets.ModelViewSet):
         posts = Post.objects.filter(user_id=user_id).order_by('-created_at')
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def poll_of_the_day(self, request):
+        # Find the latest high-engagement poll
+        poll = Poll.objects.annotate(
+            vote_count=Count('votes')
+        ).order_by('-vote_count', '-id').first()
+        
+        if not poll:
+            return Response({'error': 'No polls found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response(PostSerializer(poll.post, context={'request': request}).data)
 
     @action(detail=False, methods=['get'])
     def trending(self, request):
@@ -80,6 +147,14 @@ class PostViewSet(viewsets.ModelViewSet):
                 post=post,
                 message=f"{request.user.username} liked your post."
             )
+            # Trending Check
+            if post.likes.count() == 10:
+                Notification.objects.create(
+                    recipient=post.user,
+                    action_type='TRENDING',
+                    post=post,
+                    message=f"🔥 Your post is trending! It just hit 10 likes. Keep it up!"
+                )
         return Response({'status': 'liked', 'likes_count': post.likes.count()})
 
     @action(detail=True, methods=['post'])
@@ -164,6 +239,14 @@ class LikeViewSet(viewsets.ModelViewSet):
                 action_type='LIKE',
                 book=like.book
             )
+            # Trending Check
+            if like.book.likes.count() == 10:
+                Notification.objects.create(
+                    recipient=like.book.author,
+                    action_type='TRENDING',
+                    book=like.book,
+                    message=f"📈 '{like.book.title}' is gaining steam! 10 readers have liked it so far."
+                )
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -237,20 +320,22 @@ class MentionSearchView(APIView):
         users = User.objects.filter(username__icontains=q).select_related('profile')[:7]
         books = Book.objects.filter(title__icontains=q, is_published=True)[:7]
 
+        logger = logging.getLogger(__name__)
+
         def build_avatar(user):
             try:
-                if user.profile.avatar:
+                if hasattr(user, 'profile') and user.profile.avatar:
                     return request.build_absolute_uri(user.profile.avatar.url)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Error building avatar URI for user {user.username}: {e}")
             return None
 
         def build_cover(book):
             try:
                 if book.cover:
                     return request.build_absolute_uri(book.cover.url)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Error building cover URI for book {book.id}: {e}")
             return None
 
         return Response({

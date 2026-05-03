@@ -34,8 +34,11 @@ class SettingsScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final settings = ref.watch(settingsProvider);
     final settingsNotifier = ref.read(settingsProvider.notifier);
-    // All users are creators now, no need for separate role flagging
-    const isAuthor = true;
+    
+    // Check if user is a creator/author
+    final isAuthor = authState.profile?.role == 'author' || authState.profile?.role == 'creator';
+    // Check if user has beta access
+    final isBetaUser = settings.isBetaEnabled;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1E),
@@ -88,9 +91,14 @@ class SettingsScreen extends ConsumerWidget {
                   settings.isPrivateAccount, 
                   (val) => settingsNotifier.updateSetting('isPrivateAccount', val),
                 ),
-                _buildListTile('Who can comment', subtitle: 'Everyone', icon: Icons.comment_outlined),
-                _buildListTile('Block users', icon: Icons.block),
-                _buildListTile('Two-factor authentication', subtitle: 'Coming soon', icon: Icons.verified_user_outlined),
+                _buildListTile('Who can comment', subtitle: 'Everyone', icon: Icons.comment_outlined, trailing: _buildComingSoonBadge()),
+                _buildListTile('Block users', icon: Icons.block, trailing: _buildComingSoonBadge()),
+                _buildListTile(
+                  'Two-factor authentication', 
+                  subtitle: 'Extra security for your account', 
+                  icon: Icons.verified_user_outlined,
+                  trailing: _buildComingSoonBadge(),
+                ),
               ],
             ),
 
@@ -143,6 +151,7 @@ class SettingsScreen extends ConsumerWidget {
                   'Background play enabled', 
                   settings.audioBackgroundPlay, 
                   (val) => settingsNotifier.updateSetting('audioBackgroundPlay', val),
+                  trailing: _buildBetaBadge(),
                 ),
               ],
             ),
@@ -156,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.format_size,
                   onTap: () => _showSelectionDialog(context, ref, 'fontSize', 'Font Size', [12.0, 14.0, 16.0, 18.0, 20.0, 24.0], settings.fontSize),
                 ),
-                _buildListTile('Font style', subtitle: 'Inter', icon: Icons.font_download_outlined),
+                _buildListTile('Font style', subtitle: 'Inter', icon: Icons.font_download_outlined, trailing: _buildComingSoonBadge()),
                 _buildListTile(
                   'Theme', 
                   subtitle: settings.readerTheme, 
@@ -169,7 +178,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildSectionHeader('6. DOWNLOADS / STORAGE', Icons.save_alt),
             _buildGlassCard(
               children: [
-                _buildListTile('Downloaded books', icon: Icons.download_done),
+                _buildListTile('Downloaded books', icon: Icons.download_done, trailing: _buildComingSoonBadge()),
                 _buildListTile(
                   'Clear cache', 
                   icon: Icons.delete_sweep_outlined,
@@ -204,17 +213,17 @@ class SettingsScreen extends ConsumerWidget {
             _buildSectionHeader('7. LANGUAGE & REGION', Icons.language),
             _buildGlassCard(
               children: [
-                _buildListTile('App language', subtitle: 'English (US)', icon: Icons.translate),
-                _buildListTile('Content language', subtitle: 'Global', icon: Icons.public),
+                _buildListTile('App language', subtitle: 'English (US)', icon: Icons.translate, trailing: _buildComingSoonBadge()),
+                _buildListTile('Content language', subtitle: 'Global', icon: Icons.public, trailing: _buildComingSoonBadge()),
               ],
             ),
 
             _buildSectionHeader('8. CREATOR SETTINGS', Icons.draw_outlined),
               _buildGlassCard(
                 children: [
-                  _buildListTile('Payment account', subtitle: 'UPI / Bank', icon: Icons.account_balance),
-                  _buildListTile('Earnings dashboard', icon: Icons.bar_chart),
-                  _buildListTile('Upload preferences', icon: Icons.cloud_upload_outlined),
+                  _buildListTile('Payment account', subtitle: 'UPI / Bank', icon: Icons.account_balance, trailing: _buildComingSoonBadge()),
+                  _buildListTile('Earnings dashboard', icon: Icons.bar_chart, trailing: _buildComingSoonBadge()),
+                  _buildListTile('Upload preferences', icon: Icons.cloud_upload_outlined, trailing: _buildComingSoonBadge()),
                 ],
               ),
 
@@ -222,9 +231,9 @@ class SettingsScreen extends ConsumerWidget {
             _buildSectionHeader('9. HELP & SUPPORT', Icons.help_outline),
             _buildGlassCard(
               children: [
-                _buildListTile('Help center', icon: Icons.support_agent),
-                _buildListTile('Contact support', icon: Icons.mail_outline),
-                _buildListTile('FAQ', icon: Icons.question_answer_outlined),
+                _buildListTile('Help center', icon: Icons.support_agent, trailing: _buildComingSoonBadge()),
+                _buildListTile('Contact support', icon: Icons.mail_outline, trailing: _buildComingSoonBadge()),
+                _buildListTile('FAQ', icon: Icons.question_answer_outlined, trailing: _buildComingSoonBadge()),
               ],
             ),
 
@@ -246,7 +255,35 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.delete_forever, 
                   textColor: Colors.redAccent,
                   iconColor: Colors.redAccent,
+                  trailing: _buildComingSoonBadge(),
                 ),
+              ],
+            ),
+
+            _buildSectionHeader('11. BETA PROGRAM', Icons.biotech_outlined),
+            _buildGlassCard(
+              children: [
+                _buildSwitchTile(
+                  'Join Beta Program', 
+                  settings.isBetaEnabled, 
+                  (val) => settingsNotifier.updateSetting('isBetaEnabled', val),
+                  subtitle: 'Get early access to experimental features',
+                ),
+                if (settings.isBetaEnabled) ...[
+                  const Divider(color: Colors.white10),
+                  _buildListTile(
+                    'AI Story Analysis', 
+                    subtitle: 'Automatic plot & character review', 
+                    icon: Icons.auto_awesome,
+                    trailing: _buildComingSoonBadge(),
+                  ),
+                  _buildListTile(
+                    'Community Translation', 
+                    subtitle: 'Multi-language crowdsourcing', 
+                    icon: Icons.g_translate,
+                    trailing: _buildComingSoonBadge(),
+                  ),
+                ],
               ],
             ),
 
@@ -282,9 +319,9 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -299,24 +336,70 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildListTile(String title, {String? subtitle, required IconData icon, Color? textColor, Color? iconColor, VoidCallback? onTap}) {
+  Widget _buildListTile(String title, {String? subtitle, required IconData icon, Color? textColor, Color? iconColor, VoidCallback? onTap, Widget? trailing}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       leading: Icon(icon, color: iconColor ?? Colors.white70, size: 22),
       title: Text(title, style: TextStyle(color: textColor ?? Colors.white, fontSize: 15)),
       subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
+      trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
       onTap: onTap,
     );
   }
 
-  Widget _buildSwitchTile(String title, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchTile(String title, bool value, ValueChanged<bool> onChanged, {String? subtitle, Widget? trailing}) {
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
+      title: Row(
+        children: [
+          Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15))),
+          if (trailing != null) trailing,
+        ],
+      ),
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)) : null,
       value: value,
       onChanged: onChanged,
       activeColor: const Color(0xFF00D2FF),
+    );
+  }
+
+  Widget _buildBetaBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFF6C63FF).withValues(alpha: 0.5)),
+      ),
+      child: const Text(
+        'BETA',
+        style: TextStyle(
+          color: Color(0xFF6C63FF),
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComingSoonBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+      ),
+      child: const Text(
+        'COMING SOON',
+        style: TextStyle(
+          color: Colors.amber,
+          fontSize: 7,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 
@@ -334,8 +417,8 @@ class SettingsScreen extends ConsumerWidget {
             blur: 20,
             alignment: Alignment.center,
             border: 1,
-            linearGradient: LinearGradient(colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]),
-            borderGradient: LinearGradient(colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0)]),
+            linearGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]),
+            borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0)]),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -407,8 +490,8 @@ class SettingsScreen extends ConsumerWidget {
             blur: 20,
             alignment: Alignment.center,
             border: 1,
-            linearGradient: LinearGradient(colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]),
-            borderGradient: LinearGradient(colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0)]),
+            linearGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]),
+            borderGradient: LinearGradient(colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0)]),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(

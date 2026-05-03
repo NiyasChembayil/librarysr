@@ -37,3 +37,12 @@ frontend/ios/Flutter/flutter_export_environment.sh
 *.iml
 *.swp
 .DS_Store
+
+# Root files
+*.apk
+*.png
+
+# Backend specific
+backend/media/
+backend/staticfiles/
+backend/create_test_quote.py

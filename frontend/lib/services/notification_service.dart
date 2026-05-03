@@ -18,8 +18,8 @@ class NotificationService {
     final token = _ref.read(authProvider).token;
     if (token == null) return;
 
-    // Route WebSocket traffic to the live production server using secure WSS
-    final wsUrl = 'wss://srishty-backend.onrender.com/ws/notifications/';
+    // Using localhost for local development
+    final wsUrl = 'ws://127.0.0.1:8000/ws/notifications/';
     
     try {
       _channel = WebSocketChannel.connect(

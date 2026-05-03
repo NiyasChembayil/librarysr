@@ -4,6 +4,7 @@ class ProfileModel {
   final String role;
   final String bio;
   final String? avatar;
+  final String? banner;
   final int followersCount;
   final int followingCount;
   final bool isFollowing;
@@ -24,6 +25,7 @@ class ProfileModel {
     required this.role,
     required this.bio,
     this.avatar,
+    this.banner,
     required this.followersCount,
     required this.followingCount,
     this.isFollowing = false,
@@ -49,6 +51,7 @@ class ProfileModel {
       role: json['role'] ?? 'reader',
       bio: json['bio'] ?? '',
       avatar: json['avatar'],
+      banner: json['banner'],
       // 'followed_by' is the correct field name on the model
       followersCount: (json['followed_by'] as List?)?.length ?? json['followers_count'] ?? 0,
       followingCount: json['following_count'] ?? 0,
@@ -73,6 +76,7 @@ class ProfileModel {
       'role': role,
       'bio': bio,
       'avatar': avatar,
+      'banner': banner,
       'followers_count': followersCount,
       'following_count': followingCount,
       'user_id': userId,

@@ -11,6 +11,7 @@ class Profile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='author')
     bio = models.TextField(blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    banner = models.ImageField(upload_to='banners/', null=True, blank=True)
     
     # Privacy & Safety
     is_private = models.BooleanField(default=False)

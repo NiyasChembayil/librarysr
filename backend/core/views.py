@@ -1,14 +1,18 @@
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.db.models import Count, Q
-from .models import Category, Book, Chapter, Purchase, ReadStats
-from .serializers import CategorySerializer, BookSerializer, ChapterSerializer, PurchaseSerializer
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import Count, Q, F, Sum
+from django.utils import timezone
+from datetime import timedelta
+from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound
+from .serializers import CategorySerializer, BookSerializer, BookSummarySerializer, ChapterSerializer, PurchaseSerializer, AmbientSoundSerializer, UserAmbientSoundSerializer
 from .payments import create_stripe_checkout_session, fulfill_purchase
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from .permissions import IsAuthorOrReadOnly
 import stripe
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -19,277 +23,195 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     filterset_fields = ['category']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = Book.objects.all().select_related('author', 'category').prefetch_related('chapters')
-        
+        queryset = Book.objects.all()
         author_id = self.request.query_params.get('author')
-        user = self.request.user
-        
-        # 1. Start with visibility filtering
-        if user.is_authenticated:
-            # If the user is logged in, they see all published books + their own drafts
-            qs = qs.filter(Q(is_published=True) | Q(author=user))
-        else:
-            # Guest users only see published books
-            qs = qs.filter(is_published=True)
-
-        # 2. Apply author filter manually (since we removed it from filterset_fields)
         if author_id:
-            if author_id == 'me':
-                if user.is_authenticated:
-                    return qs.filter(author=user)
-                else:
-                    return qs.none()
+            print(f"DEBUG: author_id={author_id}, user={self.request.user}, authenticated={self.request.user.is_authenticated}")
+            if author_id == 'me' and self.request.user.is_authenticated:
+                queryset = queryset.filter(author=self.request.user)
             else:
-                try:
-                    return qs.filter(author_id=author_id)
-                except (ValueError, TypeError):
-                    return qs.none()
-            
-        return qs
+                queryset = queryset.filter(author_id=author_id)
+        
+        category_slug = self.request.query_params.get('category_slug')
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        print(f"DEBUG: returning {queryset.count()} books")
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def toggle_featured(self, request, pk=None):
+        book = self.get_object()
+        book.is_featured = not book.is_featured
+        book.save()
+        return Response({'status': 'featured toggled', 'is_featured': book.is_featured})
 
     @action(detail=True, methods=['post'])
     def record_read(self, request, pk=None):
         book = self.get_object()
         user = request.user if request.user.is_authenticated else None
         ReadStats.objects.create(book=book, user=user)
+        
+        if user:
+            from social.models import Notification
+            read_count = ReadStats.objects.filter(user=user).count()
+            milestones = [10, 50, 100, 500, 1000]
+            if read_count in milestones:
+                Notification.objects.create(
+                    recipient=user,
+                    action_type='MILESTONE',
+                    message=f"🎉 Achievement Unlocked: You've read {read_count} chapters on Srishty! Keep up the great journey."
+                )
+                
         return Response({'status': 'read recorded'})
 
     @action(detail=False, methods=['get'])
-    def my_books(self, request):
-        if not request.user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-        books = Book.objects.filter(author=request.user).select_related('author', 'category').prefetch_related('chapters')
-        serializer = self.get_serializer(books, many=True)
-        return Response(serializer.data)
+    def library_stats(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=401)
 
-    @action(detail=False, methods=['get'])
-    def trending(self, request):
-        region = request.query_params.get('region')
+        # 1. Total Library Books
+        # Combination of written books and purchased books
+        written_books_ids = set(Book.objects.filter(author=user).values_list('id', flat=True))
+        purchased_books_ids = set(Purchase.objects.filter(user=user).values_list('book_id', flat=True))
+        all_library_ids = written_books_ids.union(purchased_books_ids)
+        total_library_books = len(all_library_ids)
+
+        # 2. Monthly Milestone (Chapters/Reads this month)
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_milestone = ReadStats.objects.filter(user=user, timestamp__gte=start_of_month).count()
+
+        # 3. Genre DNA
+        genre_counts = ReadStats.objects.filter(user=user)\
+            .values('book__category__name')\
+            .annotate(count=Count('id'))\
+            .order_by('-count')[:5]
         
-        # Weighted Score: (Reads * 1) + (Likes * 3)
-        books = Book.objects.annotate(
-            read_count=Count('read_stats', distinct=True),
-            likes_count=Count('likes', distinct=True)
-        ).annotate(
-            score=(Count('read_stats') * 1) + (Count('likes') * 3)
-        )
+        genre_dna = [
+            {"genre": g['book__category__name'] or "Other", "count": g['count']} 
+            for g in genre_counts
+        ]
+
+        # 4. Streak Calculation
+        read_dates = ReadStats.objects.filter(user=user)\
+            .annotate(date=F('timestamp__date'))\
+            .values_list('date', flat=True)\
+            .distinct()\
+            .order_by('-date')
         
-        if region:
-            books = books.filter(region__icontains=region)
+        streak = 0
+        if read_dates.exists():
+            today = timezone.localdate()
+            current_check = today
             
-        books = books.order_by('-score')[:10]
-        serializer = self.get_serializer(books, many=True)
-        return Response(serializer.data)
+            # If the user hasn't read today, check if they read yesterday to continue the streak
+            if read_dates[0] < today:
+                if read_dates[0] == today - timedelta(days=1):
+                    current_check = today - timedelta(days=1)
+                else:
+                    # Streak broken if no read today or yesterday
+                    streak = 0
+                    current_check = None
+            
+            if current_check:
+                for read_date in read_dates:
+                    if read_date == current_check:
+                        streak += 1
+                        current_check -= timedelta(days=1)
+                    elif read_date < current_check:
+                        break # Gap found
+
+        return Response({
+            "streak": streak,
+            "genre_dna": genre_dna,
+            "monthly_milestone": monthly_milestone,
+            "total_library_books": total_library_books
+        })
 
     @action(detail=False, methods=['get'])
     def discovery(self, request):
-        region = request.query_params.get('region', 'Global')
+        # In a real app, this would use complex analytics.
+        # For now, we'll provide varied random samples to populate the grid.
+        all_published = Book.objects.filter(is_published=True)
         
-        # 1. Mostly Read Category
-        # Find category with most read stats
-        top_category_stats = Category.objects.annotate(
-            total_reads=Count('books__read_stats')
-        ).order_by('-total_reads').first()
+        mostly_read = all_published.order_by('?')[:6]
+        local_hits = all_published.order_by('?')[:6]
+        social_hits = all_published.order_by('?')[:6]
         
-        mostly_read_category = []
-        category_name = "Trending"
-        if top_category_stats and top_category_stats.total_reads > 0:
-            category_name = top_category_stats.name
-            mostly_read_category = Book.objects.filter(
-                category=top_category_stats, 
-                is_published=True
-            ).annotate(
-                reads=Count('read_stats')
-            ).order_by('-reads')[:6]
-
-        if not mostly_read_category:
-            mostly_read_category = Book.objects.filter(is_published=True).order_by('?')[:6]
-
-        # 3. New Arrivals (latest published books)
-        new_arrivals = Book.objects.filter(is_published=True).order_by('-created_at')[:10]
-
-        # 4. Local Hits (Books from the same region)
-        local_hits = Book.objects.filter(is_published=True, region__iexact=region)[:6]
-        if not local_hits:
-            local_hits = Book.objects.filter(is_published=True).order_by('?')[:6]
-
-        # 4. Mutual Friends' Books (Social Discovery)
-        social_hits = []
-        if request.user.is_authenticated:
-            following_ids = request.user.following.values_list('followed_id', flat=True)
-            social_hits = Book.objects.filter(
-                likes__user_id__in=following_ids,
-                is_published=True
-            ).exclude(author=request.user).distinct()[:6]
+        # Featured Authors Spotlight
+        from accounts.models import Profile
+        from accounts.serializers import ProfileSerializer
+        featured_authors = Profile.objects.filter(role='author').order_by('?')[:10]
         
-        if not social_hits:
-             social_hits = Book.objects.filter(is_published=True).order_by('?')[:6]
-
+        serializer_context = {'request': request}
+        
         return Response({
             'mostly_read': {
-                'category_name': category_name,
-                'books': self.get_serializer(mostly_read_category, many=True).data
+                'category_name': 'Trending Now',
+                'books': BookSummarySerializer(mostly_read, many=True, context=serializer_context).data
             },
-            'local_hits': self.get_serializer(local_hits, many=True).data,
-            'social_hits': self.get_serializer(social_hits, many=True).data,
-            'new_arrivals': self.get_serializer(new_arrivals, many=True).data
+            'local_hits': BookSummarySerializer(local_hits, many=True, context=serializer_context).data,
+            'social_hits': BookSummarySerializer(social_hits, many=True, context=serializer_context).data,
+            'featured_authors': ProfileSerializer(featured_authors, many=True, context=serializer_context).data
         })
 
-    @action(detail=True, methods=['post'])
-    def toggle_library(self, request, pk=None):
-        from .models import UserLibrary
-        book = self.get_object()
-        user = request.user
-        
-        if not user.is_authenticated:
-            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-            
-        library_item, created = UserLibrary.objects.get_or_create(user=user, book=book)
-        
-        if not created:
-            library_item.delete()
-            return Response({'status': 'removed', 'is_in_library': False})
-            
-        return Response({'status': 'added', 'is_in_library': True})
-
-    @action(detail=False, methods=['get'])
-    def my_books(self, request):
-        user = request.user
-        if not user.is_authenticated:
-            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        # Books user authored, completed purchases, OR added to library
-        from .models import UserLibrary
-        ordered_book_ids = Purchase.objects.filter(user=user, status='COMPLETED').values_list('book_id', flat=True)
-        library_book_ids = UserLibrary.objects.filter(user=user).values_list('book_id', flat=True)
-        
-        books = Book.objects.filter(
-            Q(author=user) | Q(id__in=ordered_book_ids) | Q(id__in=library_book_ids)
-        ).distinct().select_related('author', 'category').prefetch_related('chapters')
-        
-        serializer = self.get_serializer(books, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['post'], url_path='convert_docx')
-    def convert_docx(self, request):
-        import mammoth
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            result = mammoth.convert_to_html(file)
-            return Response({'html': result.value})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['post'], url_path='convert_pdf')
-    def convert_pdf(self, request):
-        import pdfplumber
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            with pdfplumber.open(file) as pdf:
-                full_text = ""
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if text:
-                        full_text += text + "\n"
-            
-            # Simple conversion to HTML paragraphs
-            # We split by single newlines but preserve blocks
-            paragraphs = full_text.split('\n')
-            html = "".join([f"<p>{p}</p>" for p in paragraphs if p.strip()])
-            
-            return Response({'html': html})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=True, methods=['post'])
-    def import_chapters(self, request, pk=None):
-        """
-        Accepts a list of chapters in JSON format.
-        Expected format: {'chapters': [{'title': '...', 'content': '...'}, ...]}
-        """
-        book = self.get_object()
-        chapters_data = request.data.get('chapters')
-        
-        if not chapters_data or not isinstance(chapters_data, list):
-            return Response({'error': 'No valid chapters list provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            chapters_created = []
-            # Optionally clear existing chapters if you want a fresh import
-            # book.chapters.all().delete() 
-            
-            for index, item in enumerate(chapters_data):
-                title = item.get('title', f'Chapter {index + 1}')
-                content = item.get('content', '')
-                
-                chapter = Chapter.objects.create(
-                    book=book,
-                    title=title,
-                    content=content,
-                    order=book.chapters.count()
-                )
-                chapters_created.append({
-                    'id': chapter.id,
-                    'title': chapter.title,
-                    'order': chapter.order
-                })
-            
-            return Response({
-                'status': 'chapters imported',
-                'count': len(chapters_created),
-                'chapters': chapters_created
-            })
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=True, methods=['post'])
-    def upload_audio(self, request, pk=None):
-        book = self.get_object()
-        chapter_number = request.data.get('chapter_number')
-        audio_file = request.FILES.get('audio_file')
-
-        if not chapter_number or not audio_file:
-            return Response({'error': 'chapter_number and audio_file are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            # chapter_number from frontend is 1-indexed, match it with 0-indexed 'order'
-            chapter = book.chapters.get(order=int(chapter_number) - 1)
-            chapter.audio_file = audio_file
-            chapter.save()
-            return Response({'status': 'audio uploaded', 'url': chapter.audio_file.url})
-        except (Chapter.DoesNotExist, ValueError):
-            return Response({'error': f'Chapter {chapter_number} not found'}, status=status.HTTP_404_NOT_FOUND)
-
 class ChapterViewSet(viewsets.ModelViewSet):
-    queryset = Chapter.objects.all().select_related('book')
     serializer_class = ChapterSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
 
     def get_queryset(self):
         return Chapter.objects.filter(book_id=self.kwargs['book_pk'])
 
     def perform_create(self, serializer):
-        serializer.save(book_id=self.kwargs['book_pk'])
+        book = Book.objects.get(pk=self.kwargs['book_pk'])
+        serializer.save(book=book)
 
+class AmbientSoundViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AmbientSound.objects.all()
+    serializer_class = AmbientSoundSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        system_sounds = AmbientSound.objects.filter(is_system=True)
+        user_sounds = []
+        if request.user.is_authenticated:
+            user_sounds = UserAmbientSound.objects.filter(user=request.user)
+        
+        results = [AmbientSoundSerializer(s).data for s in system_sounds]
+        for us in user_sounds:
+            results.append({
+                'id': us.id,
+                'name': us.name,
+                'emoji': us.emoji,
+                'audio_url': us.audio_url,
+                'is_system': False
+            })
+        return Response(results)
+
+class UserAmbientSoundViewSet(viewsets.ModelViewSet):
+    serializer_class = UserAmbientSoundSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UserAmbientSound.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class PurchaseViewSet(viewsets.ModelViewSet):
-    queryset = Purchase.objects.all().select_related('user', 'book')
+    queryset = Purchase.objects.all()
     serializer_class = PurchaseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -297,50 +219,34 @@ class PurchaseViewSet(viewsets.ModelViewSet):
         return Purchase.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=['post'])
-    def create_checkout_session(self, request):
+    def create_session(self, request):
         book_id = request.data.get('book_id')
-        if not book_id:
-            return Response({'error': 'book_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        success_url = settings.FRONTEND_URL + '/payment-success'
-        cancel_url = settings.FRONTEND_URL + '/payment-cancelled'
-        
-        session = create_stripe_checkout_session(
-            request.user, 
-            book_id, 
-            success_url, 
-            cancel_url
-        )
-        
-        if session:
-            return Response({
-                'session_url': session.url,
-                'session_id': session.id
-            })
-        return Response({'error': 'Failed to create session'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
-    @method_decorator(csrf_exempt)
-    def webhook(self, request):
-        payload = request.body
-        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-
         try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, endpoint_secret
-            )
-        except ValueError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        except stripe.error.SignatureVerificationError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            book = Book.objects.get(id=book_id)
+            session = create_stripe_checkout_session(request.user, book)
+            return Response({'sessionId': session.id, 'url': session.url})
+        except Book.DoesNotExist:
+            return Response({'error': 'Book not found'}, status=404)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            fulfill_purchase(session)
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    event = None
 
-        return Response(status=status.HTTP_200_OK)
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        return Response(status=400)
+    except stripe.error.SignatureVerificationError:
+        return Response(status=400)
 
-    def perform_create(self, serializer):
-        # Prevent manual creation, only via checkout
-        pass
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        fulfill_purchase(session)
+
+    return Response(status=200)

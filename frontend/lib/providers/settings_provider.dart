@@ -19,6 +19,7 @@ class SettingsState {
   final double playbackSpeed;
   final double fontSize;
   final String readerTheme;
+  final bool isBetaEnabled;
   final bool isLoading;
 
   SettingsState({
@@ -33,6 +34,7 @@ class SettingsState {
     this.playbackSpeed = 1.0,
     this.fontSize = 16.0,
     this.readerTheme = 'Dark',
+    this.isBetaEnabled = false,
     this.isLoading = false,
   });
 
@@ -48,6 +50,7 @@ class SettingsState {
     double? playbackSpeed,
     double? fontSize,
     String? readerTheme,
+    bool? isBetaEnabled,
     bool? isLoading,
   }) {
     return SettingsState(
@@ -62,6 +65,7 @@ class SettingsState {
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       fontSize: fontSize ?? this.fontSize,
       readerTheme: readerTheme ?? this.readerTheme,
+      isBetaEnabled: isBetaEnabled ?? this.isBetaEnabled,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -101,6 +105,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       audioAutoPlay: prefs.getBool('audioAutoPlay') ?? false,
       audioDownloadWifiOnly: prefs.getBool('audioDownloadWifiOnly') ?? true,
       audioBackgroundPlay: prefs.getBool('audioBackgroundPlay') ?? true,
+      isBetaEnabled: prefs.getBool('isBetaEnabled') ?? false,
     );
   }
 
@@ -159,6 +164,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       case 'audioAutoPlay': state = state.copyWith(audioAutoPlay: value); break;
       case 'audioDownloadWifiOnly': state = state.copyWith(audioDownloadWifiOnly: value); break;
       case 'audioBackgroundPlay': state = state.copyWith(audioBackgroundPlay: value); break;
+      case 'isBetaEnabled': state = state.copyWith(isBetaEnabled: value); break;
       case 'playbackSpeed': state = state.copyWith(playbackSpeed: value); break;
       case 'fontSize': state = state.copyWith(fontSize: value); break;
       case 'readerTheme': state = state.copyWith(readerTheme: value); break;

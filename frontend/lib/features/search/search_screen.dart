@@ -63,34 +63,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildSearchHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
-      child: GlassmorphicContainer(
-        width: double.infinity,
-        height: 55,
-        borderRadius: 20,
-        blur: 20,
-        alignment: Alignment.center,
-        border: 1,
-        linearGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)]
-        ),
-        borderGradient: LinearGradient(
-          colors: [Colors.white.withOpacity(0.2), Colors.white.withOpacity(0.05)]
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) => ref.read(searchProvider.notifier).searchAll(value),
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Search stories, authors, tags...',
-            hintStyle: TextStyle(color: Colors.white38),
-            prefixIcon: Icon(Icons.search_rounded, color: Colors.white54),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 15),
+      padding: const EdgeInsets.fromLTRB(10, 15, 20, 15),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
           ),
-        ),
+          Expanded(
+            child: GlassmorphicContainer(
+              width: double.infinity,
+              height: 55,
+              borderRadius: 20,
+              blur: 20,
+              alignment: Alignment.center,
+              border: 1,
+              linearGradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white.withValues(alpha: 0.1), Colors.white.withValues(alpha: 0.05)]
+              ),
+              borderGradient: LinearGradient(
+                colors: [Colors.white.withValues(alpha: 0.2), Colors.white.withValues(alpha: 0.05)]
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => ref.read(searchProvider.notifier).searchAll(value),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Search stories, authors, tags...',
+                  hintStyle: TextStyle(color: Colors.white38),
+                  prefixIcon: Icon(Icons.search_rounded, color: Colors.white54),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 15),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -168,7 +178,76 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             const SizedBox(height: 20),
           ],
 
-          // 2. Discover Stories Header
+          // 2. Featured Authors Spotlight
+          if (state.featuredAuthors.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                'Featured Authors',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                scrollDirection: Axis.horizontal,
+                itemCount: state.featuredAuthors.length,
+                itemBuilder: (context, index) {
+                  final author = state.featuredAuthors[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ProfileScreen(targetUserId: author.userId)),
+                    ),
+                    child: Container(
+                      width: 90,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6C63FF), Color(0xFFFF6584)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 35,
+                              backgroundColor: const Color(0xFF1E1E2E),
+                              backgroundImage: author.avatar != null ? NetworkImage(author.avatar!) : null,
+                              child: author.avatar == null 
+                                ? Text(author.username[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+                                : null,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            author.username,
+                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // 3. Discover Stories Header
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Text(
@@ -215,18 +294,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 150,
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       child: const Center(child: Icon(Icons.book, color: Colors.white12)),
                     ),
                     errorWidget: (context, url, error) => Container(
                       height: 150,
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       child: const Center(child: Icon(Icons.error_outline, color: Colors.white24)),
                     ),
                   )
                 : Container(
                     height: 150,
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     child: const Center(child: Icon(Icons.book, color: Colors.white24, size: 40)),
                   ),
             // Gradient Overlay
@@ -237,8 +316,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.6),
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.6),
                     ],
                   ),
                 ),
@@ -251,7 +330,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: data.color.withOpacity(0.8),
+                  color: data.color.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -372,8 +451,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildShimmerLoading() {
     return Shimmer.fromColors(
-      baseColor: Colors.white.withOpacity(0.1),
-      highlightColor: Colors.white.withOpacity(0.2),
+      baseColor: Colors.white.withValues(alpha: 0.1),
+      highlightColor: Colors.white.withValues(alpha: 0.2),
       child: MasonryGridView.count(
         padding: const EdgeInsets.all(10),
         crossAxisCount: 3,

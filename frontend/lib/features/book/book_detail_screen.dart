@@ -6,6 +6,7 @@ import '../audio/audio_player_screen.dart';
 import 'reader_screen.dart';
 import '../../providers/book_provider.dart';
 import '../../widgets/follow_button.dart';
+import '../../providers/auth_provider.dart';
 import '../profile/profile_screen.dart';
 
 class BookDetailScreen extends ConsumerWidget {
@@ -52,12 +53,16 @@ class BookDetailScreen extends ConsumerWidget {
         if (book == null) {
           return const Scaffold(body: Center(child: Text('Book not found')));
         }
+        
+        final authState = ref.watch(authProvider);
+
         return Scaffold(
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
               expandedHeight: 450,
               pinned: true,
+              actions: const [],
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(
                   fit: StackFit.expand,
@@ -173,7 +178,7 @@ class BookDetailScreen extends ConsumerWidget {
         bottomSheet: Container(
           height: 100,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+          color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
           child: Row(
             children: [
               Expanded(
@@ -189,6 +194,7 @@ class BookDetailScreen extends ConsumerWidget {
                           bookId: id,
                           title: book.title,
                           chapters: book.chapters,
+                          recommendedMood: book.recommendedMood,
                         ),
                       ),
                     );
@@ -214,14 +220,14 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05)
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
                   book.isLiked
-                      ? Colors.redAccent.withOpacity(0.5)
-                      : Colors.white.withOpacity(0.5),
-                  Colors.white.withOpacity(0.2)
+                      ? Colors.redAccent.withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
                 ]),
                 child: IconButton(
                   onPressed: () => ref.read(bookProvider.notifier).likeBook(id, ref),
@@ -251,14 +257,14 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05)
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
                   book.isInLibrary
-                      ? Colors.greenAccent.withOpacity(0.5)
-                      : const Color(0xFF6C63FF).withOpacity(0.5),
-                  Colors.white.withOpacity(0.2)
+                      ? Colors.greenAccent.withValues(alpha: 0.5)
+                      : const Color(0xFF6C63FF).withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
                 ]),
                 child: IconButton(
                   onPressed: () async {
@@ -296,12 +302,12 @@ class BookDetailScreen extends ConsumerWidget {
                 alignment: Alignment.center,
                 border: 1,
                 linearGradient: LinearGradient(colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05)
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05)
                 ]),
                 borderGradient: LinearGradient(colors: [
-                  Colors.white.withOpacity(0.5),
-                  Colors.white.withOpacity(0.2)
+                  Colors.white.withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.2)
                 ]),
                 child: IconButton(
                   onPressed: () {

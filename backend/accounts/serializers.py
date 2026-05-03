@@ -37,7 +37,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'id', 'user_id', 'username', 'email', 'password', 'role', 'bio', 'avatar', 
+            'id', 'user_id', 'username', 'email', 'password', 'role', 'bio', 'avatar', 'banner',
             'followers_count', 'following_count', 'is_following',
             'is_private', 'notify_new_follower', 'notify_likes', 'notify_comments', 
             'notify_new_books', 'font_size', 'reader_theme', 'playback_speed'
@@ -89,12 +89,8 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_profile(self, obj):
-        try:
-            profile = obj.profile
-            return ProfileSerializer(profile, context=self.context).data
-        except (AttributeError, Profile.DoesNotExist):
-            # Self-healing: try to create if missing, or return None
-            return None
+        profile, created = Profile.objects.get_or_create(user=obj)
+        return ProfileSerializer(profile, context=self.context).data
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile', {})
@@ -141,8 +137,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
-        # Ensure profile exists and set role
-        if hasattr(user, 'profile'):
-            user.profile.role = role
-            user.profile.save()
+        # Ensure profile exists and set role (Self-healing)
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.role = role
+        profile.save()
         return user

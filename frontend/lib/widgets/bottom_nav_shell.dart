@@ -21,7 +21,6 @@ class _BottomNavShellState extends State<BottomNavShell> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const AudioLibraryScreen(),
-    const SearchScreen(),
     const FeedScreen(),
     const ProfileScreen(),
   ];
@@ -50,16 +49,16 @@ class _BottomNavShellState extends State<BottomNavShell> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.1),
-                      Colors.white.withOpacity(0.05),
+                      Colors.white.withValues(alpha: 0.1),
+                      Colors.white.withValues(alpha: 0.05),
                     ],
                   ),
                   borderGradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.5),
-                      Colors.white.withOpacity(0.2),
+                      Colors.white.withValues(alpha: 0.5),
+                      Colors.white.withValues(alpha: 0.2),
                     ],
                   ),
                   child: Padding(
@@ -71,9 +70,8 @@ class _BottomNavShellState extends State<BottomNavShell> {
                         _buildNavItem(ref, selectedIndex, 1, Icons.headphones_rounded, 'Audio'),
                         // Centre ➕ Post button
                         _buildPostButton(context, ref),
-                        _buildNavItem(ref, selectedIndex, 2, Icons.search_rounded, 'Search'),
-                        _buildNavItem(ref, selectedIndex, 3, Icons.dynamic_feed_rounded, 'Feed'),
-                        _buildNavItem(ref, selectedIndex, 4, Icons.person_rounded, 'Profile'),
+                        _buildNavItem(ref, selectedIndex, 2, Icons.dynamic_feed_rounded, 'Feed'),
+                        _buildNavItem(ref, selectedIndex, 3, Icons.person_rounded, 'Profile'),
                       ],
                     ),
                   ),

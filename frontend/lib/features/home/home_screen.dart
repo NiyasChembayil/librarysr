@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animations/animations.dart';
-import '../../widgets/book_card.dart';
+import '../../widgets/shimmer_loading.dart';
 import '../../widgets/mini_book_card.dart';
 import '../book/book_detail_screen.dart';
 import '../audio/audio_player_screen.dart';
@@ -10,6 +11,17 @@ import '../../providers/book_provider.dart';
 import '../notifications/notification_screen.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/reading_progress_provider.dart';
+import '../../models/book_model.dart';
+import '../../providers/social_discovery_provider.dart';
+import 'widgets/author_spotlight.dart';
+import 'widgets/friend_activity_row.dart';
+import 'widgets/hero_section.dart';
+import 'widgets/category_chips.dart';
+import 'widgets/continue_reading_card.dart';
+import '../feed/widgets/post_card.dart';
+import '../search/search_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +37,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Future.microtask(() async {
       ref.read(bookProvider.notifier).fetchBooks();
       ref.read(notificationProvider.notifier).fetchNotifications();
+      ref.read(socialDiscoveryProvider.notifier).fetchAll();
+      ref.read(readingProgressProvider.notifier).fetchRecentProgress();
       final count = await ref.read(notificationProvider.notifier).fetchUnreadCount();
       ref.read(unreadNotificationCountProvider.notifier).state = count;
     });
@@ -46,19 +60,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Srishty',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getGreeting(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Text(
+                        'Srishty',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                   Row(
                     children: [
                       IconButton(
                         onPressed: () {
-                          ref.read(navigationProvider.notifier).state = 2;
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
                         },
                         icon: const Icon(Icons.search_rounded, size: 28, color: Colors.white70),
                       ),
@@ -113,6 +140,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    final username = ref.watch(authProvider).profile?.username ?? '';
+    final namePart = username.isNotEmpty ? ', $username' : '';
+    
+    if (hour < 12) return 'Good Morning$namePart';
+    if (hour < 17) return 'Good Afternoon$namePart';
+    return 'Good Evening$namePart';
+  }
+
   Widget _buildBody(BookFeedState feedState) {
     switch (feedState.status) {
       case BookFeedStatus.initial:
@@ -127,30 +164,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       case BookFeedStatus.loaded:
         final allBooks = List.of(feedState.books);
+        final socialState = ref.watch(socialDiscoveryProvider);
+        final recentProgress = ref.watch(readingProgressProvider);
         
-        // Prepare sub-lists
+        // Pick a featured book for Hero (highest liked or just first)
+        final featuredBook = allBooks.isNotEmpty ? allBooks.first : null;
+        
+        // 1. Top Picks
         final topPicks = allBooks.take(10).toList();
         
-        // Sort by likes for Top 10 in India
+        // 2. Top 10 in India (Sorted by likes)
         final top10Books = List.of(allBooks)
           ..sort((a, b) => b.likesCount.compareTo(a.likesCount));
         final top10 = top10Books.take(10).toList();
         
-        // Remaining books or random for Secret Obsessions
-        final obsessions = allBooks.length > 20 
-            ? allBooks.skip(20).toList() 
-            : allBooks.reversed.toList();
+        // 3+. Categorized Books
+        final Map<String, List<BookModel>> categorizedBooks = {};
+        for (var book in allBooks) {
+          final cat = book.categoryName;
+          categorizedBooks.putIfAbsent(cat, () => []).add(book);
+        }
 
         return RefreshIndicator(
           color: const Color(0xFF6C63FF),
           backgroundColor: const Color(0xFF1E1E2E),
-          onRefresh: () => ref.read(bookProvider.notifier).fetchBooks(),
+          onRefresh: () async {
+            HapticFeedback.mediumImpact();
+            await ref.read(bookProvider.notifier).fetchBooks();
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 120, top: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (featuredBook != null) ...[
+                  HeroSection(book: featuredBook),
+                  const SizedBox(height: 10),
+                ],
+
+                if (recentProgress != null)
+                  ContinueReadingCard(progress: recentProgress),
+                
+                CategoryChips(
+                  categories: categorizedBooks.keys.toList(),
+                  onCategorySelected: (cat) {
+                    // Logic to filter or jump to section could go here
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                if (socialState.isLoading) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: ShimmerLoading(width: 150, height: 20, borderRadius: 8),
+                  ),
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      itemCount: 5,
+                      itemBuilder: (context, index) => const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: ShimmerLoading(width: 60, height: 60, borderRadius: 30),
+                      ),
+                    ),
+                  ),
+                ] else
+                  AuthorSpotlight(authors: socialState.topCreators),
+                const SizedBox(height: 10),
                 _buildHorizontalSection(
                   context,
                   title: 'Top picks for you',
@@ -163,13 +246,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   books: top10,
                   showRank: true,
                 ),
+                const SizedBox(height: 10),
+                if (socialState.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: ShimmerLoading(width: double.infinity, height: 80, borderRadius: 15),
+                  )
+                else
+                  FriendActivityRow(activities: socialState.friendActivity),
+                const SizedBox(height: 20),
+                if (socialState.pollOfTheDay != null) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Text(
+                      'Poll of the Day',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  PostCard(post: socialState.pollOfTheDay!),
+                  const SizedBox(height: 20),
+                ],
                 const SizedBox(height: 30),
-                _buildHorizontalSection(
-                  context,
-                  title: 'Secret obsessions 🖤',
-                  subtitle: 'Unraveling the darkest truths',
-                  books: obsessions,
-                ),
+                
+                // Dynamically add category sections
+                ...categorizedBooks.entries.map((entry) {
+                  return Column(
+                    children: [
+                      _buildHorizontalSection(
+                        context,
+                        title: entry.key,
+                        books: entry.value,
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+                  );
+                }),
               ],
             ),
           ),
@@ -273,22 +388,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildShimmerLoading() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: 3,
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: Colors.grey[900]!,
-        highlightColor: Colors.grey[800]!,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          height: 400,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white10),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          _buildShimmerSection(),
+          const SizedBox(height: 30),
+          _buildShimmerSection(),
+          const SizedBox(height: 30),
+          _buildShimmerSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: ShimmerLoading(width: 150, height: 24, borderRadius: 8),
+        ),
+        const SizedBox(height: 15),
+        SizedBox(
+          height: 270,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: 5,
+            itemBuilder: (context, index) => const ShimmerBookCard(),
           ),
         ),
-      ),
+      ],
     );
   }
 

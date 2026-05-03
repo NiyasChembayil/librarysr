@@ -32,7 +32,7 @@ class MyBooksNotifier extends StateNotifier<MyBooksState> {
   Future<void> fetchMyBooks() async {
     state = MyBooksState(books: state.books, isLoading: true);
     try {
-      final response = await _apiClient.dio.get('core/books/my_books/');
+      final response = await _apiClient.dio.get('core/books/?author=me');
       final List data = response.data is List ? response.data : (response.data['results'] ?? []);
       
       final books = data.map((json) => BookModel.fromJson(json)).toList();
@@ -40,6 +40,22 @@ class MyBooksNotifier extends StateNotifier<MyBooksState> {
     } catch (e) {
       debugPrint("Failed to fetch my books: $e");
       state = MyBooksState(books: state.books, isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> updateShelf(int bookId, {String? status, bool? isFavorite}) async {
+    try {
+      await _apiClient.dio.post(
+        'core/books/$bookId/update_shelf/',
+        data: {
+          if (status != null) 'status': status,
+          if (isFavorite != null) 'is_favorite': isFavorite,
+        },
+      );
+      // Refresh the list to get updated shelf info
+      await fetchMyBooks();
+    } catch (e) {
+      debugPrint("Failed to update shelf: $e");
     }
   }
 }

@@ -7,6 +7,7 @@ from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer, RegisterSerializer, UserListSerializer
 from core.models import ReadStats
 from social.models import Follow, Notification
+from core.permissions import IsProfileOwnerOrReadOnly
 
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
@@ -38,7 +39,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsProfileOwnerOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__username', 'bio']
 
@@ -118,23 +119,38 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def activity(self, request, pk=None):
         profile = self.get_object()
         
-        # Calculate daily activity for the ACTUAL last 7 days (trailing)
+        # Calculate daily activity for the last 35 days (5 weeks) for heatmap
         today = timezone.localdate()
         results = []
         
-        # We iterate backwards from today for 7 days
-        for i in range(6, -1, -1):
+        # If the user is an author, show reads of THEIR books
+        # If they are just a reader, show THEIR own reading activity
+        is_author = profile.role == 'author'
+        
+        for i in range(34, -1, -1):
             date = today - timezone.timedelta(days=i)
-            count = ReadStats.objects.filter(
-                user=profile.user,
-                timestamp__date=date
-            ).count()
+            if is_author:
+                # Total reads of all books by this author on this day
+                count = ReadStats.objects.filter(
+                    book__author=profile.user,
+                    timestamp__date=date
+                ).count()
+            else:
+                # Total reads done by this user on this day
+                count = ReadStats.objects.filter(
+                    user=profile.user,
+                    timestamp__date=date
+                ).count()
+                
             results.append({
                 "date": date.isoformat(),
                 "count": count
             })
             
-        return Response({"activity": results})
+        return Response({
+            "activity": results,
+            "type": "author" if is_author else "reader"
+        })
     
     @action(detail=False, methods=['get'], url_path='by_user/(?P<user_id>[0-9]+)')
     def by_user(self, request, user_id=None):

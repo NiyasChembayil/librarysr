@@ -10,10 +10,10 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Example: 'https://api.srishty.com/api/'
 // Using localhost (127.0.0.1) will NOT work on real devices!
 // Using localhost (127.0.0.1) will NOT work on real physical devices or Android emulators!
-String get _baseUrl {
-  // Now routing to your live production Render database and API!
-  return 'https://srishty-backend.onrender.com/api/';
-}
+const String _baseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://127.0.0.1:8000/api/',
+);
 
 class ApiClient {
   final Dio dio = Dio(

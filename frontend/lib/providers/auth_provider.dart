@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../core/api_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/profile_model.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -30,8 +30,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _checkToken() async {
     try {
       debugPrint('Auth: Checking token...');
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'access_token');
       if (token != null) {
         debugPrint('Auth: Token found, fetching profile...');
         _apiClient.setAuthToken(token);
@@ -73,8 +73,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'password': password,
       });
       final token = response.data['access'];
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', token);
+      const storage = FlutterSecureStorage();
+      await storage.write(key: 'access_token', value: token);
       _apiClient.setAuthToken(token);
       
       final profile = await _fetchProfile();
@@ -181,8 +181,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
+    const storage = FlutterSecureStorage();
+    await storage.delete(key: 'access_token');
     _apiClient.clearAuthToken();
     state = AuthState(status: AuthStatus.unauthenticated);
   }

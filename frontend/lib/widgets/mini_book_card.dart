@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class MiniBookCard extends StatelessWidget {
+class MiniBookCard extends StatefulWidget {
   final String title;
   final String coverUrl;
   final String categoryName;
@@ -23,6 +24,28 @@ class MiniBookCard extends StatelessWidget {
     required this.onPlay,
   });
 
+  @override
+  State<MiniBookCard> createState() => _MiniBookCardState();
+}
+
+class _MiniBookCardState extends State<MiniBookCard> with SingleTickerProviderStateMixin {
+  late AnimationController _reflectionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _reflectionController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _reflectionController.dispose();
+    super.dispose();
+  }
+
   String _formatViews(int count) {
     if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
     if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
@@ -32,7 +55,10 @@ class MiniBookCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
       child: Container(
         width: 140,
         margin: const EdgeInsets.only(right: 16),
@@ -50,7 +76,7 @@ class MiniBookCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -58,26 +84,26 @@ class MiniBookCard extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: coverUrl.isEmpty
+                    child: widget.coverUrl.isEmpty
                         ? Container(
                             color: Colors.grey[900],
                             child: const Icon(Icons.book, size: 40, color: Colors.white24),
                           )
-                        : (coverUrl.startsWith('http')
+                        : (widget.coverUrl.startsWith('http')
                             ? CachedNetworkImage(
-                                imageUrl: coverUrl,
+                                imageUrl: widget.coverUrl,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(color: Colors.grey[900]),
                                 errorWidget: (context, url, error) => const Icon(Icons.book, size: 40, color: Colors.white24),
                               )
                             : (kIsWeb
                                 ? Image.network(
-                                    coverUrl,
+                                    widget.coverUrl,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 40, color: Colors.white24),
                                   )
                                 : Image.file(
-                                    File(coverUrl),
+                                    File(widget.coverUrl),
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 40, color: Colors.white24),
                                   ))),
@@ -89,13 +115,16 @@ class MiniBookCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: onPlay,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.onPlay();
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                       ),
                       child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
                     ),
@@ -103,45 +132,63 @@ class MiniBookCard extends StatelessWidget {
                 ),
 
                 // Absolute Rank Number Positioned at Bottom-Left edge
-                if (rank != null)
+                if (widget.rank != null)
                   Positioned(
                     bottom: -20,
                     left: -10,
-                    child: Text(
-                      rank.toString(),
-                      style: TextStyle(
-                        fontSize: 80,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                        letterSpacing: -5,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 4,
-                            color: Colors.black.withOpacity(0.6),
-                            offset: const Offset(0, 2),
+                    child: AnimatedBuilder(
+                      animation: _reflectionController,
+                      builder: (context, child) {
+                        return ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: const [
+                                Colors.white,
+                                Colors.white,
+                                Color(0xFF6C63FF), // Srishty Purple reflection
+                                Colors.white,
+                                Colors.white,
+                              ],
+                              stops: [
+                                0.0,
+                                _reflectionController.value - 0.2,
+                                _reflectionController.value,
+                                _reflectionController.value + 0.2,
+                                1.0,
+                              ],
+                            ).createShader(bounds);
+                          },
+                          child: Text(
+                            widget.rank.toString(),
+                            style: TextStyle(
+                              fontSize: 80,
+                              fontWeight: FontWeight.w900,
+                              height: 1.0,
+                              letterSpacing: -5,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 4,
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
                           ),
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black.withOpacity(0.4),
-                            offset: const Offset(2, 4),
-                          )
-                        ],
-                        // Stroke effect
-                        foreground: Paint()
-                          ..style = PaintingStyle.fill
-                          ..color = Colors.white,
-                      ),
+                        );
+                      },
                     ),
                   ),
                   
-                  // Black stroke outline behind the white number
-                  if (rank != null)
+                  // Black stroke outline behind the animated number
+                  if (widget.rank != null)
                   Positioned(
                     bottom: -20,
                     left: -10,
                     child: Text(
-                      rank.toString(),
+                      widget.rank.toString(),
                       style: TextStyle(
                         fontSize: 80,
                         fontWeight: FontWeight.w900,
@@ -150,7 +197,7 @@ class MiniBookCard extends StatelessWidget {
                         foreground: Paint()
                           ..style = PaintingStyle.stroke
                           ..strokeWidth = 3
-                          ..color = Colors.black,
+                          ..color = Colors.black.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -167,11 +214,11 @@ class MiniBookCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    categoryName.toLowerCase(),
+                    widget.categoryName.toLowerCase(),
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -185,7 +232,7 @@ class MiniBookCard extends StatelessWidget {
                     const Icon(Icons.visibility_rounded, color: Colors.white54, size: 12),
                     const SizedBox(width: 4),
                     Text(
-                      _formatViews(views),
+                      _formatViews(widget.views),
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.white54,

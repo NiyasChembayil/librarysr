@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../models/post_model.dart';
 import '../models/book_model.dart';
 import '../models/profile_model.dart';
@@ -14,6 +16,7 @@ class PostFeedState {
   final bool isLoading;
   final bool isTrendingLoading;
   final bool isUserPostsLoading;
+  final String? selectedFilter;
   final String? error;
 
   const PostFeedState({
@@ -25,6 +28,7 @@ class PostFeedState {
     this.isLoading = false,
     this.isTrendingLoading = false,
     this.isUserPostsLoading = false,
+    this.selectedFilter,
     this.error,
   });
 
@@ -37,6 +41,7 @@ class PostFeedState {
     bool? isLoading,
     bool? isTrendingLoading,
     bool? isUserPostsLoading,
+    String? selectedFilter,
     String? error,
   }) {
     return PostFeedState(
@@ -48,6 +53,7 @@ class PostFeedState {
       isLoading: isLoading ?? this.isLoading,
       isTrendingLoading: isTrendingLoading ?? this.isTrendingLoading,
       isUserPostsLoading: isUserPostsLoading ?? this.isUserPostsLoading,
+      selectedFilter: selectedFilter ?? this.selectedFilter,
       error: error,
     );
   }
@@ -58,10 +64,11 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
 
   PostFeedNotifier(this._api) : super(const PostFeedState());
 
-  Future<void> loadFeed() async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> loadFeed({String? type}) async {
+    state = state.copyWith(isLoading: true, error: null, selectedFilter: type);
     try {
-      final resp = await _api.dio.get('social/posts/feed/');
+      final queryParams = type != null ? '?type=$type' : '';
+      final resp = await _api.dio.get('social/posts/feed/$queryParams');
       final posts = (resp.data as List).map((j) => PostModel.fromJson(j)).toList();
       state = state.copyWith(feed: posts, isLoading: false);
     } catch (e) {
@@ -96,14 +103,34 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
 
   Future<void> loadUserPosts(int profileId) async {
     state = state.copyWith(isUserPostsLoading: true);
+    debugPrint("🔍 Loading posts for user ID: $profileId");
     try {
-      // Assuming profileId corresponds to Django user id for simplicity here
-      // Better to use a dedicated profile_posts action if they differ
       final resp = await _api.dio.get('social/posts/user_posts/?user_id=$profileId');
-      final posts = (resp.data as List).map((j) => PostModel.fromJson(j)).toList();
+      
+      List rawList;
+      if (resp.data is Map && resp.data.containsKey('results')) {
+        rawList = resp.data['results'] as List;
+      } else if (resp.data is List) {
+        rawList = resp.data as List;
+      } else {
+        debugPrint("⚠️ Unexpected user_posts response format: ${resp.data}");
+        rawList = [];
+      }
+
+      final posts = rawList.map((j) {
+        try {
+          return PostModel.fromJson(j);
+        } catch (e) {
+          debugPrint("❌ Error parsing post: $e | Data: $j");
+          return null;
+        }
+      }).whereType<PostModel>().toList();
+
+      debugPrint("✅ Loaded ${posts.length} posts for user $profileId");
       state = state.copyWith(userPosts: posts, isUserPostsLoading: false);
     } catch (e) {
-      state = state.copyWith(isUserPostsLoading: false);
+      debugPrint("❌ Failed to load user posts: $e");
+      state = state.copyWith(isUserPostsLoading: false, error: e.toString());
     }
   }
 
@@ -111,13 +138,63 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
     required String text,
     required String postType,
     int? bookId,
+    int? chapterId,
+    String? audioFilePath,
   }) async {
     try {
+      if (audioFilePath != null) {
+        final formData = FormData.fromMap({
+          'text': text,
+          'post_type': postType,
+          if (bookId != null) 'book': bookId.toString(),
+          if (chapterId != null) 'chapter_id': chapterId.toString(),
+          'audio_file': await MultipartFile.fromFile(audioFilePath),
+        });
+        final resp = await _api.dio.post('social/posts/', data: formData);
+        final newPost = PostModel.fromJson(resp.data);
+        state = state.copyWith(feed: [newPost, ...state.feed]);
+        return;
+      }
+
       final body = {'text': text, 'post_type': postType};
       if (bookId != null) body['book'] = bookId.toString();
+      if (chapterId != null) body['chapter_id'] = chapterId.toString();
       final resp = await _api.dio.post('social/posts/', data: body);
       final newPost = PostModel.fromJson(resp.data);
       state = state.copyWith(feed: [newPost, ...state.feed]);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> createPoll({
+    required String text,
+    required String question,
+    required List<String> options,
+  }) async {
+    try {
+      final body = {
+        'text': text,
+        'post_type': 'POLL',
+        'poll_question': question,
+        'poll_options': options,
+      };
+      final resp = await _api.dio.post('social/posts/', data: body);
+      final newPost = PostModel.fromJson(resp.data);
+      state = state.copyWith(feed: [newPost, ...state.feed]);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> vote(int postId, int optionId) async {
+    try {
+      final resp = await _api.dio.post('social/posts/$postId/vote/', data: {'option_id': optionId});
+      final pollData = PollModel.fromJson(resp.data['poll_data']);
+      
+      state = state.copyWith(
+        feed: state.feed.map((p) => p.id == postId ? p.copyWith(poll: pollData) : p).toList(),
+      );
     } catch (e) {
       rethrow;
     }
@@ -213,6 +290,38 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
       userPosts: updateList(state.userPosts),
       trending: updateList(state.trending),
     );
+  }
+
+  Future<void> deletePost(int postId) async {
+    try {
+      await _api.dio.delete('social/posts/$postId/');
+      state = state.copyWith(
+        feed: state.feed.where((p) => p.id != postId).toList(),
+        userPosts: state.userPosts.where((p) => p.id != postId).toList(),
+        trending: state.trending.where((p) => p.id != postId).toList(),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> editPost(int postId, String newText) async {
+    try {
+      final resp = await _api.dio.patch('social/posts/$postId/', data: {'text': newText});
+      final updatedPost = PostModel.fromJson(resp.data);
+      
+      List<PostModel> updateList(List<PostModel> list) {
+        return list.map((p) => p.id == postId ? updatedPost : p).toList();
+      }
+
+      state = state.copyWith(
+        feed: updateList(state.feed),
+        userPosts: updateList(state.userPosts),
+        trending: updateList(state.trending),
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 

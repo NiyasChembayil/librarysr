@@ -22,11 +22,9 @@ import social.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": AllowedHostsOriginValidator(
-        JwtAuthMiddlewareStack(
-            URLRouter(
-                social.routing.websocket_urlpatterns
-            )
+    "websocket": JwtAuthMiddlewareStack(
+        URLRouter(
+            social.routing.websocket_urlpatterns
         )
     ),
 })

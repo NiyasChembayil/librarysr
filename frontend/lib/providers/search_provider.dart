@@ -13,6 +13,7 @@ class SearchState {
   final List<BookModel> localHits;
   final List<BookModel> socialHits;
   final List<PostModel> trendingPosts;
+  final List<ProfileModel> featuredAuthors;
   final bool isLoading;
 
   SearchState({
@@ -23,6 +24,7 @@ class SearchState {
     this.localHits = const [],
     this.socialHits = const [],
     this.trendingPosts = const [],
+    this.featuredAuthors = const [],
     this.isLoading = false,
   });
 
@@ -33,7 +35,8 @@ class SearchState {
     mostlyReadCategoryName: '', 
     localHits: [],
     socialHits: [],
-    trendingPosts: []
+    trendingPosts: [],
+    featuredAuthors: []
   );
 }
 
@@ -129,6 +132,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
           trendingPosts: (socialData != null && socialData['trending_posts'] != null)
               ? (socialData['trending_posts'] as List).map((j) => PostModel.fromJson(j)).toList()
               : state.trendingPosts,
+          featuredAuthors: (bookData['featured_authors'] as List? ?? []).map((j) => ProfileModel.fromJson(j)).toList(),
           isLoading: false,
         );
       } else {

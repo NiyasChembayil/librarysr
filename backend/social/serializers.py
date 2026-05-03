@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Like, Comment, Notification, Follow, Post, PostLike, PostComment, PostCommentLike
+from .models import Like, Comment, Notification, Follow, Post, PostLike, PostComment, PostCommentLike, Poll, PollOption, PollVote
 from core.models import Book
 
 class PostLikeSerializer(serializers.ModelSerializer):
@@ -46,14 +46,15 @@ class PostSerializer(serializers.ModelSerializer):
     reposts_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     parent_post_data = serializers.SerializerMethodField()
+    poll = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = [
             'id', 'user', 'username', 'user_avatar', 'text', 'post_type', 
-            'book', 'book_title', 'book_cover', 'parent_post', 'parent_post_data',
+            'book', 'book_title', 'book_cover', 'chapter_id', 'audio_file', 'parent_post', 'parent_post_data',
             'created_at', 'updated_at', 'likes_count', 'comments_count', 
-            'reposts_count', 'is_liked'
+            'reposts_count', 'is_liked', 'poll'
         ]
         read_only_fields = ['user']
 
@@ -93,13 +94,18 @@ class PostSerializer(serializers.ModelSerializer):
             return PostParentSerializer(obj.parent_post, context=self.context).data
         return None
 
+    def get_poll(self, obj):
+        if hasattr(obj, 'poll'):
+            return PollSerializer(obj.poll, context=self.context).data
+        return None
+
 class PostParentSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
     user_avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'username', 'user_avatar', 'text', 'post_type', 'created_at']
+        fields = ['id', 'user', 'username', 'user_avatar', 'text', 'post_type', 'book', 'chapter_id', 'audio_file', 'created_at']
 
     def get_user_avatar(self, obj):
         request = self.context.get('request')
@@ -153,3 +159,32 @@ class NotificationSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated and obj.actor:
             return Follow.objects.filter(follower=request.user, followed=obj.actor).exists()
         return False
+
+class PollOptionSerializer(serializers.ModelSerializer):
+    votes_count = serializers.SerializerMethodField()
+    class Meta:
+        model = PollOption
+        fields = ['id', 'text', 'votes_count']
+    
+    def get_votes_count(self, obj):
+        return obj.votes.count()
+
+class PollSerializer(serializers.ModelSerializer):
+    options = PollOptionSerializer(many=True, read_only=True)
+    user_voted_option_id = serializers.SerializerMethodField()
+    total_votes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Poll
+        fields = ['id', 'question', 'options', 'expires_at', 'user_voted_option_id', 'total_votes']
+
+    def get_user_voted_option_id(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            vote = PollVote.objects.filter(poll=obj, user=request.user).first()
+            if vote:
+                return vote.option_id
+        return None
+
+    def get_total_votes(self, obj):
+        return obj.votes.count()

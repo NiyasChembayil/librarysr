@@ -199,6 +199,31 @@ class BookNotifier extends StateNotifier<BookFeedState> {
       debugPrint("Failed to toggle library: $e");
     }
   }
+
+  Future<void> deleteBook(int id) async {
+    try {
+      await _apiClient.dio.delete('core/books/$id/');
+      state = state.copyWith(
+        books: state.books.where((b) => b.id != id).toList(),
+      );
+    } catch (e) {
+      debugPrint("Failed to delete book: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> addChapter(int bookId, String title, String content, int order) async {
+    try {
+      await _apiClient.dio.post('core/books/$bookId/chapters/', data: {
+        'title': title,
+        'content': content,
+        'order': order,
+      });
+    } catch (e) {
+      debugPrint("Failed to add chapter: $e");
+      rethrow;
+    }
+  }
 }
 
 final currentBookProvider = FutureProvider.family<BookModel?, int>((ref, id) async {

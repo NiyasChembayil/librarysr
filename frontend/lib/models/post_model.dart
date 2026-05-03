@@ -8,7 +8,7 @@ class PostAuthor {
   factory PostAuthor.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'https://srishty-backend.onrender.com$avatar';
+      avatar = 'http://127.0.0.1:8000$avatar';
     }
     return PostAuthor(
       id: json['user'] ?? 0,
@@ -40,12 +40,15 @@ class PostModel {
   final int? bookId;
   final String? bookTitle;
   final String? bookCover;
+  final int? chapterId;
+  final String? audioUrl;
   final PostModel? parentPost;
   final DateTime createdAt;
   final int likesCount;
   final int commentsCount;
   final int repostsCount;
   final bool isLiked;
+  final PollModel? poll;
 
   PostModel({
     required this.id,
@@ -57,22 +60,25 @@ class PostModel {
     this.bookId,
     this.bookTitle,
     this.bookCover,
+    this.chapterId,
+    this.audioUrl,
     this.parentPost,
     required this.createdAt,
     required this.likesCount,
     required this.commentsCount,
     required this.repostsCount,
     required this.isLiked,
+    this.poll,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'https://srishty-backend.onrender.com$avatar';
+      avatar = 'http://127.0.0.1:8000$avatar';
     }
     String? cover = json['book_cover'];
     if (cover != null && cover.isNotEmpty && !cover.startsWith('http')) {
-      cover = 'https://srishty-backend.onrender.com$cover';
+      cover = 'http://127.0.0.1:8000$cover';
     }
 
     PostModel? parent;
@@ -90,12 +96,15 @@ class PostModel {
       bookId: json['book'],
       bookTitle: json['book_title'],
       bookCover: cover,
+      chapterId: json['chapter_id'],
+      audioUrl: json['audio_file'],
       parentPost: parent,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       likesCount: json['likes_count'] ?? 0,
       commentsCount: json['comments_count'] ?? 0,
       repostsCount: json['reposts_count'] ?? 0,
       isLiked: json['is_liked'] ?? false,
+      poll: json['poll'] != null ? PollModel.fromJson(json['poll']) : null,
     );
   }
 
@@ -109,12 +118,15 @@ class PostModel {
     int? bookId,
     String? bookTitle,
     String? bookCover,
+    int? chapterId,
+    String? audioUrl,
     PostModel? parentPost,
     DateTime? createdAt,
     int? likesCount,
     int? commentsCount,
     int? repostsCount,
     bool? isLiked,
+    PollModel? poll,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -126,12 +138,15 @@ class PostModel {
       bookId: bookId ?? this.bookId,
       bookTitle: bookTitle ?? this.bookTitle,
       bookCover: bookCover ?? this.bookCover,
+      chapterId: chapterId ?? this.chapterId,
+      audioUrl: audioUrl ?? this.audioUrl,
       parentPost: parentPost ?? this.parentPost,
       createdAt: createdAt ?? this.createdAt,
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
       repostsCount: repostsCount ?? this.repostsCount,
       isLiked: isLiked ?? this.isLiked,
+      poll: poll ?? this.poll,
     );
   }
 
@@ -145,6 +160,10 @@ class PostModel {
         return '🗣 Opinion';
       case 'UPDATE':
         return '📖 Update';
+      case 'POLL':
+        return '📊 Poll';
+      case 'MILESTONE':
+        return '🎉 Milestone';
       default:
         return '📝 Post';
     }
@@ -185,7 +204,7 @@ class PostCommentModel {
   factory PostCommentModel.fromJson(Map<String, dynamic> json) {
     String? avatar = json['user_avatar'];
     if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'https://srishty-backend.onrender.com$avatar';
+      avatar = 'http://127.0.0.1:8000$avatar';
     }
     return PostCommentModel(
       id: json['id'],
@@ -221,6 +240,57 @@ class PostCommentModel {
       createdAt: createdAt ?? this.createdAt,
       likesCount: likesCount ?? this.likesCount,
       isLiked: isLiked ?? this.isLiked,
+    );
+  }
+}
+
+class PollModel {
+  final int id;
+  final String question;
+  final List<PollOptionModel> options;
+  final DateTime? expiresAt;
+  final int? userVotedOptionId;
+  final int totalVotes;
+
+  PollModel({
+    required this.id,
+    required this.question,
+    required this.options,
+    this.expiresAt,
+    this.userVotedOptionId,
+    required this.totalVotes,
+  });
+
+  factory PollModel.fromJson(Map<String, dynamic> json) {
+    return PollModel(
+      id: json['id'] ?? 0,
+      question: json['question'] ?? '',
+      options: (json['options'] as List? ?? [])
+          .map((o) => PollOptionModel.fromJson(o))
+          .toList(),
+      expiresAt: DateTime.tryParse(json['expires_at'] ?? ''),
+      userVotedOptionId: json['user_voted_option_id'],
+      totalVotes: json['total_votes'] ?? 0,
+    );
+  }
+}
+
+class PollOptionModel {
+  final int id;
+  final String text;
+  final int votesCount;
+
+  PollOptionModel({
+    required this.id,
+    required this.text,
+    required this.votesCount,
+  });
+
+  factory PollOptionModel.fromJson(Map<String, dynamic> json) {
+    return PollOptionModel(
+      id: json['id'] ?? 0,
+      text: json['text'] ?? '',
+      votesCount: json['votes_count'] ?? 0,
     );
   }
 }

@@ -8,11 +8,16 @@ class Post(models.Model):
         ('QUOTE', 'Quote'),
         ('OPINION', 'Opinion'),
         ('UPDATE', 'Reading Update'),
+        ('AUDIO', 'Audio Bite'),
+        ('POLL', 'Poll'),
+        ('MILESTONE', 'Reading Milestone'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     text = models.TextField()
     post_type = models.CharField(max_length=20, choices=POST_TYPES, default='UPDATE')
     book = models.ForeignKey(Book, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    chapter_id = models.IntegerField(null=True, blank=True)
+    audio_file = models.FileField(upload_to='post_audio/', null=True, blank=True)
     parent_post = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='reposts')
     is_trending = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -99,6 +104,11 @@ class Notification(models.Model):
         ('POST_COMMENT', 'New Post Comment'),
         ('REPOST', 'New Repost'),
         ('POST_COMMENT_LIKE', 'New Post Comment Like'),
+        ('NEW_CHAPTER', 'New Chapter'),
+        ('MILESTONE', 'Achievement Unlocked'),
+        ('TRENDING', 'Trending Alert'),
+        ('STREAK_REMINDER', 'Streak Protection'),
+        ('POLL_RESULT', 'Poll Results Available'),
     )
     
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -115,3 +125,30 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.action_type} for {self.recipient.username}"
+
+class Poll(models.Model):
+    post = models.OneToOneField(Post, on_delete=models.CASCADE, related_name='poll')
+    question = models.CharField(max_length=255)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.question
+
+class PollOption(models.Model):
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name='options')
+    text = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.poll.question} - {self.text}"
+
+class PollVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='poll_votes')
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name='votes')
+    option = models.ForeignKey(PollOption, on_delete=models.CASCADE, related_name='votes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'poll')
+
+    def __str__(self):
+        return f"{self.user.username} voted on {self.poll.question}"
