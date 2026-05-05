@@ -11,7 +11,11 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the author of the book.
-        return obj.author == request.user
+        if hasattr(obj, 'author'):
+            return obj.author == request.user
+        elif hasattr(obj, 'book'):
+            return obj.book.author == request.user
+        return False
 
 class IsProfileOwnerOrReadOnly(permissions.BasePermission):
     """

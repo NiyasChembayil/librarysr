@@ -130,7 +130,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
 
     final newText =
-        text.substring(0, atIndex) + token + ' ' + text.substring(cursor);
+        '${text.substring(0, atIndex)}$token ${text.substring(cursor)}';
     final newCursor = atIndex + token.length + 1;
 
     _textCtrl.value = TextEditingValue(
@@ -581,7 +581,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
           if (_pollOptionCtrls.length < 5)
             TextButton.icon(
               onPressed: () =>

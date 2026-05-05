@@ -1,5 +1,17 @@
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return str.toString().replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
+}
+
 class SrishtyReaderApp {
     constructor() {
         this.categories = [];
@@ -226,14 +238,14 @@ class SrishtyReaderApp {
     createBookCardHTML(book) {
         // Fallback for missing cover
         const coverHtml = book.cover 
-            ? `<img src="${book.cover}" alt="${book.title} cover" class="book-cover">`
+            ? `<img src="${escapeHTML(book.cover)}" alt="${escapeHTML(book.title)} cover" class="book-cover">`
             : `<div class="book-cover placeholder-cover">📖</div>`;
             
         return `
-            <article class="book-card dashboard-card" onclick="readerApp.openBookInStudio(${JSON.stringify(book).replace(/"/g, '&quot;')})">
+            <article class="book-card dashboard-card" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">
                 ${coverHtml}
-                <div class="book-title" title="${book.title}">${book.title}</div>
-                <div class="book-author">by ${book.author_name || 'Unknown'}</div>
+                <div class="book-title" title="${escapeHTML(book.title)}">${escapeHTML(book.title)}</div>
+                <div class="book-author">by ${escapeHTML(book.author_name || 'Unknown')}</div>
             </article>
         `;
     }
@@ -390,13 +402,13 @@ class SrishtyReaderApp {
             const pinned = books[0]; // Assuming first is most recent
             pinnedContainer.innerHTML = `
                 <div class="hero-project-card animate-up">
-                    <img src="${pinned.cover || '../frontend/assets/logo.png'}" class="hero-cover">
+                    <img src="${escapeHTML(pinned.cover) || '../frontend/assets/logo.png'}" class="hero-cover">
                     <div class="hero-details">
                         <span style="font-size: 12px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">CURRENT FOCUS</span>
-                        <h2 style="font-size: 28px; margin-bottom: 10px;">${pinned.title}</h2>
-                        <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; max-width: 500px;">${pinned.description || 'Continue working on your masterpiece and share it with the world.'}</p>
+                        <h2 style="font-size: 28px; margin-bottom: 10px;">${escapeHTML(pinned.title)}</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; max-width: 500px;">${escapeHTML(pinned.description || 'Continue working on your masterpiece and share it with the world.')}</p>
                         <div style="display: flex; gap: 15px;">
-                            <button class="btn-primary" onclick="readerApp.openBookInStudio(${JSON.stringify(pinned).replace(/"/g, '&quot;')})">Continue Writing</button>
+                            <button class="btn-primary" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(pinned))})">Continue Writing</button>
                             <button class="btn-secondary" onclick="alert('Viewing Analytics...')">View Full Analytics</button>
                         </div>
                     </div>
@@ -420,13 +432,13 @@ class SrishtyReaderApp {
         container.innerHTML = mainList.map(book => {
             const statusClass = book.is_published ? 'status-published' : 'status-draft';
             const statusLabel = book.is_published ? 'Published' : 'Draft';
-            const cover = book.cover || '../frontend/assets/logo.png';
+            const cover = escapeHTML(book.cover) || '../frontend/assets/logo.png';
             
             if (this.galleryView === 'grid') {
                 return `
                     <article class="book-card dashboard-card">
                         <div class="book-status-badge ${statusClass}">${statusLabel}</div>
-                        <img src="${cover}" alt="${book.title}" class="book-cover">
+                        <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover">
                         
                         <div class="book-analytics-overlay">
                             <span>👁️ ${book.total_reads || 0}</span>
@@ -434,11 +446,11 @@ class SrishtyReaderApp {
                         </div>
 
                         <div class="quick-actions-hover">
-                            <button class="action-btn" onclick="readerApp.openBookInStudio(${JSON.stringify(book).replace(/"/g, '&quot;')})">✏️ Edit Story</button>
+                            <button class="action-btn" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">✏️ Edit Story</button>
                             <button class="action-btn" onclick="alert('Shared to community!')">🔗 Share Link</button>
                         </div>
 
-                        <div class="book-title" title="${book.title}">${book.title}</div>
+                        <div class="book-title" title="${escapeHTML(book.title)}">${escapeHTML(book.title)}</div>
                         <div class="book-author">by You</div>
                     </article>
                 `;
@@ -448,7 +460,7 @@ class SrishtyReaderApp {
                     <article class="dashboard-card">
                         <img src="${cover}" class="book-cover">
                         <div>
-                            <div style="font-weight: 700; color: white;">${book.title}</div>
+                            <div style="font-weight: 700; color: white;">${escapeHTML(book.title)}</div>
                             <div style="font-size: 11px; color: var(--text-secondary);">${statusLabel}</div>
                         </div>
                         <div class="book-analytics-overlay">
@@ -458,7 +470,7 @@ class SrishtyReaderApp {
                             <span>❤️ ${book.likes_count || 0} Likes</span>
                         </div>
                         <div class="quick-actions-hover">
-                            <button class="action-btn" onclick="readerApp.openBookInStudio(${JSON.stringify(book).replace(/"/g, '&quot;')})">Edit</button>
+                            <button class="action-btn" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">Edit</button>
                             <button class="action-btn">Stats</button>
                         </div>
                     </article>
@@ -501,7 +513,7 @@ class SrishtyReaderApp {
         toast.className = 'toast glass';
         toast.innerHTML = `
             <div style="font-weight: 800; color: var(--accent-blue); margin-bottom: 4px;">New Notification</div>
-            <div>${notification.message}</div>
+            <div>${escapeHTML(notification.message)}</div>
         `;
 
         toastContainer.appendChild(toast);
@@ -564,11 +576,11 @@ readerApp.renderLeaderboard = function() {
         <div class="glass" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-radius: 12px; background: ${i === 0 ? 'rgba(108, 99, 255, 0.1)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${i === 0 ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)'}">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <span style="font-weight: 800; color: var(--text-secondary); width: 20px;">#${i + 1}</span>
-                <span style="font-weight: 700; color: white;">${leader.name}</span>
+                <span style="font-weight: 700; color: white;">${escapeHTML(leader.name)}</span>
             </div>
             <div style="text-align: right;">
-                <div style="font-size: 14px; font-weight: 800; color: var(--accent-blue); text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);">${leader.reads}</div>
-                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); opacity: 0.8;">${leader.rank}</div>
+                <div style="font-size: 14px; font-weight: 800; color: var(--accent-blue); text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);">${escapeHTML(leader.reads)}</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); opacity: 0.8;">${escapeHTML(leader.rank)}</div>
             </div>
         </div>
     `).join('');

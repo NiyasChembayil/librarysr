@@ -1,3 +1,15 @@
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return str.toString().replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
+}
+
 class StudioApp {
     constructor() {
         this.quill = null;
@@ -57,7 +69,7 @@ class StudioApp {
             const data = await window.readerApp.fetchAPI('/core/categories/');
             if (data && data.results) {
                 select.innerHTML = '<option value="">Select a category</option>' + 
-                    data.results.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                    data.results.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
             }
         } catch (err) { console.error(err); }
     }
@@ -228,7 +240,7 @@ class StudioApp {
             item.appendChild(handle);
 
             const title = document.createElement('span');
-            title.innerText = `${index + 1}. ${ch.title}`;
+            title.innerText = `${index + 1}. ${escapeHTML(ch.title)}`;
             title.style.whiteSpace = 'nowrap';
             title.style.overflow = 'hidden';
             title.style.textOverflow = 'ellipsis';
@@ -387,7 +399,7 @@ class StudioApp {
         const previewContent = document.getElementById('mobile-preview-content');
         const title = document.getElementById('current-chapter-title').value;
         previewContent.innerHTML = `
-            <h2 style="font-size: 22px; margin-bottom: 15px; color: white;">${title}</h2>
+            <h2 style="font-size: 22px; margin-bottom: 15px; color: white;">${escapeHTML(title)}</h2>
             <div style="color: rgba(255,255,255,0.7); line-height: 1.8;">
                 ${this.quill.root.innerHTML}
             </div>
@@ -402,7 +414,7 @@ class StudioApp {
         list.innerHTML = this.chapters.map(ch => `
             <div class="glass" style="padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h4 style="margin-bottom: 5px;">${ch.title}</h4>
+                    <h4 style="margin-bottom: 5px;">${escapeHTML(ch.title)}</h4>
                     <p style="font-size: 12px; color: var(--text-secondary);">${ch.audio_file ? '✅ Audio uploaded' : '⏳ No audio file'}</p>
                 </div>
                 <div>

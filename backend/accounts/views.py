@@ -43,6 +43,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__username', 'bio']
 
+    def get_permissions(self):
+        if self.action == 'follow':
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
         if self.action == 'me':
             return Profile.objects.filter(user=self.request.user)

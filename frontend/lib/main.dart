@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 // import 'package:audio_service/audio_service.dart';
 // import 'core/services/audio_handler.dart';
 // import 'providers/audio_provider.dart';

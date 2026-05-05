@@ -17,6 +17,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _bioController;
   bool _isLoading = false;
   File? _selectedImage;
+  File? _selectedBanner;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -39,6 +40,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  Future<void> _pickBanner() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    if (image != null) {
+      setState(() => _selectedBanner = File(image.path));
+    }
+  }
+
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
     
@@ -48,13 +56,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       base64Image = 'data:image/jpeg;base64,${base64.encode(bytes)}';
     }
 
+    String? base64Banner;
+    if (_selectedBanner != null) {
+      final bytes = await _selectedBanner!.readAsBytes();
+      base64Banner = 'data:image/jpeg;base64,${base64.encode(bytes)}';
+    }
+
     final success = await ref.read(authProvider.notifier).updateProfile(
       bio: _bioController.text,
       avatar: base64Image,
+      banner: base64Banner,
     );
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
+        // Force refresh the profile data in the background
+        ref.read(authProvider.notifier).refreshProfile();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
         );
@@ -90,32 +108,67 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            const SizedBox(height: 10),
+            // Banner Section
+            GestureDetector(
+              onTap: _pickBanner,
+              child: Container(
+                height: 150,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2E),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  image: _selectedBanner != null
+                      ? DecorationImage(image: FileImage(_selectedBanner!), fit: BoxFit.cover)
+                      : (profile?.banner != null ? DecorationImage(image: NetworkImage(profile!.banner!), fit: BoxFit.cover) : null),
+                ),
+                child: (_selectedBanner == null && profile?.banner == null)
+                    ? Center(child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_photo_alternate_outlined, color: Colors.white.withValues(alpha: 0.2), size: 40),
+                          const SizedBox(height: 8),
+                          const Text('Add Cover Image', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                        ],
+                      ))
+                    : Align(
+                        alignment: Alignment.topRight,
+                        child: Container(
+                          margin: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(height: 20),
-            // Avatar Section
+            // Avatar Section (Adjusted overlap logic if needed, but keeping it simple for now)
             GestureDetector(
               onTap: _pickImage,
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
                   CircleAvatar(
-                    radius: 60,
+                    radius: 50, // Slightly smaller to fit better
                     backgroundColor: const Color(0xFF1E1E2E),
                     backgroundImage: _selectedImage != null 
                       ? FileImage(_selectedImage!) as ImageProvider
                       : (profile?.avatar != null ? NetworkImage(profile!.avatar!) : null),
                     child: (_selectedImage == null && profile?.avatar == null)
-                      ? Text(profile?.username[0].toUpperCase() ?? 'U', style: const TextStyle(fontSize: 40, color: Color(0xFF6C63FF)))
+                      ? Text(profile?.username[0].toUpperCase() ?? 'U', style: const TextStyle(fontSize: 30, color: Color(0xFF6C63FF)))
                       : null,
                   ),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(color: Color(0xFF6C63FF), shape: BoxShape.circle),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             
             // Username (Disabled)
             _buildTextField(

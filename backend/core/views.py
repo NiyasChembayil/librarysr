@@ -82,7 +82,6 @@ class BookViewSet(viewsets.ModelViewSet):
             return Response({"error": "Authentication required"}, status=401)
 
         # 1. Total Library Books
-        # Combination of written books and purchased books
         written_books_ids = set(Book.objects.filter(author=user).values_list('id', flat=True))
         purchased_books_ids = set(Purchase.objects.filter(user=user).values_list('book_id', flat=True))
         all_library_ids = written_books_ids.union(purchased_books_ids)
@@ -93,7 +92,7 @@ class BookViewSet(viewsets.ModelViewSet):
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         monthly_milestone = ReadStats.objects.filter(user=user, timestamp__gte=start_of_month).count()
 
-        # 3. Genre DNA
+        # 3. Genre DNA (Reading)
         genre_counts = ReadStats.objects.filter(user=user)\
             .values('book__category__name')\
             .annotate(count=Count('id'))\
@@ -104,7 +103,7 @@ class BookViewSet(viewsets.ModelViewSet):
             for g in genre_counts
         ]
 
-        # 4. Streak Calculation
+        # 4. Streak
         read_dates = ReadStats.objects.filter(user=user)\
             .annotate(date=F('timestamp__date'))\
             .values_list('date', flat=True)\
@@ -115,13 +114,10 @@ class BookViewSet(viewsets.ModelViewSet):
         if read_dates.exists():
             today = timezone.localdate()
             current_check = today
-            
-            # If the user hasn't read today, check if they read yesterday to continue the streak
             if read_dates[0] < today:
                 if read_dates[0] == today - timedelta(days=1):
                     current_check = today - timedelta(days=1)
                 else:
-                    # Streak broken if no read today or yesterday
                     streak = 0
                     current_check = None
             
@@ -131,13 +127,44 @@ class BookViewSet(viewsets.ModelViewSet):
                         streak += 1
                         current_check -= timedelta(days=1)
                     elif read_date < current_check:
-                        break # Gap found
+                        break
 
         return Response({
             "streak": streak,
             "genre_dna": genre_dna,
             "monthly_milestone": monthly_milestone,
             "total_library_books": total_library_books
+        })
+
+    @action(detail=False, methods=['get'])
+    def author_stats(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=401)
+
+        # 1. Total Reads across all my books
+        my_books = Book.objects.filter(author=user)
+        total_reads = ReadStats.objects.filter(book__in=my_books).count()
+
+        # 2. Total Followers
+        followers_count = user.followers.count()
+
+        # 3. Genre DNA (Writing distribution)
+        writing_genres = my_books.values('category__name').annotate(count=Count('id')).order_by('-count')
+        genre_dna = [
+            {"genre": g['category__name'] or "Other", "count": g['count']}
+            for g in writing_genres
+        ]
+
+        # 4. Published Books
+        published_count = my_books.filter(is_published=True).count()
+
+        return Response({
+            "total_reads": total_reads,
+            "followers_count": followers_count,
+            "genre_dna": genre_dna,
+            "published_count": published_count,
+            "writing_streak": 7 # Placeholder for actual logic if needed
         })
 
     @action(detail=False, methods=['get'])
@@ -191,11 +218,12 @@ class AmbientSoundViewSet(viewsets.ReadOnlyModelViewSet):
         
         results = [AmbientSoundSerializer(s).data for s in system_sounds]
         for us in user_sounds:
+            sound_data = UserAmbientSoundSerializer(us, context={'request': request}).data
             results.append({
-                'id': us.id,
-                'name': us.name,
-                'emoji': us.emoji,
-                'audio_url': us.audio_url,
+                'id': sound_data['id'],
+                'name': sound_data['name'],
+                'emoji': sound_data['emoji'],
+                'audio_url': sound_data['audio_file'], # DRF serializes FileField to absolute URL
                 'is_system': False
             })
         return Response(results)

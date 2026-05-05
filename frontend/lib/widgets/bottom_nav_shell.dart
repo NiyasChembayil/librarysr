@@ -5,7 +5,6 @@ import '../features/home/home_screen.dart';
 import '../features/audio/audio_library_screen.dart';
 import '../features/feed/feed_screen.dart';
 import '../features/profile/profile_screen.dart';
-import '../features/search/search_screen.dart';
 import '../features/feed/create_post_screen.dart';
 import '../providers/navigation_provider.dart';
 

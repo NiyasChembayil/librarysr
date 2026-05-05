@@ -31,12 +31,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECURITY WARNING: keep the secret key used in production secret!
 # Make sure to set SECRET_KEY in your .env file for production
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-nt#3g3^zxpq&rohn2+x%9#z9j7+$a43q@p1&6x(l=+_&#l!zg7')
+SECRET_KEY = env('SECRET_KEY', default='srishty-local-dev-fallback-secret-key-with-enough-length-1234')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=False)
+
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Parse database configuration from $DATABASE_URL
 # Automatically fall back to SQLite if no variable provided.

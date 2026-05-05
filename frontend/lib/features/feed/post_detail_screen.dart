@@ -55,6 +55,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       _commentCtrl.clear();
       await _loadComments();
     } catch (_) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Login required to comment'),

@@ -25,6 +25,7 @@ class Base64ImageField(serializers.ImageField):
 
 class ProfileSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True)
+    banner = Base64ImageField(required=False, allow_null=True)
     username = serializers.CharField(source='user.username', required=False)
     email = serializers.EmailField(source='user.email', required=False)
     # Password is write-only for the 'Change Password' feature

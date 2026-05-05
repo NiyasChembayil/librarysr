@@ -130,13 +130,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> updateProfile({String? bio, String? avatar}) async {
+  Future<bool> updateProfile({String? bio, String? avatar, String? banner}) async {
     try {
       final Map<String, dynamic> data = {
         'bio': bio,
         'avatar': avatar,
+        'banner': banner,
       }..removeWhere((key, value) => value == null);
       final response = await _apiClient.dio.patch('accounts/profile/me/', data: data);
+      debugPrint('Auth: Profile updated successfully. Response: ${response.data}');
       final updatedProfile = ProfileModel.fromJson(response.data);
       state = AuthState(
         status: AuthStatus.authenticated,

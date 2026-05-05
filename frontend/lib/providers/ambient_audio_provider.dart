@@ -27,8 +27,8 @@ class AmbientSoundModel {
     return AmbientSoundModel(
       id: json['id'],
       name: json['name'],
-      emoji: json['emoji'],
-      audioUrl: json['audio_url'],
+      emoji: json['emoji'] ?? '🎵',
+      audioUrl: json['audio_url'] ?? json['audio_file'] ?? '',
       isSystem: json['is_system'] ?? true,
     );
   }
@@ -117,7 +117,7 @@ class AmbientAudioNotifier extends StateNotifier<AmbientAudioState> {
       final formData = FormData.fromMap({
         'name': name,
         'emoji': emoji,
-        'audio_url': await MultipartFile.fromFile(filePath, filename: filePath.split('/').last),
+        'audio_file': await MultipartFile.fromFile(filePath, filename: filePath.split('/').last),
       });
 
       final response = await _apiClient.dio.post(

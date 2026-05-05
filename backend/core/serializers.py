@@ -135,11 +135,9 @@ class AmbientSoundSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserAmbientSoundSerializer(serializers.ModelSerializer):
-    audio_url = serializers.FileField(source='audio_file')
-    
     class Meta:
         model = UserAmbientSound
-        fields = ['id', 'name', 'emoji', 'audio_url', 'created_at']
+        fields = ['id', 'name', 'emoji', 'audio_file', 'created_at']
         read_only_fields = ['user']
 
     def validate(self, data):

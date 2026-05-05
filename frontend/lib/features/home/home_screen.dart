@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:animations/animations.dart';
 import '../../widgets/shimmer_loading.dart';
 import '../../widgets/mini_book_card.dart';
@@ -10,7 +9,6 @@ import '../audio/audio_player_screen.dart';
 import '../../providers/book_provider.dart';
 import '../notifications/notification_screen.dart';
 import '../../providers/notification_provider.dart';
-import '../../providers/navigation_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/reading_progress_provider.dart';
 import '../../models/book_model.dart';

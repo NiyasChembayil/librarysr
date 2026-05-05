@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/book_provider.dart';
 import '../../models/book_model.dart';
 import '../../widgets/book_card.dart';
+import '../../providers/social_provider.dart';
+import '../../providers/book_provider.dart';
 import '../settings/settings_screen.dart';
+import '../studio/studio_screen.dart';
 import '../book/book_detail_screen.dart';
 import 'user_list_screen.dart';
 import '../../core/api_client.dart';
@@ -158,16 +160,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1E2E),
                           borderRadius: BorderRadius.circular(25),
-                          image: profile?.banner != null
-                              ? DecorationImage(image: NetworkImage(profile!.banner!), fit: BoxFit.cover)
-                              : null,
                         ),
-                        child: profile?.banner == null
-                            ? Center(
-                                child: Icon(Icons.auto_awesome_mosaic_rounded, 
-                                  color: Colors.white.withValues(alpha: 0.05), size: 50),
-                              )
-                            : null,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(25),
+                          child: profile.banner != null
+                              ? CachedNetworkImage(
+                                  imageUrl: profile.banner!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(Icons.error_outline, color: Colors.white.withValues(alpha: 0.05)),
+                                  ),
+                                )
+                              : Center(
+                                  child: Icon(Icons.auto_awesome_mosaic_rounded, 
+                                    color: Colors.white.withValues(alpha: 0.05), size: 50),
+                                ),
+                        ),
                       ),
                       // Back & Settings overlay
                       Positioned(
@@ -208,12 +222,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           child: CircleAvatar(
                             radius: 45,
                             backgroundColor: const Color(0xFF1E1E2E),
-                            backgroundImage: profile?.avatar != null
-                                ? NetworkImage(profile!.avatar!)
+                            backgroundImage: profile.avatar != null
+                                ? NetworkImage(profile.avatar!)
                                 : null,
-                            child: profile?.avatar == null
+                            child: profile.avatar == null
                                 ? Text(
-                                    (profile?.username ?? 'U')[0].toUpperCase(),
+                                    (profile.username ?? 'U')[0].toUpperCase(),
                                     style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF)),
                                   )
                                 : null,
@@ -226,7 +240,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
                   // Username & Role
                   Text(
-                    profile?.username ?? 'User',
+                    profile.username ?? 'User',
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                   ),
                   const SizedBox(height: 4),
@@ -237,14 +251,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      (profile?.role ?? 'reader').toUpperCase(),
+                      (profile.role ?? 'reader').toUpperCase(),
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF), letterSpacing: 1),
                     ),
                   ),
+                  
+                  // Author Studio Button (Only for me if I'm an author)
+                  if (isMe && profile.role == 'author')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 15),
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AuthorStudioScreen()),
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6C63FF), Color(0xFFFF6584)],
+                            ),
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Srishty Studio',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
 
                   // Bio
-                  if (profile?.bio != null && profile!.bio.isNotEmpty)
+                  if (profile.bio.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 15),
                       child: Text(
@@ -255,7 +309,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     ),
 
                   // Follow Button (Only for others)
-                  if (!isMe && profile != null)
+                  if (!isMe)
                     Consumer(
                       builder: (context, ref, _) {
                         final socialState = ref.watch(socialProvider);
@@ -283,7 +337,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                     : BorderSide.none,
                                 ),
                               ).copyWith(
-                                overlayColor: MaterialStateProperty.all(Colors.white.withValues(alpha: 0.05)),
+                                overlayColor: WidgetStateProperty.all(Colors.white.withValues(alpha: 0.05)),
                               ),
                               child: Text(
                                 isFollowing ? 'Following' : 'Follow',
@@ -321,38 +375,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         _buildVerticalDivider(),
                         _buildStatItem(
                           'Followers',
-                          '${profile?.followersCount ?? 0}',
+                          '${profile.followersCount ?? 0}',
                           onTap: () {
-                            if (profile != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => UserListScreen(
-                                    title: 'Followers',
-                                    endpoint: 'accounts/profile/${profile.id}/followers/',
-                                  ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserListScreen(
+                                  title: 'Followers',
+                                  endpoint: 'accounts/profile/${profile.id}/followers/',
                                 ),
-                              );
-                            }
-                          },
+                              ),
+                            );
+                                                    },
                         ),
                         _buildVerticalDivider(),
                         _buildStatItem(
                           'Following',
-                          '${profile?.followingCount ?? 0}',
+                          '${profile.followingCount ?? 0}',
                           onTap: () {
-                            if (profile != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => UserListScreen(
-                                    title: 'Following',
-                                    endpoint: 'accounts/profile/${profile.id}/following/',
-                                  ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserListScreen(
+                                  title: 'Following',
+                                  endpoint: 'accounts/profile/${profile.id}/following/',
                                 ),
-                              );
-                            }
-                          },
+                              ),
+                            );
+                                                    },
                         ),
                       ],
                     ),
@@ -531,6 +581,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                   await apiClient.dio.post('core/books/${book.id}/toggle_featured/');
                                   ref.invalidate(authorBooksProvider('me'));
                                 } catch (e) {
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Error: $e')),
                                   );
@@ -631,6 +682,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           await apiClient.dio.post('core/books/${book.id}/toggle_featured/');
                           ref.invalidate(authorBooksProvider('me'));
                         } catch (e) {
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Error updating featured status: $e')),
                           );
@@ -730,8 +782,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           const SizedBox(height: 5),
           const Text('Your engagement over the last 35 days.', style: TextStyle(fontSize: 12, color: Colors.white38)),
           const SizedBox(height: 25),
-          SizedBox(
-            height: 150,
+          Container(
+            constraints: const BoxConstraints(minHeight: 150),
             child: activityAsync.when(
               data: (data) {
                 if (data.isEmpty) return const Center(child: Text("No activity yet", style: TextStyle(color: Colors.white24)));

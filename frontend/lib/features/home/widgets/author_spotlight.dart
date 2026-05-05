@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/profile_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../profile/profile_screen.dart';
 
 class AuthorSpotlight extends StatelessWidget {
   final List<ProfileModel> authors;
@@ -35,48 +36,58 @@ class AuthorSpotlight extends StatelessWidget {
               final author = authors[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6C63FF), Color(0xFFFF6B6B)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfileScreen(targetUserId: author.userId),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1E1E2E),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6C63FF), Color(0xFFFF6B6B)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                         ),
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.grey[900],
-                          backgroundImage: author.avatar != null
-                              ? CachedNetworkImageProvider(author.avatar!)
-                              : null,
-                          child: author.avatar == null
-                              ? const Icon(Icons.person, color: Colors.white54)
-                              : null,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1E1E2E),
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.grey[900],
+                            backgroundImage: author.avatar != null
+                                ? CachedNetworkImageProvider(author.avatar!)
+                                : null,
+                            child: author.avatar == null
+                                ? const Icon(Icons.person, color: Colors.white54)
+                                : null,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      author.username,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 5),
+                      Text(
+                        author.username,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

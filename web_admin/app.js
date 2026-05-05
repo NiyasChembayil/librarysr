@@ -1,5 +1,17 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return str.toString().replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
+}
+
 class AdminApp {
     constructor() {
         this.token = localStorage.getItem('srishty_admin_token');
@@ -153,8 +165,8 @@ class AdminApp {
             const list = document.getElementById('recent-books-list');
             list.innerHTML = activity.books.map(book => `
                 <tr class="animate-slide-up">
-                    <td>${book.title}</td>
-                    <td>${book.author}</td>
+                    <td>${escapeHTML(book.title)}</td>
+                    <td>${escapeHTML(book.author)}</td>
                     <td>Fiction</td>
                     <td><span class="status-badge active">Published</span></td>
                     <td><button class="btn-action">Manage</button></td>
@@ -194,9 +206,9 @@ class AdminApp {
             target.innerHTML = data.results.map(profile => `
                 <tr>
                     <td>#${profile.id}</td>
-                    <td>${profile.username}</td>
-                    <td>${profile.role}</td>
-                    <td><span class="status-badge ${profile.role}">Online</span></td>
+                    <td>${escapeHTML(profile.username)}</td>
+                    <td>${escapeHTML(profile.role)}</td>
+                    <td><span class="status-badge ${escapeHTML(profile.role)}">Online</span></td>
                     <td><button class="btn-action red">Block</button></td>
                 </tr>
             `).join('');
@@ -233,8 +245,8 @@ class AdminApp {
             target.innerHTML = data.results.map(book => `
                 <tr>
                     <td>#${book.id}</td>
-                    <td>${book.title}</td>
-                    <td>${book.author_name}</td>
+                    <td>${escapeHTML(book.title)}</td>
+                    <td>${escapeHTML(book.author_name)}</td>
                     <td><span class="status-badge active">Live</span></td>
                     <td><button class="btn-action red">Remove</button></td>
                 </tr>
@@ -356,7 +368,7 @@ class AdminApp {
                         <h4>General Options</h4>
                         <div class="form-group">
                             <label>Platform Name</label>
-                            <input type="text" id="set-name" value="${settings.platformName}" required>
+                            <input type="text" id="set-name" value="${escapeHTML(settings.platformName)}" required>
                         </div>
                         <div class="form-group">
                             <label>Author Commission Rate (%)</label>

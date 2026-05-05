@@ -359,7 +359,7 @@ class SettingsScreen extends ConsumerWidget {
       subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)) : null,
       value: value,
       onChanged: onChanged,
-      activeColor: const Color(0xFF00D2FF),
+      activeThumbColor: const Color(0xFF00D2FF),
     );
   }
 

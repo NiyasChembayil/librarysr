@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/post_model.dart';
 import '../../providers/post_provider.dart';
 import '../../providers/social_provider.dart';
-import '../../core/theme.dart';
 import 'widgets/post_card.dart';
 import 'widgets/creator_card.dart';
-import '../../widgets/book_card.dart';
 import '../book/book_detail_screen.dart';
-import 'create_post_screen.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -311,17 +307,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  image: book.coverUrl != null
-                                      ? DecorationImage(
-                                          image: NetworkImage(book.coverUrl!),
+                                  image: DecorationImage(
+                                          image: NetworkImage(book.coverUrl),
                                           fit: BoxFit.cover,
-                                        )
-                                      : null,
+                                        ),
                                   color: Colors.white.withValues(alpha: 0.05),
                                 ),
-                                child: book.coverUrl == null
-                                    ? const Center(child: Icon(Icons.book, color: Colors.white24))
-                                    : null,
+                                child: null,
                               ),
                             ),
                           ),

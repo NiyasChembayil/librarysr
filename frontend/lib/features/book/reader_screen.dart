@@ -384,7 +384,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final sharedKey = 'milestone_shared_${widget.bookId}';
     if (prefs.getBool(sharedKey) ?? false) return;
 
-    final text = "I just finished reading '${widget.title}' on Srishty! 📖✨";
+    final text = "I just finished reading '${widget.title}' on Srishty! 📚✨";
     try {
       await ref.read(postFeedProvider.notifier).createPost(
             text: text,
@@ -399,7 +399,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }
 
   void _shareMilestone() async {
-    final text = "I just finished reading '${widget.title}'! 📖✨";
+    final text = "I just finished reading '${widget.title}'! 📚✨";
     try {
       await ref.read(postFeedProvider.notifier).createPost(
             text: text,
@@ -589,7 +589,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () async {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
+                  FilePickerResult? result = await FilePicker.pickFiles(type: FileType.audio);
                   if (result != null) {
                     setState(() {
                       selectedFilePath = result.files.single.path;
@@ -633,8 +633,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     await ref.read(ambientAudioProvider.notifier).addCustomSound(
                       nameCtrl.text, emojiCtrl.text, selectedFilePath!
                     );
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                   } catch (e) {
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                   }
                 }
@@ -650,6 +652,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   Widget _moodItem(WidgetRef ref, AmbientSoundModel sound) {
     final ambientState = ref.watch(ambientAudioProvider);
     final isSelected = ambientState.currentMoodId == sound.name;
+    
+    // Map names to beautiful Material Icons for better compatibility
+    IconData getIcon() {
+      switch (sound.name.toLowerCase()) {
+        case 'rain': return Icons.umbrella_rounded;
+        case 'forest': return Icons.forest_rounded;
+        case 'cafe': return Icons.coffee_rounded;
+        case 'waves': return Icons.waves_rounded;
+        case 'fire': return Icons.local_fire_department_rounded;
+        default: return Icons.music_note_rounded;
+      }
+    }
     
     return GestureDetector(
       onLongPress: sound.isSystem ? null : () {
@@ -687,9 +701,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(sound.emoji, style: const TextStyle(fontSize: 30)),
+            Icon(
+              getIcon(),
+              size: 32,
+              color: isSelected ? const Color(0xFF6C63FF) : Colors.white70,
+            ),
             const SizedBox(height: 8),
-            Text(sound.name, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            Text(
+              sound.name, 
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70, 
+                fontSize: 12, 
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+              )
+            ),
             if (!sound.isSystem)
                const Icon(Icons.person_outline_rounded, size: 10, color: Colors.white24),
           ],

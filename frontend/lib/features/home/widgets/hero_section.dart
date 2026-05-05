@@ -24,7 +24,7 @@ class HeroSection extends StatelessWidget {
           ),
         ),
       ),
-      child: Container(
+      child: SizedBox(
         height: 500,
         width: double.infinity,
         child: Stack(

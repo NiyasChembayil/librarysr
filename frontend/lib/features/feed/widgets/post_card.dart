@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/post_model.dart';
 import '../../../providers/post_provider.dart';
 import '../post_detail_screen.dart';
-import '../../search/search_screen.dart';
 import '../../profile/profile_screen.dart';
 import '../../book/book_detail_screen.dart';
 import '../../book/reader_screen.dart';
@@ -339,6 +339,7 @@ class _PostCardState extends ConsumerState<PostCard>
                           try {
                             await ref.read(postFeedProvider.notifier).toggleLike(post);
                           } catch (e) {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Login required to like posts'),
@@ -394,6 +395,7 @@ class _PostCardState extends ConsumerState<PostCard>
                             try {
                               await ref.read(postFeedProvider.notifier).repost(post);
                             } catch (e) {
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Login required to repost'),
@@ -461,11 +463,13 @@ class _PostCardState extends ConsumerState<PostCard>
             onPressed: () async {
               try {
                 await ref.read(postFeedProvider.notifier).editPost(post.id, controller.text);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Post updated'))
                 );
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to update post: $e'))
                 );
@@ -496,11 +500,13 @@ class _PostCardState extends ConsumerState<PostCard>
             onPressed: () async {
               try {
                 await ref.read(postFeedProvider.notifier).deletePost(post.id);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Post deleted'))
                 );
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to delete post: $e'))
                 );
@@ -581,7 +587,7 @@ class _PostCardState extends ConsumerState<PostCard>
                 ),
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 4),
           Text(
             '${poll.totalVotes} votes',
@@ -767,7 +773,7 @@ class MentionRichText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text.rich(
       _buildSpans(text),
-      style: const TextStyle(
+      style: GoogleFonts.inter(
         color: Colors.white,
         fontSize: 15,
         height: 1.5,

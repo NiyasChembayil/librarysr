@@ -32,7 +32,7 @@ class AudioPlayerScreen extends ConsumerStatefulWidget {
 
 class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
   int _currentChapterIndex = 0;
-  bool _isAutoPlaying = false;
+  final bool _isAutoPlaying = false;
 
   @override
   void initState() {

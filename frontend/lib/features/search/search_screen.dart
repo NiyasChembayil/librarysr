@@ -10,10 +10,8 @@ import '../../widgets/book_card.dart';
 import '../book/book_detail_screen.dart';
 import '../audio/audio_player_screen.dart';
 import '../../models/book_model.dart';
-import '../../models/post_model.dart';
 import '../feed/widgets/post_card.dart';
 import '../profile/profile_screen.dart';
-import '../../models/profile_model.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
