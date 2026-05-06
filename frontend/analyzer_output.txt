@@ -1,0 +1,71 @@
+Resolving dependencies...
+Downloading packages...
+  animations 2.1.2 (2.2.0 available)
+  audio_session 0.1.25 (0.2.3 available)
+  cli_util 0.4.2 (0.5.0 available)
+  device_info_plus 9.1.2 (13.1.0 available)
+  device_info_plus_platform_interface 7.0.3 (8.1.0 available)
+  fl_chart 0.65.0 (1.2.0 available)
+! flutter_inappwebview 6.1.5 (overridden)
+  flutter_keyboard_visibility 5.4.1 (6.0.0 available)
+  flutter_quill 8.6.4 (11.5.0 available)
+  flutter_quill_extensions 0.7.2 (11.0.0 available)
+  flutter_riverpod 2.6.1 (3.3.1 available)
+! flutter_web_plugins 0.0.1 from path ../dummy_flutter_web_plugins (overridden)
+  hooks 1.0.2 (1.0.3 available)
+  image_picker 1.2.1 (1.2.2 available)
+  image_picker_android 0.8.13+16 (0.8.13+17 available)
+! intl 0.20.2 (overridden)
+  js 0.6.7 (0.7.2 available)
+  just_audio 0.9.46 (0.10.5 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.17.0 (1.18.2 available)
+  native_toolchain_c 0.17.6 (0.18.0 available)
+  pasteboard 0.2.0 (0.5.0 available)
+  photo_view 0.14.0 (0.15.0 available)
+  riverpod 2.6.1 (3.2.1 available)
+  sqflite 2.4.2 (2.4.2+1 available)
+  sqflite_common 2.5.6 (2.5.7 available)
+  synchronized 3.4.0 (3.4.0+1 available)
+  test_api 0.7.10 (0.7.12 available)
+  vector_math 2.2.0 (2.3.0 available)
+  video_player_platform_interface 6.6.0 (6.7.0 available)
+  vm_service 15.1.0 (15.2.0 available)
+! win32 5.15.0 (overridden) (6.1.0 available)
+  win32_registry 1.1.5 (3.0.3 available)
+  xml 6.6.1 (7.0.1 available)
+  youtube_player_flutter 8.1.2 (9.1.3 available)
+Got dependencies!
+32 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing frontend...                                           
+
+warning • The value of the field '_isAutoPlaying' isn't used • lib/features/audio/audio_player_screen.dart:35:14 • unused_field
+warning • The value of the local variable 'authState' isn't used • lib/features/book/book_detail_screen.dart:57:15 • unused_local_variable
+warning • The declaration '_buildTrendingTab' isn't referenced • lib/features/feed/feed_screen.dart:188:10 • unused_element
+warning • The declaration '_typeColor' isn't referenced • lib/features/feed/widgets/post_card.dart:55:13 • unused_element
+warning • Unused import: '../../providers/book_provider.dart' • lib/features/profile/profile_screen.dart:10:8 • unused_import
+warning • Duplicate import • lib/features/profile/profile_screen.dart:19:8 • duplicate_import
+warning • The value of the local variable 'activityAsync' isn't used • lib/features/profile/profile_screen.dart:138:15 • unused_local_variable
+warning • The left operand can't be null, so the right operand is never executed • lib/features/profile/profile_screen.dart:230:58 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/profile/profile_screen.dart:243:41 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/profile/profile_screen.dart:254:40 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/profile/profile_screen.dart:378:56 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/features/profile/profile_screen.dart:394:56 • dead_null_aware_expression
+warning • The declaration '_buildBooksList' isn't referenced • lib/features/profile/profile_screen.dart:635:10 • unused_element
+warning • The value of the local variable 'isMe' isn't used • lib/features/profile/profile_screen.dart:759:11 • unused_local_variable
+warning • The value of the local variable 'maxY' isn't used • lib/features/profile/profile_screen.dart:792:23 • unused_local_variable
+warning • The value of the local variable 'isAuthor' isn't used • lib/features/settings/settings_screen.dart:39:11 • unused_local_variable
+warning • The value of the local variable 'isBetaUser' isn't used • lib/features/settings/settings_screen.dart:41:11 • unused_local_variable
+warning • Unused import: 'dart:io' • lib/features/studio/book_management_screen.dart:1:8 • unused_import
+warning • Unused import: 'package:file_picker/file_picker.dart' • lib/features/studio/book_management_screen.dart:5:8 • unused_import
+warning • Unused import: 'package:dio/dio.dart' • lib/features/studio/book_management_screen.dart:6:8 • unused_import
+warning • Unused import: '../../providers/book_provider.dart' • lib/features/studio/book_management_screen.dart:8:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/studio/chapter_editor_screen.dart:217:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/studio/chapter_editor_screen.dart:234:88 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/studio/chapter_editor_screen.dart:242:62 • deprecated_member_use
+warning • Unused import: '../../widgets/mini_book_card.dart' • lib/features/studio/studio_screen.dart:9:8 • unused_import
+warning • The declaration '_initAudioService' isn't referenced • lib/main.dart:33:14 • unused_element
+warning • The value of the local variable 'originalCount' isn't used • lib/providers/post_provider.dart:233:11 • unused_local_variable
+warning • The value of the local variable 'response' isn't used • lib/providers/post_provider.dart:242:13 • unused_local_variable
+

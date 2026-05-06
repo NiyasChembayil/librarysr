@@ -20,6 +20,7 @@ class BookModel {
 
   final int authorProfileId;
   final bool isAuthorFollowing;
+  final bool isAuthorVerified;
 
   BookModel({
     required this.id,
@@ -28,6 +29,7 @@ class BookModel {
     required this.categoryName,
     required this.authorProfileId,
     required this.isAuthorFollowing,
+    this.isAuthorVerified = false,
     required this.coverUrl,
     required this.description,
     required this.price,
@@ -57,6 +59,7 @@ class BookModel {
       categoryName: json['category_name'] ?? 'Novel',
       authorProfileId: json['author_profile_id'] ?? 0,
       isAuthorFollowing: json['is_author_following'] ?? false,
+      isAuthorVerified: json['is_author_verified'] ?? false,
       coverUrl: cover,
       description: json['description'] ?? '',
       price: 0.0,
@@ -107,6 +110,7 @@ class BookModel {
       categoryName: categoryName ?? this.categoryName,
       authorProfileId: authorProfileId ?? this.authorProfileId,
       isAuthorFollowing: isAuthorFollowing ?? this.isAuthorFollowing,
+      isAuthorVerified: isAuthorVerified ?? this.isAuthorVerified,
       coverUrl: coverUrl ?? this.coverUrl,
       description: description ?? this.description,
       price: price ?? this.price,

@@ -81,7 +81,8 @@ class ReadingProgress(models.Model):
 class AmbientSound(models.Model):
     name = models.CharField(max_length=100)
     emoji = models.CharField(max_length=10, default='🎵')
-    audio_url = models.URLField()
+    audio_url = models.URLField(null=True, blank=True)
+    audio_file = models.FileField(upload_to='ambient_sounds/', null=True, blank=True)
     is_system = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 

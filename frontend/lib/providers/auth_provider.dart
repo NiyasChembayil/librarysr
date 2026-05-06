@@ -208,23 +208,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void updateFollowingCount(int delta) {
     if (state.profile == null) return;
     
-    final currentProfile = state.profile!;
-    final newProfile = ProfileModel(
-      id: currentProfile.id,
-      username: currentProfile.username,
-      role: currentProfile.role,
-      bio: currentProfile.bio,
-      avatar: currentProfile.avatar,
-      followersCount: currentProfile.followersCount,
-      followingCount: currentProfile.followingCount + delta,
-      userId: currentProfile.userId,
-      email: currentProfile.email,
-    );
-    
     state = AuthState(
       status: state.status,
       token: state.token,
-      profile: newProfile,
+      profile: state.profile!.copyWith(followingCount: state.profile!.followingCount + delta),
       errorMessage: state.errorMessage,
     );
   }

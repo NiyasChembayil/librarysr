@@ -133,6 +133,14 @@ class AdminApp {
                 title.textContent = 'System Settings';
                 this.loadSettingsView();
                 break;
+            case 'sounds':
+                title.textContent = 'Ambient Sound Library';
+                this.loadSoundsView();
+                break;
+            case 'categories':
+                title.textContent = 'Genre & Mood Management';
+                this.loadCategoriesView();
+                break;
             default:
                 container.innerHTML = '<div class="glass section-card"><h3>Coming Soon</h3><p>This module is currently in development.</p></div>';
         }
@@ -194,14 +202,36 @@ class AdminApp {
             target.innerHTML = data.results.map(profile => `
                 <tr>
                     <td>#${profile.id}</td>
-                    <td>${profile.username}</td>
+                    <td>
+                        ${profile.username}
+                        ${profile.is_verified ? '<span style="color: #00D2FF; margin-left: 5px;" title="Verified User">☑️</span>' : ''}
+                    </td>
                     <td>${profile.role}</td>
                     <td><span class="status-badge ${profile.role}">Online</span></td>
-                    <td><button class="btn-action red">Block</button></td>
+                    <td>
+                        <button class="btn-action ${profile.is_verified ? 'orange' : 'blue'}" 
+                                onclick="adminApp.toggleVerification(${profile.id})">
+                            ${profile.is_verified ? 'Unverify' : 'Verify'}
+                        </button>
+                        <button class="btn-action red">Block</button>
+                    </td>
                 </tr>
             `).join('');
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    async toggleVerification(profileId) {
+        try {
+            const res = await this.fetchWithAuth(`${API_BASE_URL}/accounts/profile/${profileId}/toggle_verification/`, {
+                method: 'POST'
+            });
+            if (res.status === 'success') {
+                this.loadUsersView();
+            }
+        } catch (error) {
+            console.error('Verification toggle failed:', error);
         }
     }
 
@@ -408,6 +438,300 @@ class AdminApp {
             localStorage.setItem('srishty_settings', JSON.stringify(newSettings));
             alert('Settings successfully saved!');
         });
+    }
+
+    async loadCategoriesView() {
+        const container = document.getElementById('view-container');
+        container.innerHTML = `
+            <div class="glass section-card animate-slide-up">
+                <div class="section-header">
+                    <h3>Platform Categories</h3>
+                    <button class="btn-action blue" onclick="adminApp.showCategoryModal()">+ Add New Category</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th>Default Mood</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categories-list-target">
+                            <tr><td colspan="4">Loading categories...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="category-modal" class="modal hidden">
+                <div class="modal-content glass animate-slide-up">
+                    <h4 id="category-modal-title">Add New Category</h4>
+                    <form id="category-form">
+                        <input type="hidden" id="category-id">
+                        <div class="form-group">
+                            <label>Category Name</label>
+                            <input type="text" id="category-name" placeholder="e.g. Science Fiction" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Slug (URL handle)</label>
+                            <input type="text" id="category-slug" placeholder="e.g. sci-fi" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Default Ambient Sound (Mood)</label>
+                            <select id="category-sound">
+                                <option value="">No Default Mood</option>
+                            </select>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-action" onclick="adminApp.hideCategoryModal()">Cancel</button>
+                            <button type="submit" class="btn-action blue" id="btn-save-category">Save Category</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        try {
+            const [categoriesData, sounds] = await Promise.all([
+                this.fetchWithAuth(`${API_BASE_URL}/core/categories/`),
+                this.fetchWithAuth(`${API_BASE_URL}/core/ambient-sounds/`)
+            ]);
+
+            const categories = categoriesData.results || categoriesData;
+
+            const soundSelect = document.getElementById('category-sound');
+            const systemSounds = sounds.filter(s => s.is_system);
+            soundSelect.innerHTML += systemSounds.map(s => `<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+
+            const target = document.getElementById('categories-list-target');
+            target.innerHTML = categories.map(cat => `
+                <tr>
+                    <td><strong>${cat.name}</strong></td>
+                    <td><code>${cat.slug}</code></td>
+                    <td>${cat.recommended_mood_emoji || '🎵'} ${cat.recommended_mood_name || 'None'}</td>
+                    <td>
+                        <button class="btn-action orange" onclick="adminApp.editCategory('${cat.slug}')">Edit</button>
+                        <button class="btn-action red" onclick="adminApp.deleteCategory('${cat.slug}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('category-form').addEventListener('submit', (e) => this.handleCategorySubmit(e));
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    showCategoryModal() {
+        document.getElementById('category-modal-title').textContent = 'Add New Category';
+        document.getElementById('category-form').reset();
+        document.getElementById('category-id').value = '';
+        document.getElementById('category-modal').classList.remove('hidden');
+    }
+
+    hideCategoryModal() {
+        document.getElementById('category-modal').classList.add('hidden');
+    }
+
+    async handleCategorySubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('category-id').value;
+        const name = document.getElementById('category-name').value;
+        const slug = document.getElementById('category-slug').value;
+        const soundId = document.getElementById('category-sound').value;
+
+        const data = { name, slug, recommended_ambient_sound: soundId || null };
+        const method = id ? 'PATCH' : 'POST';
+        const url = id ? `${API_BASE_URL}/core/categories/${id}/` : `${API_BASE_URL}/core/categories/`;
+
+        try {
+            const res = await this.fetchWithAuth(url, {
+                method,
+                body: JSON.stringify(data)
+            });
+            if (res) {
+                this.hideCategoryModal();
+                this.loadCategoriesView();
+            }
+        } catch (error) {
+            console.error('Category save failed:', error);
+        }
+    }
+
+    async editCategory(slug) {
+        try {
+            const cat = await this.fetchWithAuth(`${API_BASE_URL}/core/categories/${slug}/`);
+            document.getElementById('category-modal-title').textContent = 'Edit Category';
+            document.getElementById('category-id').value = cat.slug; // Using slug as lookup
+            document.getElementById('category-name').value = cat.name;
+            document.getElementById('category-slug').value = cat.slug;
+            document.getElementById('category-sound').value = cat.recommended_ambient_sound || '';
+            document.getElementById('category-modal').classList.remove('hidden');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async deleteCategory(slug) {
+        if (!confirm('Are you sure? All books in this category will lose their genre association.')) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/core/categories/${slug}/`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.ok) this.loadCategoriesView();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async loadSoundsView() {
+        const container = document.getElementById('view-container');
+        container.innerHTML = `
+            <div class="glass section-card animate-slide-up">
+                <div class="section-header">
+                    <h3>Official Platform Sounds</h3>
+                    <button class="btn-action blue" onclick="adminApp.showSoundModal()">+ Add New Sound</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Icon</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Preview</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sounds-list-target">
+                            <tr><td colspan="5">Loading sounds...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sound-modal" class="modal hidden">
+                <div class="modal-content glass animate-slide-up">
+                    <h4>Add New Ambient Sound</h4>
+                    <form id="sound-form">
+                        <div class="form-group">
+                            <label>Sound Name</label>
+                            <input type="text" id="sound-name" placeholder="e.g. Heavy Rain" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Emoji Icon</label>
+                            <input type="text" id="sound-emoji" placeholder="e.g. 🌧️" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Audio File</label>
+                            <input type="file" id="sound-file" accept="audio/*" required>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-action" onclick="adminApp.hideSoundModal()">Cancel</button>
+                            <button type="submit" class="btn-action blue" id="btn-upload-sound">Upload Sound</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        try {
+            const data = await this.fetchWithAuth(`${API_BASE_URL}/core/ambient-sounds/`);
+            const target = document.getElementById('sounds-list-target');
+            
+            // Show only system sounds for management
+            const systemSounds = data.filter(s => s.is_system);
+            
+            target.innerHTML = systemSounds.map(sound => `
+                <tr>
+                    <td style="font-size: 24px;">${sound.emoji}</td>
+                    <td>${sound.name}</td>
+                    <td><span class="status-badge active">System</span></td>
+                    <td>
+                        <audio controls style="height: 30px; width: 220px;">
+                            <source src="${sound.audio_url}" type="audio/mpeg">
+                        </audio>
+                    </td>
+                    <td>
+                        <button class="btn-action red" onclick="adminApp.deleteSound(${sound.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('sound-form').addEventListener('submit', (e) => this.handleSoundUpload(e));
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    showSoundModal() {
+        document.getElementById('sound-modal').classList.remove('hidden');
+    }
+
+    hideSoundModal() {
+        document.getElementById('sound-modal').classList.add('hidden');
+    }
+
+    async handleSoundUpload(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-upload-sound');
+        btn.disabled = true;
+        btn.textContent = 'Uploading...';
+
+        const name = document.getElementById('sound-name').value;
+        const emoji = document.getElementById('sound-emoji').value;
+        const file = document.getElementById('sound-file').files[0];
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('emoji', emoji);
+        formData.append('audio_file', file);
+        formData.append('is_system', 'true');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/core/ambient-sounds/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                this.hideSoundModal();
+                this.loadSoundsView();
+            } else {
+                alert('Upload failed. Please check the file format.');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Upload Sound';
+        }
+    }
+
+    async deleteSound(id) {
+        if (!confirm('Are you sure you want to delete this sound? Authors will no longer be able to use it.')) return;
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/core/ambient-sounds/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            if (res.ok) {
+                this.loadSoundsView();
+            }
+        } catch (error) {
+            console.error('Delete failed:', error);
+        }
     }
 }
 

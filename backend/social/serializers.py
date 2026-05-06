@@ -47,6 +47,7 @@ class PostSerializer(serializers.ModelSerializer):
     is_liked = serializers.SerializerMethodField()
     parent_post_data = serializers.SerializerMethodField()
     poll = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -54,7 +55,7 @@ class PostSerializer(serializers.ModelSerializer):
             'id', 'user', 'username', 'user_avatar', 'text', 'post_type', 
             'book', 'book_title', 'book_cover', 'chapter_id', 'audio_file', 'parent_post', 'parent_post_data',
             'created_at', 'updated_at', 'likes_count', 'comments_count', 
-            'reposts_count', 'is_liked', 'poll'
+            'reposts_count', 'is_liked', 'poll', 'is_verified'
         ]
         read_only_fields = ['user']
 
@@ -99,13 +100,19 @@ class PostSerializer(serializers.ModelSerializer):
             return PollSerializer(obj.poll, context=self.context).data
         return None
 
+    def get_is_verified(self, obj):
+        if hasattr(obj.user, 'profile'):
+            return obj.user.profile.is_verified
+        return False
+
 class PostParentSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
     user_avatar = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'username', 'user_avatar', 'text', 'post_type', 'book', 'chapter_id', 'audio_file', 'created_at']
+        fields = ['id', 'user', 'username', 'user_avatar', 'is_verified', 'text', 'post_type', 'book', 'chapter_id', 'audio_file', 'created_at']
 
     def get_user_avatar(self, obj):
         request = self.context.get('request')
@@ -114,6 +121,11 @@ class PostParentSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.user.profile.avatar.url)
             return obj.user.profile.avatar.url
         return None
+
+    def get_is_verified(self, obj):
+        if hasattr(obj.user, 'profile'):
+            return obj.user.profile.is_verified
+        return False
 
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:

@@ -194,6 +194,7 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
       
       state = state.copyWith(
         feed: state.feed.map((p) => p.id == postId ? p.copyWith(poll: pollData) : p).toList(),
+        userPosts: state.userPosts.map((p) => p.id == postId ? p.copyWith(poll: pollData) : p).toList(),
       );
     } catch (e) {
       rethrow;
@@ -230,7 +231,6 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
 
   Future<bool> toggleCommentLike(PostCommentModel comment) async {
     final originalStatus = comment.isLiked;
-    final originalCount = comment.likesCount;
     
     // We don't have a global comment list in state (they are fetched per post),
     // so the UI should handle the optimistic update locally or we just return the new model.
@@ -239,7 +239,7 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
           ? 'social/post-comments/${comment.id}/unlike/' 
           : 'social/post-comments/${comment.id}/like/';
       
-      final response = await _api.dio.post(endpoint);
+      await _api.dio.post(endpoint);
       // Backend returns {'likes_count': X}
       return true;
     } catch (e) {

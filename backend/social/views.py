@@ -50,7 +50,8 @@ class PostViewSet(viewsets.ModelViewSet):
                 defaults={'option': option}
             )
             if not created:
-                return Response({'error': 'You have already voted in this poll'}, status=status.HTTP_400_BAD_REQUEST)
+                vote.option = option
+                vote.save()
             
             # Poll Milestone Notification
             vote_count = post.poll.votes.count()

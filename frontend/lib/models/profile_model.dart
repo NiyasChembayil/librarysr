@@ -18,6 +18,7 @@ class ProfileModel {
   final double playbackSpeed;
   final int userId;
   final String? email;
+  final bool isVerified;
 
   ProfileModel({
     required this.id,
@@ -39,6 +40,7 @@ class ProfileModel {
     this.fontSize = 16.0,
     this.readerTheme = 'Dark',
     this.playbackSpeed = 1.0,
+    this.isVerified = false,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -66,6 +68,7 @@ class ProfileModel {
       fontSize: (json['font_size'] as num?)?.toDouble() ?? 16.0,
       readerTheme: json['reader_theme'] ?? 'Dark',
       playbackSpeed: (json['playback_speed'] as num?)?.toDouble() ?? 1.0,
+      isVerified: json['is_verified'] ?? false,
     );
   }
 
@@ -89,6 +92,53 @@ class ProfileModel {
       'font_size': fontSize,
       'reader_theme': readerTheme,
       'playback_speed': playbackSpeed,
+      'is_verified': isVerified,
     };
+  }
+
+  ProfileModel copyWith({
+    int? id,
+    String? username,
+    String? role,
+    String? bio,
+    String? avatar,
+    String? banner,
+    int? followersCount,
+    int? followingCount,
+    bool? isFollowing,
+    int? userId,
+    String? email,
+    bool? isPrivate,
+    bool? notifyNewFollower,
+    bool? notifyLikes,
+    bool? notifyComments,
+    bool? notifyNewBooks,
+    double? fontSize,
+    String? readerTheme,
+    double? playbackSpeed,
+    bool? isVerified,
+  }) {
+    return ProfileModel(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      role: role ?? this.role,
+      bio: bio ?? this.bio,
+      avatar: avatar ?? this.avatar,
+      banner: banner ?? this.banner,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      isFollowing: isFollowing ?? this.isFollowing,
+      userId: userId ?? this.userId,
+      email: email ?? this.email,
+      isPrivate: isPrivate ?? this.isPrivate,
+      notifyNewFollower: notifyNewFollower ?? this.notifyNewFollower,
+      notifyLikes: notifyLikes ?? this.notifyLikes,
+      notifyComments: notifyComments ?? this.notifyComments,
+      notifyNewBooks: notifyNewBooks ?? this.notifyNewBooks,
+      fontSize: fontSize ?? this.fontSize,
+      readerTheme: readerTheme ?? this.readerTheme,
+      playbackSpeed: playbackSpeed ?? this.playbackSpeed,
+      isVerified: isVerified ?? this.isVerified,
+    );
   }
 }

@@ -18,8 +18,12 @@ import stripe
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
     lookup_field = 'slug'
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
 
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
@@ -168,6 +172,42 @@ class BookViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def my_books(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=401)
+        
+        books = Book.objects.filter(author=user).order_by('-created_at')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def import_chapters(self, request, pk=None):
+        book = self.get_object()
+        chapters_data = request.data.get('chapters', [])
+        
+        if not chapters_data:
+            return Response({'error': 'No chapters provided'}, status=400)
+            
+        # Optional: Clear existing chapters if you want a fresh import
+        # Chapter.objects.filter(book=book).delete()
+        
+        created_chapters = []
+        for index, ch in enumerate(chapters_data):
+            chapter = Chapter.objects.create(
+                book=book,
+                title=ch.get('title', f'Chapter {index + 1}'),
+                content=ch.get('content', ''),
+                order=index
+            )
+            created_chapters.append(ChapterSerializer(chapter).data)
+            
+        return Response({
+            'status': 'chapters imported',
+            'chapters': created_chapters
+        })
+
+    @action(detail=False, methods=['get'])
     def discovery(self, request):
         # In a real app, this would use complex analytics.
         # For now, we'll provide varied random samples to populate the grid.
@@ -194,6 +234,53 @@ class BookViewSet(viewsets.ModelViewSet):
             'featured_authors': ProfileSerializer(featured_authors, many=True, context=serializer_context).data
         })
 
+    @action(detail=False, methods=['get'])
+    def recent_reading(self, request):
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=401)
+        
+        progress = ReadingProgress.objects.filter(user=request.user).order_by('-last_read').first()
+        if not progress:
+            return Response({'error': 'No recent reading found'}, status=404)
+        
+        # We need a serializer for ReadingProgress that includes book info
+        from .serializers import ReadingProgressSerializer
+        return Response(ReadingProgressSerializer(progress, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'])
+    def update_progress(self, request, pk=None):
+        book = self.get_object()
+        chapter_index = request.data.get('chapter_index', 0)
+        
+        progress, created = ReadingProgress.objects.update_or_create(
+            user=request.user,
+            book=book,
+            defaults={'chapter_index': chapter_index}
+        )
+        
+        # Record a read stat too
+        ReadStats.objects.create(user=request.user, book=book)
+        
+        return Response({'status': 'progress updated', 'chapter_index': chapter_index})
+
+    @action(detail=False, methods=['get'])
+    def friend_activity(self, request):
+        # Latest reading activity from others (simplified friend activity)
+        activities = ReadStats.objects.exclude(user=request.user).order_by('-timestamp')[:10]
+        
+        results = []
+        for act in activities:
+            if not act.user: continue
+            results.append({
+                'username': act.user.username,
+                'user_avatar': request.build_absolute_uri(act.user.profile.avatar.url) if hasattr(act.user, 'profile') and act.user.profile.avatar else None,
+                'book_title': act.book.title,
+                'book_cover': request.build_absolute_uri(act.book.cover.url) if act.book.cover else None,
+                'action_text': 'is reading',
+                'timestamp': act.timestamp
+            })
+        return Response(results)
+
 class ChapterViewSet(viewsets.ModelViewSet):
     serializer_class = ChapterSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -205,10 +292,14 @@ class ChapterViewSet(viewsets.ModelViewSet):
         book = Book.objects.get(pk=self.kwargs['book_pk'])
         serializer.save(book=book)
 
-class AmbientSoundViewSet(viewsets.ReadOnlyModelViewSet):
+class AmbientSoundViewSet(viewsets.ModelViewSet):
     queryset = AmbientSound.objects.all()
     serializer_class = AmbientSoundSerializer
-    permission_classes = [permissions.AllowAny]
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
 
     def list(self, request, *args, **kwargs):
         system_sounds = AmbientSound.objects.filter(is_system=True)
@@ -216,14 +307,14 @@ class AmbientSoundViewSet(viewsets.ReadOnlyModelViewSet):
         if request.user.is_authenticated:
             user_sounds = UserAmbientSound.objects.filter(user=request.user)
         
-        results = [AmbientSoundSerializer(s).data for s in system_sounds]
+        results = [AmbientSoundSerializer(s, context={'request': request}).data for s in system_sounds]
         for us in user_sounds:
             sound_data = UserAmbientSoundSerializer(us, context={'request': request}).data
             results.append({
                 'id': sound_data['id'],
                 'name': sound_data['name'],
                 'emoji': sound_data['emoji'],
-                'audio_url': sound_data['audio_file'], # DRF serializes FileField to absolute URL
+                'audio_url': sound_data['audio_file'], 
                 'is_system': False
             })
         return Response(results)

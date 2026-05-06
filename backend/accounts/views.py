@@ -60,21 +60,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(profile)
             return Response(serializer.data)
             
-        # Handle User model updates if present in data
-        user_updated = False
-        user = request.user
-        if 'username' in request.data and request.data['username']:
-            user.username = request.data['username']
-            user_updated = True
-        if 'email' in request.data and request.data['email']:
-            user.email = request.data['email']
-            user_updated = True
-        if 'password' in request.data and request.data['password']:
-            user.set_password(request.data['password'])
-            user_updated = True
-            
-        if user_updated:
-            user.save()
+        # Let the serializer handle all updates (Profile and User fields)
 
         # Handle Profile model updates
         serializer = self.get_serializer(profile, data=request.data, partial=True)
@@ -174,3 +160,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
             profile.save()
             return Response({"status": "success", "role": profile.role})
         return Response({"status": "already_author", "role": profile.role})
+
+    @action(detail=True, methods=['post'])
+    def toggle_verification(self, request, pk=None):
+        if not (request.user.is_staff or request.user.profile.role == 'admin'):
+            return Response({"error": "Admin access required"}, status=403)
+            
+        profile = self.get_object()
+        profile.is_verified = not profile.is_verified
+        profile.save()
+        
+        if profile.is_verified:
+            Notification.objects.create(
+                recipient=profile.user,
+                action_type='SYSTEM',
+                message="Congratulations! Your account has been officially verified with a Blue Tick."
+            )
+            
+        return Response({
+            "status": "success",
+            "is_verified": profile.is_verified
+        })

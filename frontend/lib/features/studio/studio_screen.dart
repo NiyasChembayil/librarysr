@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../core/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/book_provider.dart';
+import '../../providers/my_books_provider.dart';
 import '../../widgets/mini_book_card.dart';
 import '../studio/book_management_screen.dart';
 import '../studio/create_book_screen.dart';
@@ -45,10 +46,8 @@ class _AuthorStudioScreenState extends ConsumerState<AuthorStudioScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final myProfile = authState.profile;
-    final bookState = ref.watch(bookProvider);
-
-    // Filter only my books
-    final myBooks = bookState.books.where((b) => b.authorName == myProfile?.username).toList();
+    final myBooksState = ref.watch(myBooksProvider);
+    final myBooks = myBooksState.books;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A12),

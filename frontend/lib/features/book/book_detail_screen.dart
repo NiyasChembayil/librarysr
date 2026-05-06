@@ -118,13 +118,26 @@ class BookDetailScreen extends ConsumerWidget {
                                 ),
                               );
                             },
-                            child: Text(
-                              'by ${book.authorName}',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: const Color(0xFF6C63FF),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'by ${book.authorName}',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: const Color(0xFF6C63FF),
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                                if (book.isAuthorVerified)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 6),
+                                    child: Icon(
+                                      Icons.verified_rounded,
+                                      color: Color(0xFF00D2FF),
+                                      size: 16,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 15),

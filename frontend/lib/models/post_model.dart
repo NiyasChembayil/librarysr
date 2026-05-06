@@ -48,6 +48,7 @@ class PostModel {
   final int commentsCount;
   final int repostsCount;
   final bool isLiked;
+  final bool isVerified;
   final PollModel? poll;
 
   PostModel({
@@ -68,6 +69,7 @@ class PostModel {
     required this.commentsCount,
     required this.repostsCount,
     required this.isLiked,
+    this.isVerified = false,
     this.poll,
   });
 
@@ -104,6 +106,7 @@ class PostModel {
       commentsCount: json['comments_count'] ?? 0,
       repostsCount: json['reposts_count'] ?? 0,
       isLiked: json['is_liked'] ?? false,
+      isVerified: json['is_verified'] ?? false,
       poll: json['poll'] != null ? PollModel.fromJson(json['poll']) : null,
     );
   }
@@ -146,6 +149,7 @@ class PostModel {
       commentsCount: commentsCount ?? this.commentsCount,
       repostsCount: repostsCount ?? this.repostsCount,
       isLiked: isLiked ?? this.isLiked,
+      isVerified: isVerified ?? this.isVerified,
       poll: poll ?? this.poll,
     );
   }

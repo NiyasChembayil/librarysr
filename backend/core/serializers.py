@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Book, Chapter, Purchase, ReadStats, AmbientSound, UserAmbientSound
+from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound
 
 class CategorySerializer(serializers.ModelSerializer):
     recommended_mood_name = serializers.ReadOnlyField(source='recommended_ambient_sound.name')
@@ -8,7 +8,7 @@ class CategorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'recommended_mood_name', 'recommended_mood_emoji']
+        fields = ['id', 'name', 'slug', 'recommended_ambient_sound', 'recommended_mood_name', 'recommended_mood_emoji']
 
 class ChapterSerializer(serializers.ModelSerializer):
     book = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -56,6 +56,7 @@ class BookSerializer(serializers.ModelSerializer):
     total_reads = serializers.SerializerMethodField()
     shelf_status = serializers.SerializerMethodField()
     is_favorite_book = serializers.SerializerMethodField()
+    is_author_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
@@ -64,7 +65,7 @@ class BookSerializer(serializers.ModelSerializer):
             'description', 'category', 'category_name', 'recommended_mood', 'price', 
             'is_published', 'is_featured', 'created_at', 'updated_at', 'chapters',
             'likes_count', 'comments_count', 'total_reads', 'is_in_library', 'is_liked',
-            'downloads_count', 'shelf_status', 'is_favorite_book'
+            'downloads_count', 'shelf_status', 'is_favorite_book', 'is_author_verified'
         ]
 
     def get_is_liked(self, obj):
@@ -115,6 +116,11 @@ class BookSerializer(serializers.ModelSerializer):
             return item.is_favorite if item else False
         return False
 
+    def get_is_author_verified(self, obj):
+        if hasattr(obj.author, 'profile'):
+            return obj.author.profile.is_verified
+        return False
+
 class PurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Purchase
@@ -130,9 +136,19 @@ class ReadStatsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AmbientSoundSerializer(serializers.ModelSerializer):
+    audio_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = AmbientSound
-        fields = '__all__'
+        fields = ['id', 'name', 'emoji', 'audio_url', 'audio_file', 'is_system', 'order']
+
+    def get_audio_url(self, obj):
+        if obj.audio_file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.audio_file.url)
+            return obj.audio_file.url
+        return obj.audio_url
 
 class UserAmbientSoundSerializer(serializers.ModelSerializer):
     class Meta:
@@ -145,3 +161,18 @@ class UserAmbientSoundSerializer(serializers.ModelSerializer):
         if UserAmbientSound.objects.filter(user=user).count() >= 3:
             raise serializers.ValidationError("You can only add up to 3 custom ambient sounds.")
         return data
+
+class ReadingProgressSerializer(serializers.ModelSerializer):
+    book_id = serializers.ReadOnlyField(source='book.id')
+    book_title = serializers.ReadOnlyField(source='book.title')
+    book_author = serializers.ReadOnlyField(source='book.author.username')
+    book_cover = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReadingProgress
+        fields = ['id', 'book_id', 'book_title', 'book_author', 'book_cover', 'chapter_index', 'last_read']
+
+    def get_book_cover(self, obj):
+        if obj.book.cover:
+            return self.context['request'].build_absolute_uri(obj.book.cover.url)
+        return None

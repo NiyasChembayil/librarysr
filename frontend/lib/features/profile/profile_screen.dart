@@ -7,7 +7,6 @@ import '../../providers/auth_provider.dart';
 import '../../models/book_model.dart';
 import '../../widgets/book_card.dart';
 import '../../providers/social_provider.dart';
-import '../../providers/book_provider.dart';
 import '../settings/settings_screen.dart';
 import '../studio/studio_screen.dart';
 import '../book/book_detail_screen.dart';
@@ -16,7 +15,6 @@ import '../../core/api_client.dart';
 import '../../providers/post_provider.dart';
 import '../feed/widgets/post_card.dart';
 import '../../models/profile_model.dart';
-import '../../providers/social_provider.dart';
 
 final externalProfileProvider = FutureProvider.family<ProfileModel?, String>((ref, profileId) async {
   final apiClient = ref.read(apiClientProvider);
@@ -135,7 +133,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
         // Use 'me' for current user (to see drafts), or profile.userId for others.
         final authorIdKey = isMe ? 'me' : profile.userId.toString();
         final authorBooksAsync = ref.watch(authorBooksProvider(authorIdKey));
-        final activityAsync = ref.watch(activityProvider(profile.id));
         final postState = ref.watch(postFeedProvider);
 
     return Scaffold(
@@ -227,7 +224,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 : null,
                             child: profile.avatar == null
                                 ? Text(
-                                    (profile.username ?? 'U')[0].toUpperCase(),
+                                    profile.username[0].toUpperCase(),
                                     style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF)),
                                   )
                                 : null,
@@ -239,9 +236,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   const SizedBox(height: 55),
 
                   // Username & Role
-                  Text(
-                    profile.username ?? 'User',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        profile.username,
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      ),
+                      if (profile.isVerified)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6),
+                          child: Icon(
+                            Icons.verified_rounded,
+                            color: Color(0xFF00D2FF),
+                            size: 20,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -251,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      (profile.role ?? 'reader').toUpperCase(),
+                      profile.role.toUpperCase(),
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF6C63FF), letterSpacing: 1),
                     ),
                   ),
@@ -375,7 +386,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         _buildVerticalDivider(),
                         _buildStatItem(
                           'Followers',
-                          '${profile.followersCount ?? 0}',
+                          '${profile.followersCount}',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -391,7 +402,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         _buildVerticalDivider(),
                         _buildStatItem(
                           'Following',
-                          '${profile.followingCount ?? 0}',
+                          '${profile.followingCount}',
                           onTap: () {
                             Navigator.push(
                               context,
@@ -755,8 +766,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
   Widget _buildChartSection(WidgetRef ref, int profileId) {
     final activityAsync = ref.watch(activityProvider(profileId));
-    final myProfile = ref.read(authProvider).profile;
-    final isMe = myProfile?.userId == profileId;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -787,10 +796,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             child: activityAsync.when(
               data: (data) {
                 if (data.isEmpty) return const Center(child: Text("No activity yet", style: TextStyle(color: Colors.white24)));
-                
-                final maxCount = data.map((e) => e['count'] as int).fold(0, (max, e) => e > max ? e : max);
-                final maxY = maxCount > 10 ? (maxCount + 2).toDouble() : 10.0;
-
                 return _buildHeatmap(data);
               },
               loading: () => const Center(child: CircularProgressIndicator()),

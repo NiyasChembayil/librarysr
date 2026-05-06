@@ -12,6 +12,7 @@ class Profile(models.Model):
     bio = models.TextField(blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     banner = models.ImageField(upload_to='banners/', null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
     
     # Privacy & Safety
     is_private = models.BooleanField(default=False)

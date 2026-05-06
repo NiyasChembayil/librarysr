@@ -39,11 +39,24 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = [
             'id', 'user_id', 'username', 'email', 'password', 'role', 'bio', 'avatar', 'banner',
+            'is_verified',
             'followers_count', 'following_count', 'is_following',
             'is_private', 'notify_new_follower', 'notify_likes', 'notify_comments', 
             'notify_new_books', 'font_size', 'reader_theme', 'playback_speed'
         ]
         read_only_fields = ['id', 'user_id', 'role', 'followers_count', 'following_count', 'is_following']
+
+    def validate_username(self, value):
+        user = self.instance.user if self.instance else None
+        if User.objects.exclude(pk=user.pk if user else None).filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_email(self, value):
+        user = self.instance.user if self.instance else None
+        if User.objects.exclude(pk=user.pk if user else None).filter(email__iexact=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})

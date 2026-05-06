@@ -214,7 +214,7 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 80),
@@ -231,7 +231,7 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Container(width: 40, height: 2, color: const Color(0xFF6C63FF).withOpacity(0.2)),
+                        Container(width: 40, height: 2, color: const Color(0xFF6C63FF).withValues(alpha: 0.2)),
                         const SizedBox(height: 50),
                         
                         GestureDetector(
@@ -239,7 +239,7 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6C63FF).withOpacity(0.05),
+                              color: const Color(0xFF6C63FF).withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(

@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import '../../core/api_client.dart';
 import '../../providers/book_provider.dart';
 import '../studio/chapter_editor_screen.dart';
+import '../../providers/my_books_provider.dart';
 
 class BookManagementScreen extends ConsumerStatefulWidget {
   final int bookId;
@@ -87,6 +88,59 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
     }
   }
 
+  Future<void> _showDeleteConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete Masterpiece?', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          'This action is permanent and cannot be undone. Are you sure you want to delete "${widget.bookTitle}"?',
+          style: GoogleFonts.inter(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('CANCEL', style: GoogleFonts.inter(color: Colors.white38, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('DELETE', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        await ref.read(apiClientProvider).dio.delete('core/books/${widget.bookId}/');
+        // Refresh books providers
+        ref.invalidate(myBooksProvider);
+        ref.invalidate(bookProvider);
+        if (mounted) {
+          Navigator.pop(context); // Go back to Studio
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Book deleted successfully.'), backgroundColor: Colors.redAccent),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete book: $e')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,7 +152,7 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
         actions: [
           if (!_isPublished)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: ElevatedButton.icon(
                 onPressed: _isPublishing ? null : _publishBook,
                 icon: _isPublishing 
@@ -114,7 +168,7 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
             )
           else
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF43E97B).withValues(alpha: 0.1),
@@ -129,6 +183,10 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
                 ],
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            onPressed: () => _showDeleteConfirmation(context),
+          ),
         ],
       ),
       body: _isLoading

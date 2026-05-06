@@ -172,6 +172,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                       TextSpan(text: notif['book_title'], style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
                     if (notif['message'] != null && (notif['action_type'] == 'COMMENT' || notif['action_type'] == 'POST_COMMENT'))
                       TextSpan(text: ' "${notif['message']}"', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.white70)),
+                    if (notif['message'] != null && notif['action_type'] == 'SYSTEM')
+                      TextSpan(
+                        text: ' ${notif['message'].toString().replaceAll(RegExp(r'[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}]', unicode: true), '')}', 
+                        style: const TextStyle(color: Colors.white70)
+                      ),
                     TextSpan(
                       text: '  $timeAgo',
                       style: const TextStyle(color: Colors.white54, fontSize: 13),
@@ -245,6 +250,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       case 'FOLLOW': return ' started following you.';
       case 'NEW_BOOK': return ' published a new book: ';
       case 'REPOST': return ' reposted your post.';
+      case 'SYSTEM': return ''; // Message contains the full text
       default: return ' sent a notification. ';
     }
   }
@@ -253,6 +259,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     if (type == 'LIKE' || type == 'POST_LIKE' || type == 'POST_COMMENT_LIKE') return Icons.favorite_rounded;
     if (type == 'COMMENT' || type == 'POST_COMMENT') return Icons.comment_rounded;
     if (type == 'REPOST') return Icons.repeat_rounded;
+    if (type == 'SYSTEM') return Icons.verified_rounded;
     return Icons.auto_stories_rounded;
   }
 
@@ -260,6 +267,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     if (type == 'LIKE' || type == 'POST_LIKE' || type == 'POST_COMMENT_LIKE') return Colors.redAccent;
     if (type == 'COMMENT' || type == 'POST_COMMENT') return Colors.blueAccent;
     if (type == 'REPOST') return Colors.greenAccent;
+    if (type == 'SYSTEM') return const Color(0xFF00D2FF);
     return Colors.purpleAccent;
   }
 

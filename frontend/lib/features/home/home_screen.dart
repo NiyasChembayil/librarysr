@@ -29,6 +29,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String _selectedCategory = 'All';
+
   @override
   void initState() {
     super.initState();
@@ -159,9 +161,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       case BookFeedStatus.error:
         return _buildErrorState(feedState.error);
-
       case BookFeedStatus.loaded:
-        final allBooks = List.of(feedState.books);
+        // Calculate categories from the FULL list
+        final Map<String, List<BookModel>> allCategorized = {};
+        for (var book in feedState.books) {
+          final cat = book.categoryName;
+          allCategorized.putIfAbsent(cat, () => []).add(book);
+        }
+
+        var allBooks = List.of(feedState.books);
+        // Apply category filter if not 'All'
+        if (_selectedCategory != 'All') {
+          allBooks = allBooks.where((b) => b.categoryName == _selectedCategory).toList();
+        }
+
         final socialState = ref.watch(socialDiscoveryProvider);
         final recentProgress = ref.watch(readingProgressProvider);
         
@@ -176,7 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ..sort((a, b) => b.likesCount.compareTo(a.likesCount));
         final top10 = top10Books.take(10).toList();
         
-        // 3+. Categorized Books
+        // 3+. Categorized Books for display
         final Map<String, List<BookModel>> categorizedBooks = {};
         for (var book in allBooks) {
           final cat = book.categoryName;
@@ -205,9 +218,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ContinueReadingCard(progress: recentProgress),
                 
                 CategoryChips(
-                  categories: categorizedBooks.keys.toList(),
+                  categories: allCategorized.keys.toList(),
                   onCategorySelected: (cat) {
-                    // Logic to filter or jump to section could go here
+                    setState(() => _selectedCategory = cat);
                   },
                 ),
                 const SizedBox(height: 10),

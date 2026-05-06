@@ -52,25 +52,6 @@ class _PostCardState extends ConsumerState<PostCard>
     });
   }
 
-  Color get _typeColor {
-    switch (widget.post.postType) {
-      case 'REVIEW':
-        return const Color(0xFFFFD700);
-      case 'QUOTE':
-        return const Color(0xFF6C63FF);
-      case 'OPINION':
-        return const Color(0xFFFF6584);
-      case 'UPDATE':
-        return const Color(0xFF43E97B);
-      case 'POLL':
-        return const Color(0xFF6C63FF);
-      case 'MILESTONE':
-        return const Color(0xFFFF9A8B);
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
@@ -126,13 +107,26 @@ class _PostCardState extends ConsumerState<PostCard>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                post.username,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    post.username,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  if (post.isVerified)
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Icon(
+                                        Icons.verified_rounded,
+                                        color: Color(0xFF00D2FF),
+                                        size: 14,
+                                      ),
+                                    ),
+                                ],
                               ),
                               Text(
                                 post.timeAgo,
@@ -543,7 +537,7 @@ class _PostCardState extends ConsumerState<PostCard>
             bool isSelected = poll.userVotedOptionId == option.id;
 
             return GestureDetector(
-              onTap: hasVoted ? null : () => ref.read(postFeedProvider.notifier).vote(widget.post.id, option.id),
+              onTap: () => ref.read(postFeedProvider.notifier).vote(widget.post.id, option.id),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 height: 48,
