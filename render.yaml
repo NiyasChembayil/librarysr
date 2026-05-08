@@ -10,8 +10,7 @@ services:
     env: python
     plan: free
     buildCommand: "cd backend && ./build.sh"
-    releaseCommand: "cd backend && python manage.py migrate"
-    startCommand: "cd backend && daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
+    startCommand: "cd backend && python manage.py migrate && daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
