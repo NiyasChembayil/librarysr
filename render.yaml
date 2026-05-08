@@ -9,10 +9,9 @@ services:
     name: srishty-backend
     env: python
     plan: free
-    rootDir: backend
-    buildCommand: "./build.sh"
-    releaseCommand: "python manage.py migrate"
-    startCommand: "daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
+    buildCommand: "cd backend && ./build.sh"
+    releaseCommand: "cd backend && python manage.py migrate"
+    startCommand: "cd backend && daphne -b 0.0.0.0 -p $PORT bookify_backend.asgi:application"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
