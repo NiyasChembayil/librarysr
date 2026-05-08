@@ -30,4 +30,16 @@ services:
         value: "3.11.0"
       - key: CLOUDINARY_URL
         sync: false # User must set this manually in the dashboard
-    rootDir: "backend"
+  - type: static
+    name: srishty-client
+    env: static
+    plan: free
+    rootDir: web_client
+    publishDir: "."
+
+  - type: static
+    name: srishty-admin
+    env: static
+    plan: free
+    rootDir: web_admin
+    publishDir: "."
