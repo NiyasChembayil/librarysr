@@ -32,7 +32,7 @@ class MyBooksNotifier extends StateNotifier<MyBooksState> {
   Future<void> fetchMyBooks() async {
     state = MyBooksState(books: state.books, isLoading: true);
     try {
-      final response = await _apiClient.dio.get('core/books/?author=me');
+      final response = await _apiClient.dio.get('core/books/my_library/');
       final List data = response.data is List ? response.data : (response.data['results'] ?? []);
       
       final books = data.map((json) => BookModel.fromJson(json)).toList();

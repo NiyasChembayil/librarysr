@@ -181,6 +181,49 @@ class BookViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def my_library(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=401)
+        
+        from .models import UserLibrary, Purchase
+        library_book_ids = list(UserLibrary.objects.filter(user=user).values_list('book_id', flat=True))
+        purchased_book_ids = list(Purchase.objects.filter(user=user).values_list('book_id', flat=True))
+        authored_book_ids = list(Book.objects.filter(author=user).values_list('id', flat=True))
+        
+        all_ids = set(library_book_ids + purchased_book_ids + authored_book_ids)
+        books = Book.objects.filter(id__in=all_ids).order_by('-created_at')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def toggle_library(self, request, pk=None):
+        book = self.get_object()
+        from .models import UserLibrary
+        item, created = UserLibrary.objects.get_or_create(user=request.user, book=book)
+        if not created:
+            item.delete()
+            return Response({'status': 'removed from library'})
+        return Response({'status': 'added to library'})
+
+    @action(detail=True, methods=['post'])
+    def update_shelf(self, request, pk=None):
+        book = self.get_object()
+        from .models import UserLibrary
+        item, created = UserLibrary.objects.get_or_create(user=request.user, book=book)
+        
+        status = request.data.get('status')
+        is_favorite = request.data.get('is_favorite')
+        
+        if status is not None:
+            item.shelf = status
+        if is_favorite is not None:
+            item.is_favorite = is_favorite
+            
+        item.save()
+        return Response({'status': 'shelf updated', 'shelf': item.shelf, 'is_favorite': item.is_favorite})
+
     @action(detail=True, methods=['post'])
     def import_chapters(self, request, pk=None):
         book = self.get_object()
