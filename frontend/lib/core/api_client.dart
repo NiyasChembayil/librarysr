@@ -12,7 +12,7 @@ final apiClientProvider = Provider((ref) => ApiClient());
 // Using localhost (127.0.0.1) will NOT work on real physical devices or Android emulators!
 const String _baseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8000/api/',
+  defaultValue: 'https://srishty-backend.onrender.com/api/',
 );
 
 class ApiClient {
