@@ -181,7 +181,10 @@ class AdminApp {
     async loadUsersView() {
         const container = document.getElementById('view-container');
         container.innerHTML = `<div class="glass section-card animate-slide-up">
-            <h3>Registered Platform Users</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Registered Platform Users</h3>
+                <button id="btn-export-users" class="btn-action" style="background: var(--accent-blue);">📥 Download User Data (CSV)</button>
+            </div>
             <div class="table-container">
                 <table class="data-table">
                     <thead>
@@ -212,8 +215,41 @@ class AdminApp {
                     <td><button class="btn-action red">Block</button></td>
                 </tr>
             `).join('');
+
+            // Bind export button
+            document.getElementById('btn-export-users').onclick = () => this.exportUsers();
+
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    async exportUsers() {
+        const btn = document.getElementById('btn-export-users');
+        btn.textContent = 'Generating...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/accounts/profile/export_csv/`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            
+            if (!response.ok) throw new Error('Export failed');
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `srishty_users_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            alert('Error exporting users: ' + error.message);
+        } finally {
+            btn.textContent = '📥 Download User Data (CSV)';
+            btn.disabled = false;
         }
     }
 

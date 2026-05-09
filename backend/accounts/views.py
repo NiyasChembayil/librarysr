@@ -36,6 +36,17 @@ class AuthViewSet(viewsets.GenericViewSet):
             "status": "success"
         }, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'])
+    def global_stats(self, request):
+        total_users = User.objects.count()
+        new_users_today = User.objects.filter(date_joined__date=timezone.now().date()).count()
+        
+        return Response({
+            "total_users": total_users,
+            "new_users_today": new_users_today,
+            "server_time": timezone.now()
+        })
+
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
@@ -181,3 +192,30 @@ class ProfileViewSet(viewsets.ModelViewSet):
             "status": "success",
             "is_verified": profile.is_verified
         })
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        if not (request.user.is_staff or request.user.profile.role == 'admin'):
+            return Response({"error": "Admin access required"}, status=403)
+            
+        import csv
+        from django.http import HttpResponse
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="srishty_users.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Username', 'Email', 'Role', 'Verified', 'Date Joined'])
+        
+        profiles = Profile.objects.all().select_related('user')
+        for profile in profiles:
+            writer.writerow([
+                profile.user.id,
+                profile.user.username,
+                profile.user.email,
+                profile.role,
+                profile.is_verified,
+                profile.user.date_joined.strftime('%Y-%m-%d %H:%M:%S')
+            ])
+            
+        return response

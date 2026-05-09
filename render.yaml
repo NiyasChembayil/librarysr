@@ -41,3 +41,9 @@ services:
     runtime: static
     rootDir: web_admin
     staticPublishPath: "."
+
+  - type: web
+    name: srishty-live-stats
+    runtime: static
+    rootDir: web_stats
+    staticPublishPath: "."
