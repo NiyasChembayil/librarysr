@@ -236,6 +236,10 @@ else:
     # Use Cloudinary as an alternative if configured
     CLOUDINARY_URL = env('CLOUDINARY_URL', default='')
     if CLOUDINARY_URL:
-        INSTALLED_APPS.append('cloudinary_storage')
-        INSTALLED_APPS.append('cloudinary')
+        CLOUDINARY_STORAGE = {
+            'CLOUDINARY_URL': CLOUDINARY_URL
+        }
+        INSTALLED_APPS.insert(0, 'cloudinary_storage') # Must be BEFORE staticfiles
+        if 'cloudinary' not in INSTALLED_APPS:
+            INSTALLED_APPS.append('cloudinary')
         DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
