@@ -33,6 +33,11 @@ class BookViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
+    def get_permissions(self):
+        if self.action in ['toggle_library', 'record_read', 'update_progress', 'update_shelf', 'library_stats']:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
         queryset = Book.objects.all()
         author_id = self.request.query_params.get('author')
