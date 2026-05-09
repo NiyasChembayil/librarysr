@@ -49,5 +49,9 @@ urlpatterns = [
     path('api/admin/', include(router.urls)),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+from django.views.static import serve
+import re
+
+urlpatterns += [
+    path(r'media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+]

@@ -184,11 +184,11 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False) # Must be False in production
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-])
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
