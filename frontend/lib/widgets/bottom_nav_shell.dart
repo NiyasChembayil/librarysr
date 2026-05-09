@@ -66,7 +66,7 @@ class _BottomNavShellState extends State<BottomNavShell> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(ref, selectedIndex, 0, Icons.menu_book_rounded, 'Books'),
-                        _buildNavItem(ref, selectedIndex, 1, Icons.headphones_rounded, 'Audio'),
+                        _buildNavItem(ref, selectedIndex, 1, Icons.headphones_rounded, 'Library'),
                         // Centre ➕ Post button
                         _buildPostButton(context, ref),
                         _buildNavItem(ref, selectedIndex, 2, Icons.dynamic_feed_rounded, 'Feed'),
