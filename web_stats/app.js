@@ -25,8 +25,8 @@ class LiveCounter {
             if (!response.ok) throw new Error('API request failed');
             const data = await response.json();
             
-            if (data.new_users_today !== undefined) {
-                this.update(data.new_users_today);
+            if (data.total_users !== undefined) {
+                this.update(data.total_users);
             }
         } catch (error) {
             console.error('Error fetching stats:', error);
