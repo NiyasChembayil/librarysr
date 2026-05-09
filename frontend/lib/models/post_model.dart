@@ -1,3 +1,5 @@
+import '../core/media_service.dart';
+
 class PostAuthor {
   final int id;
   final String username;
@@ -6,14 +8,10 @@ class PostAuthor {
   PostAuthor({required this.id, required this.username, this.avatarUrl});
 
   factory PostAuthor.fromJson(Map<String, dynamic> json) {
-    String? avatar = json['user_avatar'];
-    if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://127.0.0.1:8000$avatar';
-    }
     return PostAuthor(
       id: json['user'] ?? 0,
       username: json['username'] ?? 'unknown',
-      avatarUrl: avatar,
+      avatarUrl: MediaService.sanitizeUrl(json['user_avatar']),
     );
   }
 
@@ -74,15 +72,6 @@ class PostModel {
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
-    String? avatar = json['user_avatar'];
-    if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://127.0.0.1:8000$avatar';
-    }
-    String? cover = json['book_cover'];
-    if (cover != null && cover.isNotEmpty && !cover.startsWith('http')) {
-      cover = 'http://127.0.0.1:8000$cover';
-    }
-
     PostModel? parent;
     if (json['parent_post_data'] != null) {
       parent = PostModel.fromJson(json['parent_post_data']);
@@ -92,14 +81,14 @@ class PostModel {
       id: json['id'],
       userId: json['user'] ?? 0,
       username: json['username'] ?? 'unknown',
-      userAvatar: avatar,
+      userAvatar: MediaService.sanitizeUrl(json['user_avatar']),
       text: json['text'] ?? '',
       postType: json['post_type'] ?? 'UPDATE',
       bookId: json['book'],
       bookTitle: json['book_title'],
-      bookCover: cover,
+      bookCover: MediaService.sanitizeUrl(json['book_cover']),
       chapterId: json['chapter_id'],
-      audioUrl: json['audio_file'],
+      audioUrl: MediaService.sanitizeUrl(json['audio_file']),
       parentPost: parent,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       likesCount: json['likes_count'] ?? 0,
@@ -206,15 +195,11 @@ class PostCommentModel {
   });
 
   factory PostCommentModel.fromJson(Map<String, dynamic> json) {
-    String? avatar = json['user_avatar'];
-    if (avatar != null && avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = 'http://127.0.0.1:8000$avatar';
-    }
     return PostCommentModel(
       id: json['id'],
       userId: json['user'] ?? 0,
       username: json['username'] ?? 'unknown',
-      userAvatar: avatar,
+      userAvatar: MediaService.sanitizeUrl(json['user_avatar']),
       postId: json['post'] ?? 0,
       text: json['text'] ?? '',
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),

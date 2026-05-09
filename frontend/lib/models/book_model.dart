@@ -1,3 +1,5 @@
+import '../core/media_service.dart';
+
 class BookModel {
   final int id;
   final String title;
@@ -46,12 +48,7 @@ class BookModel {
     this.recommendedMood,
   });
 
-  factory BookModel.fromJson(Map<String, dynamic> json) {
-    String cover = json['cover'] ?? '';
-    if (cover.isNotEmpty && !cover.startsWith('http')) {
-      cover = 'http://127.0.0.1:8000$cover';
-    }
-
+    factory BookModel.fromJson(Map<String, dynamic> json) {
     return BookModel(
       id: json['id'],
       title: json['title'] ?? 'Untitled',
@@ -60,7 +57,7 @@ class BookModel {
       authorProfileId: json['author_profile_id'] ?? 0,
       isAuthorFollowing: json['is_author_following'] ?? false,
       isAuthorVerified: json['is_author_verified'] ?? false,
-      coverUrl: cover,
+      coverUrl: MediaService.sanitizeUrl(json['cover']) ?? '',
       description: json['description'] ?? '',
       price: 0.0,
       likesCount: json['likes_count'] ?? 0,

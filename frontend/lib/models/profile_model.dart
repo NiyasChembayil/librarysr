@@ -1,3 +1,5 @@
+import '../core/media_service.dart';
+
 class ProfileModel {
   final int id;
   final String username;
@@ -52,8 +54,8 @@ class ProfileModel {
       username: user?['username'] ?? json['username'] ?? 'User',
       role: json['role'] ?? 'reader',
       bio: json['bio'] ?? '',
-      avatar: json['avatar'],
-      banner: json['banner'],
+      avatar: MediaService.sanitizeUrl(json['avatar']),
+      banner: MediaService.sanitizeUrl(json['banner']),
       // 'followed_by' is the correct field name on the model
       followersCount: (json['followed_by'] as List?)?.length ?? json['followers_count'] ?? 0,
       followingCount: json['following_count'] ?? 0,
