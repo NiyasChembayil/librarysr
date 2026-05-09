@@ -148,7 +148,10 @@ class PostFeedNotifier extends StateNotifier<PostFeedState> {
           'post_type': postType,
           if (bookId != null) 'book': bookId.toString(),
           if (chapterId != null) 'chapter_id': chapterId.toString(),
-          'audio_file': await MultipartFile.fromFile(audioFilePath),
+          'audio_file': await MultipartFile.fromFile(
+            audioFilePath, 
+            filename: audioFilePath.split('/').last,
+          ),
         });
         final resp = await _api.dio.post('social/posts/', data: formData);
         final newPost = PostModel.fromJson(resp.data);

@@ -127,7 +127,10 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
         'content': contentJson,
         'order': widget.chapter?['order'] ?? widget.nextOrder,
         if (_audioFile != null)
-          'audio_file': await MultipartFile.fromFile(_audioFile!.path, filename: 'chapter_audio.mp3'),
+          'audio_file': await MultipartFile.fromFile(
+            _audioFile!.path, 
+            filename: _audioFile!.path.split('/').last,
+          ),
       });
 
       final dio = ref.read(apiClientProvider).dio;

@@ -69,7 +69,10 @@ class _CreateBookScreenState extends ConsumerState<CreateBookScreen> {
         'price': '0.00',
         'is_published': 'false',
         if (_coverImage != null)
-          'cover': await MultipartFile.fromFile(_coverImage!.path, filename: 'cover.jpg'),
+          'cover': await MultipartFile.fromFile(
+            _coverImage!.path, 
+            filename: _coverImage!.path.split('/').last,
+          ),
       });
 
       final response = await ref.read(apiClientProvider).dio.post('core/books/', data: formData);
