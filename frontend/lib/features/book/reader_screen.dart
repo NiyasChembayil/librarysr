@@ -589,7 +589,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () async {
-                  FilePickerResult? result = await FilePicker.pickFiles(type: FileType.audio);
+                  // Using FileType.any avoids a known iOS simulator bug with FileType.audio
+                  FilePickerResult? result = await FilePicker.pickFiles(type: FileType.any);
                   if (result != null) {
                     setState(() {
                       selectedFilePath = result.files.single.path;

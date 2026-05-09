@@ -57,7 +57,7 @@ class BookModel {
       authorProfileId: json['author_profile_id'] ?? 0,
       isAuthorFollowing: json['is_author_following'] ?? false,
       isAuthorVerified: json['is_author_verified'] ?? false,
-      coverUrl: MediaService.sanitizeUrl(json['cover']) ?? '',
+      coverUrl: MediaService.sanitizeUrl(json['cover']),
       description: json['description'] ?? '',
       price: 0.0,
       likesCount: json['likes_count'] ?? 0,
@@ -99,6 +99,7 @@ class BookModel {
     bool? isFavorite,
     bool? isFeatured,
     String? recommendedMood,
+    bool? isAuthorVerified,
   }) {
     return BookModel(
       id: id ?? this.id,

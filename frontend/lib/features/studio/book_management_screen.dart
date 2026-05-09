@@ -125,8 +125,9 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
         ref.invalidate(myBooksProvider);
         ref.invalidate(bookProvider);
         if (mounted) {
+          final messenger = ScaffoldMessenger.of(context);
           Navigator.pop(context); // Go back to Studio
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text('Book deleted successfully.'), backgroundColor: Colors.redAccent),
           );
         }

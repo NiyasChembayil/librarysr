@@ -118,6 +118,7 @@ class PostModel {
     int? commentsCount,
     int? repostsCount,
     bool? isLiked,
+    bool? isVerified,
     PollModel? poll,
   }) {
     return PostModel(
