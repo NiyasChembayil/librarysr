@@ -109,9 +109,9 @@ body {
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 15px 40px var(--accent-glow);
+    box-shadow: 0 10px 40px var(--accent-glow);
     background: #8222FF;
+    filter: brightness(1.1);
 }
 
 .btn-outline {
@@ -247,9 +247,9 @@ body {
 }
 
 .book-card:hover {
-    transform: translateY(-5px);
     border-color: var(--accent-secondary);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .book-cover {

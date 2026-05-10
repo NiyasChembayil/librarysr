@@ -405,14 +405,18 @@ class SrishtyReaderApp {
         const pinnedContainer = document.getElementById('pinned-project-container');
         if (!container) return;
 
+        const getCorrectImageUrl = (url) => {
+            if (!url) return '/static/assets/logo.png';
+            if (url.startsWith('http')) return url;
+            // If it starts with /media/ or media/, ensure it's relative to the root
+            let cleanUrl = url.startsWith('/') ? url : '/' + url;
+            return cleanUrl; 
+        };
+
         // 1. Identify Pinned Focus Project (Most recent)
         if (books.length > 0 && pinnedContainer) {
             const pinned = books[0]; 
-            let cover = pinned.cover;
-            if (cover && !cover.startsWith('http')) {
-                cover = `https://srishty-backend.onrender.com${cover}`;
-            }
-            if (!cover) cover = '/static/assets/logo.png';
+            const cover = getCorrectImageUrl(pinned.cover);
 
             pinnedContainer.innerHTML = `
                 <div class="pinned-project">
@@ -426,7 +430,6 @@ class SrishtyReaderApp {
                     </div>
                 </div>
             `;
-            // Remove pinned from the main list to avoid duplication
             var mainList = books.slice(1);
         } else {
             if (pinnedContainer) pinnedContainer.innerHTML = '';
@@ -434,18 +437,12 @@ class SrishtyReaderApp {
         }
 
         if (mainList.length === 0 && books.length === 0) {
-            container.innerHTML = '<div class="loading-spinner" style="grid-column: 1/-1; padding: 40px;">No stories found.</div>';
+            container.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; color: var(--text-muted);">No stories found. Start your first journey!</div>';
             return;
         }
 
         container.innerHTML = mainList.map(book => {
-            // Fix image URL
-            let cover = book.cover;
-            if (cover && !cover.startsWith('http')) {
-                cover = `https://srishty-backend.onrender.com${cover}`;
-            }
-            if (!cover) cover = '/static/assets/logo.png';
-            
+            const cover = getCorrectImageUrl(book.cover);
             return `
                 <article class="book-card" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">
                     <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover">
