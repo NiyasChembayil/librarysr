@@ -406,18 +406,23 @@ class SrishtyReaderApp {
         if (!container) return;
 
         // 1. Identify Pinned Focus Project (Most recent)
-        if (books.length > 0 && this.galleryTab === 'all' && pinnedContainer) {
-            const pinned = books[0]; // Assuming first is most recent
+        if (books.length > 0 && pinnedContainer) {
+            const pinned = books[0]; 
+            let cover = pinned.cover;
+            if (cover && !cover.startsWith('http')) {
+                cover = `https://srishty-backend.onrender.com${cover}`;
+            }
+            if (!cover) cover = '/static/assets/logo.png';
+
             pinnedContainer.innerHTML = `
-                <div class="hero-project-card animate-up">
-                    <img src="${escapeHTML(pinned.cover) || '../frontend/assets/logo.png'}" class="hero-cover">
-                    <div class="hero-details">
-                        <span style="font-size: 12px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">CURRENT FOCUS</span>
-                        <h2 style="font-size: 28px; margin-bottom: 10px;">${escapeHTML(pinned.title)}</h2>
-                        <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; max-width: 500px;">${escapeHTML(pinned.description || 'Continue working on your masterpiece and share it with the world.')}</p>
-                        <div style="display: flex; gap: 15px;">
-                            <button class="btn-primary" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(pinned))})">Continue Writing</button>
-                            <button class="btn-secondary" onclick="alert('Viewing Analytics...')">View Full Analytics</button>
+                <div class="pinned-project animate-up">
+                    <img src="${cover}" class="pinned-cover">
+                    <div class="pinned-info">
+                        <h2>${escapeHTML(pinned.title)}</h2>
+                        <p>${escapeHTML(pinned.description || 'Continue working on your masterpiece and share it with the world.')}</p>
+                        <div style="display: flex; gap: 20px;">
+                            <button class="btn btn-primary" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(pinned))})">Continue Writing</button>
+                            <button class="btn btn-outline" onclick="alert('Viewing Analytics...')">Detailed Insights</button>
                         </div>
                     </div>
                 </div>
@@ -434,64 +439,21 @@ class SrishtyReaderApp {
             return;
         }
 
-        // 2. Set View Class
-        container.className = this.galleryView === 'grid' ? 'book-grid' : 'book-grid list-view';
-
         container.innerHTML = mainList.map(book => {
-            const statusClass = book.is_published ? 'status-published' : 'status-draft';
-            const statusLabel = book.is_published ? 'Published' : 'Draft';
-            
             // Fix image URL
             let cover = book.cover;
             if (cover && !cover.startsWith('http')) {
-                // Remove base domain if present to keep it relative
-                cover = cover.replace('https://srishty-backend.onrender.com', '');
-                if (!cover.startsWith('/')) cover = '/' + cover;
+                cover = `https://srishty-backend.onrender.com${cover}`;
             }
             if (!cover) cover = '/static/assets/logo.png';
             
-            if (this.galleryView === 'grid') {
-                return `
-                    <article class="book-card dashboard-card">
-                        <div class="book-status-badge ${statusClass}">${statusLabel}</div>
-                        <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover">
-                        
-                        <div class="book-analytics-overlay">
-                            <span>👁️ ${book.total_reads || 0}</span>
-                            <span>❤️ ${book.likes_count || 0}</span>
-                        </div>
-
-                        <div class="quick-actions-hover">
-                            <button class="action-btn" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">✏️ Edit Story</button>
-                            <button class="action-btn" onclick="alert('Shared to community!')">🔗 Share Link</button>
-                        </div>
-
-                        <div class="book-title" title="${escapeHTML(book.title)}">${escapeHTML(book.title)}</div>
-                        <div class="book-author">by You</div>
-                    </article>
-                `;
-            } else {
-                // List View
-                return `
-                    <article class="dashboard-card">
-                        <img src="${cover}" class="book-cover">
-                        <div>
-                            <div style="font-weight: 700; color: white;">${escapeHTML(book.title)}</div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">${statusLabel}</div>
-                        </div>
-                        <div class="book-analytics-overlay">
-                            <span>👁️ ${book.total_reads || 0} Reads</span>
-                        </div>
-                        <div class="book-analytics-overlay">
-                            <span>❤️ ${book.likes_count || 0} Likes</span>
-                        </div>
-                        <div class="quick-actions-hover">
-                            <button class="action-btn" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">Edit</button>
-                            <button class="action-btn">Stats</button>
-                        </div>
-                    </article>
-                `;
-            }
+            return `
+                <article class="book-card" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">
+                    <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover">
+                    <div class="book-title" title="${escapeHTML(book.title)}">${escapeHTML(book.title)}</div>
+                    <div class="book-author">by You</div>
+                </article>
+            `;
         }).join('');
     }
 

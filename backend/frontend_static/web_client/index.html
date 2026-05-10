@@ -88,33 +88,41 @@
         </section>
 
         <!-- My Works Section (Visible when logged in) -->
-        <section id="my-works-section" class="container hidden animate-up" style="max-width: 1400px; padding-top: 120px;">
-            <div style="display: flex; gap: 30px;">
+        <section id="my-works-section" class="container hidden animate-up" style="max-width: 1400px; padding-top: 140px;">
+            <div style="display: flex; gap: 40px;">
                 <!-- Main Gallery Area -->
                 <div style="flex: 1;">
-                    <!-- Author Milestone Widget -->
-                    <div id="author-milestones" class="feature-card" style="margin-bottom: 30px; padding: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; text-align: left;">
-                        <div class="milestone-stat">
-                            <div style="color: var(--accent-secondary); font-size: 12px; font-weight: 800; text-transform: uppercase;">Total Followers</div>
-                            <div id="total-followers" style="font-size: 32px; font-weight: 900;">0</div>
+                    <!-- Command Center Stats -->
+                    <div class="milestone-grid">
+                        <div class="milestone-card">
+                            <div class="milestone-label">Audience</div>
+                            <div id="total-followers" class="milestone-value">0</div>
                         </div>
-                        <div class="milestone-stat">
-                            <div style="color: #FF4500; font-size: 12px; font-weight: 800; text-transform: uppercase;">Writing Streak</div>
-                            <div id="writing-streak" style="font-size: 32px; font-weight: 900;">🔥 0</div>
+                        <div class="milestone-card">
+                            <div class="milestone-label">Writing Streak</div>
+                            <div id="writing-streak" class="milestone-value">🔥 0</div>
                         </div>
-                        <div class="milestone-stat">
-                            <div style="color: #ADFF2F; font-size: 12px; font-weight: 800; text-transform: uppercase;">Author Level</div>
-                            <div id="author-level" style="font-size: 32px; font-weight: 900;">Lv. 1</div>
+                        <div class="milestone-card">
+                            <div class="milestone-label">Author Rank</div>
+                            <div id="author-level" class="milestone-value">Lv. 1</div>
                         </div>
-                        <div class="milestone-stat">
-                            <div style="color: white; font-size: 12px; font-weight: 800; text-transform: uppercase;">Total Reads</div>
-                            <div id="total-reads" style="font-size: 32px; font-weight: 900;">0</div>
+                        <div class="milestone-card">
+                            <div class="milestone-label">Total Impact</div>
+                            <div id="total-reads" class="milestone-value">0</div>
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                        <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px;">My Publishing House</h2>
-                        <button class="btn btn-primary" onclick="readerApp.startNewBook()">+ Create New Story</button>
+                    <!-- Pinned Project Hero -->
+                    <div id="pinned-project-container">
+                        <!-- Pinned project injected by app.js -->
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+                        <div>
+                            <h2 style="font-family: 'Outfit', sans-serif; font-size: 38px; font-weight: 900; letter-spacing: -1px;">My Publishing House</h2>
+                            <p style="color: var(--text-muted); font-size: 14px;">Manage and grow your story empire</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="readerApp.startNewBook()" style="padding: 15px 40px; font-size: 16px;">+ Launch New Story</button>
                     </div>
                     
                     <div class="book-grid" id="my-books-container">
@@ -123,24 +131,30 @@
                 </div>
 
                 <!-- Right Sidebar: Activity Feed -->
-                <div style="width: 320px; flex-shrink: 0;">
-                    <div class="feature-card" style="padding: 25px; height: 100%; min-height: 600px; text-align: left;">
-                        <h3 style="font-size: 14px; margin-bottom: 25px; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 2px;">Global Activity</h3>
-                        <div id="activity-feed" style="display: flex; flex-direction: column; gap: 20px;">
-                            <div style="display: flex; gap: 15px; font-size: 14px;">
-                                <span style="font-size: 20px;">❤️</span>
+                <div style="width: 350px; flex-shrink: 0;">
+                    <div class="milestone-card" style="padding: 30px; min-height: 700px; height: 100%;">
+                        <h3 style="font-size: 14px; margin-bottom: 30px; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 2px; font-weight: 800;">Global Signals</h3>
+                        <div id="activity-feed" style="display: flex; flex-direction: column; gap: 25px;">
+                            <div style="display: flex; gap: 20px; font-size: 14px; align-items: flex-start;">
+                                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📢</div>
                                 <div>
-                                    <p style="color: white; font-weight: 600;">System Update</p>
-                                    <p style="color: var(--text-muted); font-size: 12px;">Your studio is now live on srishtyapp.com</p>
+                                    <p style="color: white; font-weight: 700; margin-bottom: 4px;">Studio Synchronized</p>
+                                    <p style="color: var(--text-muted); font-size: 12px; line-height: 1.5;">Your workspace is fully connected to srishtyapp.com</p>
                                 </div>
                             </div>
                         </div>
                         
-                        <div style="margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 20px;">
-                            <h3 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Author Tools</h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <button class="btn btn-outline" style="padding: 10px; font-size: 11px;" onclick="readerApp.openToolModal('rank')">Rankings</button>
-                                <button class="btn btn-outline" style="padding: 10px; font-size: 11px;" onclick="readerApp.openToolModal('settings')">Settings</button>
+                        <div style="margin-top: 60px; border-top: 1px solid var(--glass-border); padding-top: 30px;">
+                            <div class="milestone-label" style="margin-bottom: 20px;">Command Tools</div>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                                <button class="btn btn-outline" style="width: 100%; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between;" onclick="readerApp.openToolModal('rank')">
+                                    <span>Leaderboard</span>
+                                    <span>🏆</span>
+                                </button>
+                                <button class="btn btn-outline" style="width: 100%; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between;" onclick="readerApp.openToolModal('settings')">
+                                    <span>Studio Settings</span>
+                                    <span>⚙️</span>
+                                </button>
                             </div>
                         </div>
                     </div>
