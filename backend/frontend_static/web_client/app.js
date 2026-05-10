@@ -40,8 +40,6 @@ class SrishtyReaderApp {
         const authNav = document.getElementById('auth-nav');
         const usernameDisplay = document.getElementById('nav-username');
         const landingSection = document.getElementById('landing-section');
-        const featuresSection = document.getElementById('features');
-        const visionSection = document.getElementById('vision');
         const worksSection = document.getElementById('my-works-section');
         const authModal = document.getElementById('auth-modal');
         
@@ -50,9 +48,8 @@ class SrishtyReaderApp {
             if (authNav) authNav.classList.remove('hidden');
             if (usernameDisplay) usernameDisplay.textContent = localStorage.getItem('username') || 'Author';
             
-            if (landingSection) landingSection.classList.add('hidden');
-            if (featuresSection) featuresSection.classList.add('hidden');
-            if (visionSection) visionSection.classList.add('hidden');
+            // Keep landing visible but show dashboard on top
+            if (landingSection) landingSection.classList.add('hidden'); // Hero is still hidden for focus
             if (worksSection) worksSection.classList.remove('hidden');
             if (authModal) authModal.classList.remove('active');
         } else {
@@ -60,8 +57,6 @@ class SrishtyReaderApp {
             if (authNav) authNav.classList.add('hidden');
             
             if (landingSection) landingSection.classList.remove('hidden');
-            if (featuresSection) featuresSection.classList.remove('hidden');
-            if (visionSection) visionSection.classList.remove('hidden');
             if (worksSection) worksSection.classList.add('hidden');
         }
     }
