@@ -168,24 +168,12 @@ body {
     line-height: 1.8;
 }
 
-/* Feature Grid Layout */
-.feature-section {
-    padding: 100px 60px;
-    max-width: 1300px;
-    margin: 0 auto;
-}
-
-.feature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-}
-
+/* Feature Cards (Milestones & Landing) */
 .feature-card {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    padding: 50px 40px;
+    padding: 30px;
     border-radius: var(--radius-lg);
     text-align: center;
     transition: var(--transition-smooth);
@@ -194,41 +182,59 @@ body {
 }
 
 .feature-card:hover {
-    transform: translateY(-10px);
-    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.05);
 }
 
-.feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at top right, var(--accent-glow), transparent 60%);
-    opacity: 0;
+/* Book Gallery & Cards */
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.book-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 15px;
     transition: var(--transition-smooth);
+    cursor: pointer;
+    text-align: left;
+    position: relative;
 }
 
-.feature-card:hover::before {
-    opacity: 1;
+.book-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.feature-icon {
-    font-size: 48px;
-    margin-bottom: 25px;
-    display: block;
-}
-
-.feature-card h3 {
-    font-size: 24px;
-    font-weight: 800;
+.book-cover {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 8px;
     margin-bottom: 15px;
-    color: white;
+    background: #131129;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
-.feature-card p {
+.book-title {
+    font-weight: 800;
+    font-size: 16px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px;
+}
+
+.book-author {
+    font-size: 13px;
     color: var(--text-muted);
-    font-size: 15px;
-    line-height: 1.7;
 }
 
 /* Mission Section (Visionaries) */

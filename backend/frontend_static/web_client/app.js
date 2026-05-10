@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
     ? 'http://127.0.0.1:8000/api' 
-    : 'https://srishty-backend.onrender.com/api';
+    : '/api';
 
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
@@ -444,7 +444,9 @@ class SrishtyReaderApp {
             // Fix image URL
             let cover = book.cover;
             if (cover && !cover.startsWith('http')) {
-                cover = `https://srishty-backend.onrender.com${cover}`;
+                // Remove base domain if present to keep it relative
+                cover = cover.replace('https://srishty-backend.onrender.com', '');
+                if (!cover.startsWith('/')) cover = '/' + cover;
             }
             if (!cover) cover = '/static/assets/logo.png';
             
