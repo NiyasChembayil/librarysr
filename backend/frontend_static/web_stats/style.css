@@ -198,3 +198,26 @@ footer {
     .digital-counter { gap: 6px; }
     .digit-group::after { margin: 0 4px; }
 }
+
+.btn-enter {
+    display: inline-block;
+    padding: 16px 40px;
+    background: #1a1a1a;
+    color: #ffffff;
+    text-decoration: none;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    animation: fadeInUp 1s ease-out 0.8s backwards;
+}
+
+.btn-enter:hover {
+    background: #000000;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(112, 0, 255, 0.2);
+    border-color: rgba(112, 0, 255, 0.3);
+}
