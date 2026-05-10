@@ -415,14 +415,13 @@ class SrishtyReaderApp {
             if (!cover) cover = '/static/assets/logo.png';
 
             pinnedContainer.innerHTML = `
-                <div class="pinned-project animate-up">
+                <div class="pinned-project">
                     <img src="${cover}" class="pinned-cover">
                     <div class="pinned-info">
                         <h2>${escapeHTML(pinned.title)}</h2>
-                        <p>${escapeHTML(pinned.description || 'Continue working on your masterpiece and share it with the world.')}</p>
+                        <p>${escapeHTML(pinned.description || 'Continue working on your masterpiece.')}</p>
                         <div style="display: flex; gap: 20px;">
                             <button class="btn btn-primary" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(pinned))})">Continue Writing</button>
-                            <button class="btn btn-outline" onclick="alert('Viewing Analytics...')">Detailed Insights</button>
                         </div>
                     </div>
                 </div>
@@ -435,7 +434,7 @@ class SrishtyReaderApp {
         }
 
         if (mainList.length === 0 && books.length === 0) {
-            container.innerHTML = '<div class="loading-spinner" style="grid-column: 1/-1; padding: 40px;">No stories found in this tab.</div>';
+            container.innerHTML = '<div class="loading-spinner" style="grid-column: 1/-1; padding: 40px;">No stories found.</div>';
             return;
         }
 

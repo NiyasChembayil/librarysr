@@ -168,7 +168,7 @@ body {
     line-height: 1.8;
 }
 
-/* Command Center: Dashboard UI */
+/* Command Center: Dashboard UI (Stabilized) */
 .milestone-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -177,107 +177,65 @@ body {
 }
 
 .milestone-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
-    padding: 30px;
+    padding: 25px;
     border-radius: var(--radius-lg);
     text-align: left;
     transition: var(--transition-smooth);
-    position: relative;
-    overflow: hidden;
 }
 
 .milestone-card:hover {
-    transform: translateY(-5px);
     border-color: var(--accent-primary);
-    background: rgba(112, 0, 255, 0.05);
-}
-
-.milestone-card::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; right: -20px;
-    width: 80px; height: 80px;
-    background: var(--accent-glow);
-    filter: blur(40px);
-    border-radius: 50%;
-    z-index: 0;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .milestone-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 2px;
     color: var(--accent-secondary);
-    margin-bottom: 10px;
-    position: relative;
-    z-index: 1;
+    margin-bottom: 8px;
 }
 
 .milestone-value {
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 900;
     color: white;
-    position: relative;
-    z-index: 1;
 }
 
-/* Pinned "Focus" Project */
+/* Pinned "Focus" Project (Stabilized) */
 .pinned-project {
-    background: linear-gradient(90deg, rgba(112, 0, 255, 0.1) 0%, rgba(0, 210, 255, 0.05) 100%);
-    border: 1px solid rgba(112, 0, 255, 0.2);
+    background: rgba(112, 0, 255, 0.05);
+    border: 1px solid rgba(112, 0, 255, 0.1);
     border-radius: var(--radius-lg);
-    padding: 40px;
+    padding: 30px;
     display: flex;
-    gap: 40px;
+    gap: 30px;
     align-items: center;
     margin-bottom: 50px;
-    position: relative;
-    overflow: hidden;
-}
-
-.pinned-project::before {
-    content: 'CURRENT FOCUS';
-    position: absolute;
-    top: 20px; right: -30px;
-    background: var(--accent-primary);
-    color: white;
-    padding: 5px 40px;
-    font-size: 10px;
-    font-weight: 900;
-    transform: rotate(45deg);
-    letter-spacing: 2px;
 }
 
 .pinned-cover {
-    width: 180px;
-    height: 250px;
-    border-radius: 12px;
+    width: 150px;
+    height: 210px;
+    border-radius: 10px;
     object-fit: cover;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .pinned-info h2 {
-    font-size: 32px;
-    margin-bottom: 15px;
+    font-size: 28px;
+    margin-bottom: 10px;
     color: white;
 }
 
-.pinned-info p {
-    color: var(--text-muted);
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 25px;
-    max-width: 500px;
-}
-
-/* Book Grid (Redesigned) */
+/* Book Grid (Redesigned & Stabilized) */
 .book-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
 }
 
 .book-card {
@@ -289,9 +247,9 @@ body {
 }
 
 .book-card:hover {
-    transform: translateY(-10px) rotateX(5deg);
+    transform: translateY(-5px);
     border-color: var(--accent-secondary);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
 }
 
 .book-cover {
