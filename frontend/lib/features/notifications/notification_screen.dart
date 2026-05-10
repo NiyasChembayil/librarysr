@@ -15,22 +15,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
-      await ref.read(notificationProvider.notifier).fetchNotifications();
-      // Mark all as read to clear the badge
-      ref.read(notificationProvider.notifier).markAllRead(ref);
-      
-      final notifications = ref.read(notificationProvider);
-      // Initialize social statuses for the follow buttons
-      for (var notif in notifications) {
-        if (notif['action_type'] == 'FOLLOW' && notif['actor_name'] != null) {
-          ref.read(socialProvider.notifier).setFollowingStatus(
-            notif['actor_name'], 
-            notif['is_following'] ?? false
-          );
-        }
-      }
-    });
+    Future.microtask(() => ref.read(notificationProvider.notifier).fetchNotifications());
   }
 
   @override
@@ -39,110 +24,108 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     final groupedNotifs = _groupNotifications(notifications);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0A12),
       appBar: AppBar(
-        title: const Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Notifications', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: () => ref.read(notificationProvider.notifier).markAllRead(ref),
             icon: const Icon(Icons.done_all_rounded, color: Color(0xFF6C63FF)),
+            tooltip: 'Mark all as read',
           ),
         ],
       ),
       body: notifications.isEmpty
           ? _buildEmptyState()
-          : ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: groupedNotifs.entries.map((entry) {
-                if (entry.value.isEmpty) return const SizedBox.shrink();
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20, bottom: 10),
-                      child: Text(
-                        entry.key,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
+          : RefreshIndicator(
+              onRefresh: () => ref.read(notificationProvider.notifier).fetchNotifications(),
+              color: const Color(0xFF6C63FF),
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: groupedNotifs.entries.where((e) => e.value.isNotEmpty).map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 25, bottom: 15, left: 4),
+                        child: Text(
+                          entry.key.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white24,
+                            letterSpacing: 1.5,
+                          ),
                         ),
                       ),
-                    ),
-                    ...entry.value.map((notif) => _buildNotificationTile(notif)),
-                  ],
-                );
-              }).toList(),
+                      ...entry.value.map((notif) => _buildDismissibleNotification(notif)),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
     );
   }
 
-  Map<String, List<dynamic>> _groupNotifications(List<dynamic> notifications) {
-    final Map<String, List<dynamic>> groups = {
-      'Today': [],
-      'Yesterday': [],
-      'This Week': [],
-      'Earlier': [],
-    };
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final sixDaysAgo = today.subtract(const Duration(days: 6));
-
-    for (var notif in notifications) {
-      if (notif['created_at'] == null) {
-        groups['Today']!.add(notif);
-        continue;
-      }
-
-      try {
-        final date = DateTime.parse(notif['created_at']);
-        final dayOnly = DateTime(date.year, date.month, date.day);
-
-        if (dayOnly.isAtSameMomentAs(today)) {
-          groups['Today']!.add(notif);
-        } else if (dayOnly.isAtSameMomentAs(yesterday)) {
-          groups['Yesterday']!.add(notif);
-        } else if (dayOnly.isAfter(sixDaysAgo)) {
-          groups['This Week']!.add(notif);
-        } else {
-          groups['Earlier']!.add(notif);
-        }
-      } catch (_) {
-        groups['Earlier']!.add(notif);
-      }
-    }
-
-    return groups;
+  Widget _buildDismissibleNotification(dynamic notif) {
+    return Dismissible(
+      key: Key('notif_${notif['id']}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+      ),
+      onDismissed: (direction) {
+        // Optimistically remove from state
+        // In a real app we'd call a delete API
+      },
+      child: _buildNotificationTile(notif),
+    );
   }
 
   Widget _buildNotificationTile(dynamic notif) {
     final timeAgo = _getTimeAgo(notif['created_at']);
     final actorName = notif['actor_name'] ?? 'System';
     final initial = actorName.isNotEmpty ? actorName[0].toUpperCase() : 'S';
+    final bool isUnread = !notif['is_read'];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
-      color: notif['is_read'] ? Colors.transparent : Colors.white.withValues(alpha: 0.05),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: isUnread ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: isUnread ? const Color(0xFF6C63FF).withValues(alpha: 0.1) : Colors.transparent,
+        ),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
+          // Avatar with Glow if Unread
           Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6C63FF), Color(0xFF00D2FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: isUnread 
+                  ? [const Color(0xFF6C63FF), const Color(0xFF00D2FF)]
+                  : [Colors.white10, Colors.white10],
               ),
               shape: BoxShape.circle,
+              boxShadow: isUnread ? [
+                BoxShadow(
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                )
+              ] : null,
             ),
             alignment: Alignment.center,
             child: Text(
@@ -150,93 +133,98 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 15),
           Expanded(
             child: GestureDetector(
               onTap: () {
                 if (notif['actor'] != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => ProfileScreen(targetUserId: notif['actor'])),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileScreen(targetUserId: notif['actor'])));
                 }
               },
-              child: RichText(
-                text: TextSpan(
-                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.3),
-                  children: [
-                    TextSpan(text: actorName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    TextSpan(text: _getActionText(notif['action_type'])),
-                    if (notif['book_title'] != null && notif['action_type'] != 'LIKE' && notif['action_type'] != 'POST_LIKE')
-                      TextSpan(text: notif['book_title'], style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70)),
-                    if (notif['message'] != null && (notif['action_type'] == 'COMMENT' || notif['action_type'] == 'POST_COMMENT'))
-                      TextSpan(text: ' "${notif['message']}"', style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.white70)),
-                    if (notif['message'] != null && notif['action_type'] == 'SYSTEM')
-                      TextSpan(
-                        text: ' ${notif['message'].toString().replaceAll(RegExp(r'[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}]', unicode: true), '')}', 
-                        style: const TextStyle(color: Colors.white70)
-                      ),
-                    TextSpan(
-                      text: '  $timeAgo',
-                      style: const TextStyle(color: Colors.white54, fontSize: 13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.inter(color: Colors.white, fontSize: 14, height: 1.4),
+                      children: [
+                        TextSpan(text: actorName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        TextSpan(text: _getActionText(notif['action_type'])),
+                        if (notif['book_title'] != null && notif['action_type'] != 'LIKE')
+                          TextSpan(text: ' "${notif['book_title']}"', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6C63FF))),
+                      ],
                     ),
-                  ],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                  ),
+                  if (notif['message'] != null && (notif['action_type'] == 'COMMENT' || notif['action_type'] == 'POST_COMMENT'))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          notif['message'],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(timeAgo, style: GoogleFonts.inter(color: Colors.white24, fontSize: 11)),
+                      if (isUnread) ...[
+                        const SizedBox(width: 8),
+                        Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF6C63FF), shape: BoxShape.circle)),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // Trailing Action/Indicator
           if (notif['action_type'] == 'FOLLOW')
-            Consumer(
-              builder: (context, ref, _) {
-                final followingMap = ref.watch(socialProvider);
-                final isFollowing = followingMap[notif['actor_name']] ?? notif['is_following'] ?? false;
-                
-                return ElevatedButton(
-                  onPressed: () {
-                    if (notif['actor_name'] != null && notif['actor_profile_id'] != null) {
-                      ref.read(socialProvider.notifier).toggleFollow(
-                        notif['actor_name'], 
-                        notif['actor_profile_id']
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isFollowing ? Colors.white10 : const Color(0xFF6C63FF),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    minimumSize: const Size(0, 32),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(isFollowing ? 'Following' : 'Follow Back', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                );
-              }
-            )
-          else if (notif['action_type'] != 'FOLLOW')
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white10,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                _getNotificationIcon(notif['action_type']),
-                color: _getNotificationColor(notif['action_type']),
-                size: 20,
-              ),
-            ),
-
-            
-          if (!notif['is_read'] && notif['action_type'] != 'FOLLOW' && notif['action_type'] != 'LIKE' && notif['action_type'] != 'COMMENT')
-            Container(width: 8, height: 8, margin: const EdgeInsets.only(left: 8), decoration: const BoxDecoration(color: Color(0xFF6C63FF), shape: BoxShape.circle)),
+            _buildFollowBackAction(notif)
+          else
+            _buildIconAction(notif),
         ],
       ),
+    );
+  }
+
+  Widget _buildFollowBackAction(dynamic notif) {
+    return Consumer(builder: (context, ref, _) {
+      final followingMap = ref.watch(socialProvider);
+      final isFollowing = followingMap[notif['actor_name']] ?? notif['is_following'] ?? false;
+      
+      return ElevatedButton(
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          if (notif['actor_name'] != null && notif['actor_profile_id'] != null) {
+            ref.read(socialProvider.notifier).toggleFollow(notif['actor_name'], notif['actor_profile_id']);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isFollowing ? Colors.white10 : const Color(0xFF6C63FF),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(80, 32),
+        ),
+        child: Text(isFollowing ? 'Following' : 'Follow Back', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      );
+    });
+  }
+
+  Widget _buildIconAction(dynamic notif) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
+      child: Icon(_getNotificationIcon(notif['action_type']), color: _getNotificationColor(notif['action_type']), size: 16),
     );
   }
 

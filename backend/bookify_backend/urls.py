@@ -33,7 +33,8 @@ urlpatterns = [
     # Frontend Apps
     path('', TemplateView.as_view(template_name='web_client/index.html'), name='public-ui'),
     path('index.html', TemplateView.as_view(template_name='web_client/index.html')),
-    path('studio.html', TemplateView.as_view(template_name='web_client/studio.html'), name='studio-ui'),
+    path('studio/', TemplateView.as_view(template_name='web_client/studio.html'), name='studio-ui'),
+    path('counter/', TemplateView.as_view(template_name='counter.html'), name='live-counter'),
     path('portal/', TemplateView.as_view(template_name='web_admin/index.html'), name='admin-ui'),
 
     path('admin/', admin.site.urls),
