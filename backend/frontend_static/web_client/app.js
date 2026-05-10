@@ -39,7 +39,9 @@ class SrishtyReaderApp {
         const guestNav = document.getElementById('guest-nav');
         const authNav = document.getElementById('auth-nav');
         const usernameDisplay = document.getElementById('nav-username');
-        const authSection = document.getElementById('landing-section');
+        const landingSection = document.getElementById('landing-section');
+        const featuresSection = document.getElementById('features');
+        const visionSection = document.getElementById('vision');
         const worksSection = document.getElementById('my-works-section');
         const authModal = document.getElementById('auth-modal');
         
@@ -48,14 +50,18 @@ class SrishtyReaderApp {
             if (authNav) authNav.classList.remove('hidden');
             if (usernameDisplay) usernameDisplay.textContent = localStorage.getItem('username') || 'Author';
             
-            if (authSection) authSection.classList.add('hidden');
+            if (landingSection) landingSection.classList.add('hidden');
+            if (featuresSection) featuresSection.classList.add('hidden');
+            if (visionSection) visionSection.classList.add('hidden');
             if (worksSection) worksSection.classList.remove('hidden');
             if (authModal) authModal.classList.remove('active');
         } else {
             if (guestNav) guestNav.classList.remove('hidden');
             if (authNav) authNav.classList.add('hidden');
             
-            if (authSection) authSection.classList.remove('hidden');
+            if (landingSection) landingSection.classList.remove('hidden');
+            if (featuresSection) featuresSection.classList.remove('hidden');
+            if (visionSection) visionSection.classList.remove('hidden');
             if (worksSection) worksSection.classList.add('hidden');
         }
     }
@@ -434,7 +440,13 @@ class SrishtyReaderApp {
         container.innerHTML = mainList.map(book => {
             const statusClass = book.is_published ? 'status-published' : 'status-draft';
             const statusLabel = book.is_published ? 'Published' : 'Draft';
-            const cover = escapeHTML(book.cover) || '../frontend/assets/logo.png';
+            
+            // Fix image URL
+            let cover = book.cover;
+            if (cover && !cover.startsWith('http')) {
+                cover = `https://srishty-backend.onrender.com${cover}`;
+            }
+            if (!cover) cover = '/static/assets/logo.png';
             
             if (this.galleryView === 'grid') {
                 return `

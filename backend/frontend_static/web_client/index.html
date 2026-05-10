@@ -87,12 +87,64 @@
             </div>
         </section>
 
-        <!-- My Works Section (Hidden by default, shown when logged in) -->
-        <section id="my-works-section" class="container hidden animate-up">
-            <!-- This section is populated by app.js when logged in -->
-            <div style="padding: 100px 0; text-align: center;">
-                <h2 style="font-size: 32px; margin-bottom: 40px;">My Publishing House</h2>
-                <div class="book-grid" id="my-books-container"></div>
+        <!-- My Works Section (Visible when logged in) -->
+        <section id="my-works-section" class="container hidden animate-up" style="max-width: 1400px; padding-top: 120px;">
+            <div style="display: flex; gap: 30px;">
+                <!-- Main Gallery Area -->
+                <div style="flex: 1;">
+                    <!-- Author Milestone Widget -->
+                    <div id="author-milestones" class="feature-card" style="margin-bottom: 30px; padding: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; text-align: left;">
+                        <div class="milestone-stat">
+                            <div style="color: var(--accent-secondary); font-size: 12px; font-weight: 800; text-transform: uppercase;">Total Followers</div>
+                            <div id="total-followers" style="font-size: 32px; font-weight: 900;">0</div>
+                        </div>
+                        <div class="milestone-stat">
+                            <div style="color: #FF4500; font-size: 12px; font-weight: 800; text-transform: uppercase;">Writing Streak</div>
+                            <div id="writing-streak" style="font-size: 32px; font-weight: 900;">🔥 0</div>
+                        </div>
+                        <div class="milestone-stat">
+                            <div style="color: #ADFF2F; font-size: 12px; font-weight: 800; text-transform: uppercase;">Author Level</div>
+                            <div id="author-level" style="font-size: 32px; font-weight: 900;">Lv. 1</div>
+                        </div>
+                        <div class="milestone-stat">
+                            <div style="color: white; font-size: 12px; font-weight: 800; text-transform: uppercase;">Total Reads</div>
+                            <div id="total-reads" style="font-size: 32px; font-weight: 900;">0</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px;">My Publishing House</h2>
+                        <button class="btn btn-primary" onclick="readerApp.startNewBook()">+ Create New Story</button>
+                    </div>
+                    
+                    <div class="book-grid" id="my-books-container">
+                        <!-- Books injected here -->
+                    </div>
+                </div>
+
+                <!-- Right Sidebar: Activity Feed -->
+                <div style="width: 320px; flex-shrink: 0;">
+                    <div class="feature-card" style="padding: 25px; height: 100%; min-height: 600px; text-align: left;">
+                        <h3 style="font-size: 14px; margin-bottom: 25px; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 2px;">Global Activity</h3>
+                        <div id="activity-feed" style="display: flex; flex-direction: column; gap: 20px;">
+                            <div style="display: flex; gap: 15px; font-size: 14px;">
+                                <span style="font-size: 20px;">❤️</span>
+                                <div>
+                                    <p style="color: white; font-weight: 600;">System Update</p>
+                                    <p style="color: var(--text-muted); font-size: 12px;">Your studio is now live on srishtyapp.com</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 20px;">
+                            <h3 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px;">Author Tools</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button class="btn btn-outline" style="padding: 10px; font-size: 11px;" onclick="readerApp.openToolModal('rank')">Rankings</button>
+                                <button class="btn btn-outline" style="padding: 10px; font-size: 11px;" onclick="readerApp.openToolModal('settings')">Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
