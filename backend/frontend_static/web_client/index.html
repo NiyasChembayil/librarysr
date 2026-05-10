@@ -3,318 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Srishty Author Gateway</title>
-    <meta name="description" content="Srishty Author Gateway. Sign in to write and publish your stories.">
+    <title>Srishty | Your Voice. Your Story. Your Legacy.</title>
+    <meta name="description" content="Srishty Author Gateway. Write, publish, and grow your own professional audiobook empire.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/web_client/style.css">
     <link rel="icon" href="/static/assets/logo.png" type="image/x-icon">
-    <style>
-        /* Inline styling to center the new auth block and gallery cleanly */
-        .auth-container {
-            max-width: 400px;
-            margin: 100px auto;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            background: rgba(20, 20, 35, 0.8);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .gallery-container {
-            max-width: 1200px;
-            margin: 60px auto;
-            padding: 20px;
-        }
-    </style>
 </head>
 <body>
+    <!-- Cinematic Background -->
+    <div class="bg-flare flare-1"></div>
+    <div class="bg-flare flare-2"></div>
+
     <!-- Navbar -->
-    <nav class="navbar glass">
-        <div class="nav-brand">
-            <img src="/static/assets/logo.png" alt="Srishty Logo" class="nav-logo">
-            <span class="nav-title">Srishty Studio</span>
+    <nav class="navbar">
+        <div class="nav-brand">SRISHTY</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#vision">Vision</a>
+            <a href="/stats/">Community</a>
         </div>
         <div class="nav-auth" id="nav-auth-container">
-            <div id="guest-nav" class="hidden">
-                <!-- Empty for a cleaner gate -->
-            </div>
             <div id="auth-nav" class="hidden user-profile">
                 <span id="nav-username">Hello!</span>
-                <button class="btn-secondary" onclick="readerApp.logout()">Logout</button>
+                <button class="btn btn-outline" onclick="readerApp.logout()">Logout</button>
+            </div>
+            <div id="guest-nav">
+                <button class="btn btn-primary" onclick="readerApp.showAuth('login')">Enter Studio</button>
             </div>
         </div>
     </nav>
 
-    <main class="container">
-        <!-- New Welcome Gateway (Visible when logged out) -->
-        <section id="landing-section" class="animate-up">
-            <!-- Hero Section -->
-            <div style="text-align: center; padding: 100px 20px; background: radial-gradient(circle at center, rgba(108, 99, 255, 0.1), transparent 70%);">
-                <h1 style="font-size: 64px; font-weight: 800; margin-bottom: 20px; line-height: 1.1; letter-spacing: -2px;">Your Voice. Your Story.<br><span style="background: linear-gradient(to right, var(--accent-blue), #ADFF2F); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Your Legacy.</span></h1>
-                <p style="font-size: 20px; color: var(--text-secondary); max-width: 700px; margin: 0 auto 40px; line-height: 1.6;">Srishty is the world's most intuitive platform for creators to write stories and transform them into professional audiobooks instantly.</p>
-                <div style="display: flex; gap: 20px; justify-content: center;">
-                    <button class="btn-primary large" style="padding: 18px 45px; font-size: 18px; border-radius: 40px; box-shadow: 0 10px 30px rgba(108, 99, 255, 0.4);" onclick="readerApp.showAuth('signup')">Begin Your Journey</button>
-                    <button class="btn-secondary large" style="padding: 18px 45px; font-size: 18px; border-radius: 40px;" onclick="readerApp.showAuth('login')">Sign In to Write</button>
-                </div>
-            </div>
-
-            <!-- Features Showcase -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 60px 0;">
-                <div class="glass" style="padding: 40px; border-radius: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size: 40px; margin-bottom: 20px;">✍️</div>
-                    <h3 style="font-size: 22px; margin-bottom: 15px;">Power Editor</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">A distraction-free environment designed for deep creative flow. Write your masterpiece page by page.</p>
-                </div>
-                <div class="glass" style="padding: 40px; border-radius: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size: 40px; margin-bottom: 20px;">🎙️</div>
-                    <h3 style="font-size: 22px; margin-bottom: 15px;">Audiobook Studio</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Bring your story to life. Easily add high-quality audio chapters and reach listeners globally.</p>
-                </div>
-                <div class="glass" style="padding: 40px; border-radius: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size: 40px; margin-bottom: 20px;">📈</div>
-                    <h3 style="font-size: 22px; margin-bottom: 15px;">Author Growth</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Track your reads, build your fanbase, and level up from a newcomer to a Diamond Author.</p>
-                </div>
-            </div>
-
-            <!-- Meet the Owners / Mission Section -->
-            <div class="glass" style="margin: 60px 0; padding: 80px; border-radius: 40px; display: flex; gap: 60px; align-items: center; background: linear-gradient(135deg, rgba(20, 20, 35, 0.9), rgba(10, 10, 20, 0.9));">
-                <div style="flex: 1;">
-                    <h2 style="font-size: 42px; margin-bottom: 25px;">Meet the Visionaries</h2>
-                    <p style="color: var(--text-secondary); font-size: 18px; line-height: 1.8; margin-bottom: 30px;">"We built Srishty to empower every voice that has a story to tell but nowhere to speak it. Our mission is to bridge the gap between imagination and reality, giving authors the tools to build their own professional publishing house."</p>
-                    <div style="display: flex; gap: 15px;">
-                        <div style="text-align: center;">
-                            <div style="width: 80px; height: 80px; background: var(--accent-blue); border-radius: 50%; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; font-size: 24px;">NC</div>
-                            <div style="font-weight: 700;">Niyas C.</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">Founder</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="width: 350px; height: 350px; background: rgba(255,255,255,0.02); border-radius: 30px; display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="text-align: center;">
-                        <div style="font-size: 60px; margin-bottom: 10px;">🏘️</div>
-                        <p style="font-size: 14px; color: var(--text-secondary);">Empowering Creators<br>Since 2026</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Final CTA -->
-            <div style="text-align: center; padding-bottom: 100px;">
-                <h2 style="font-size: 32px; margin-bottom: 20px;">Ready to create your first masterpiece?</h2>
-                <button class="btn-primary large" style="padding: 18px 60px; border-radius: 40px;" onclick="readerApp.showAuth('signup')">Start Writing for Free</button>
+    <main>
+        <!-- Hero Section -->
+        <section id="landing-section" class="hero">
+            <div class="hero-tagline">The Future of Storytelling</div>
+            <h1>Your Voice. Your Story.<br>Your Legacy.</h1>
+            <p>The world's most intuitive platform for creators to write stories and transform them into professional audiobooks instantly.</p>
+            <div style="display: flex; gap: 20px;">
+                <button class="btn btn-primary" style="padding: 18px 45px; font-size: 18px;" onclick="readerApp.showAuth('signup')">Begin Your Journey</button>
+                <button class="btn btn-outline" style="padding: 18px 45px; font-size: 18px;" onclick="readerApp.showAuth('login')">Sign In to Write</button>
             </div>
         </section>
 
-        <!-- Auth Modal (Visible on Click) -->
-        <div id="auth-modal" class="modal-overlay">
-            <section class="auth-container animate-up" style="margin-top: 0;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <img src="/static/assets/logo.png" alt="Logo" style="width: 60px; height: 60px; margin-bottom: 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(124, 77, 255, 0.4);">
-                    <h2 id="auth-title">Sign In</h2>
-                    <p style="color: var(--text-secondary); margin-top: 5px;">Enter the author portal</p>
+        <!-- Features Section -->
+        <section id="features" class="feature-section">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">✍️</span>
+                    <h3>Power Editor</h3>
+                    <p>A distraction-free environment designed for deep creative flow. Write your masterpiece page by page with ease.</p>
                 </div>
-                
-                <form id="auth-form" onsubmit="readerApp.handleAuthSubmit(event)">
-                    <div class="form-group" id="username-group">
-                        <label>Username</label>
-                        <input type="text" id="auth-username" class="form-control" placeholder="Your username" required>
-                    </div>
-                    <div class="form-group hidden" id="email-group">
-                        <label>Email</label>
-                        <input type="email" id="auth-email" class="form-control" placeholder="your@email.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="auth-password" class="form-control" placeholder="********" required>
-                    </div>
-                    
-                    <p id="auth-error" style="color: #ff6b6b; margin-bottom: 15px; font-size: 14px; display: none;"></p>
-                    
-                    <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 20px;" id="auth-submit-btn">Sign In</button>
-                    
-                    <!-- Social Auth Divider -->
-                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                        <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
-                        <span style="padding: 0 10px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Or continue with</span>
-                        <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
-                    </div>
-                    
-                    <!-- Social Login Buttons -->
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button type="button" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);" onclick="alert('Google Auth integration coming soon!')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                            </svg>
-                            Continue with Google
-                        </button>
-                        <button type="button" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);" onclick="alert('Apple Auth integration coming soon!')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" fill="white"/>
-                            </svg>
-                            Continue with Apple
-                        </button>
-                    </div>
-                </form>
-                
-                <div style="margin-top: 25px; text-align: center; color: var(--text-secondary); font-size: 14px;">
-                    <span id="auth-toggle-text">New Author?</span> 
-                    <a href="#" onclick="readerApp.toggleAuthMode(event)" style="color: var(--accent-blue); text-decoration: none; font-weight: bold;" id="auth-toggle-link">Create Account</a>
-                    <br><br>
-                    <a href="#" onclick="document.getElementById('auth-modal').classList.remove('active')" style="color: var(--text-secondary); text-decoration: underline;">Back to Home</a>
+                <div class="feature-card">
+                    <span class="feature-icon">🎙️</span>
+                    <h3>Audiobook Studio</h3>
+                    <p>Bring your story to life. Easily add high-quality audio chapters and reach listeners globally across all devices.</p>
                 </div>
-            </section>
-        </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📈</span>
+                    <h3>Author Growth</h3>
+                    <p>Track your reads, build your fanbase, and level up from a newcomer to a Diamond Author with real-time stats.</p>
+                </div>
+            </div>
+        </section>
 
-        <!-- My Works Section (Visible when logged in) -->
-        <section id="my-works-section" class="gallery-container hidden animate-up" style="max-width: 1400px;">
-            <div style="display: flex; gap: 30px;">
-                <!-- Main Gallery Area -->
-                <div style="flex: 1;">
-                    <!-- Author Milestone Widget -->
-                    <div id="author-milestones" class="glass" style="margin-bottom: 20px; padding: 25px; border-radius: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 210, 255, 0.08)); border: 1px solid rgba(255,255,255,0.15);">
-                        <div class="milestone-stat">
-                            <span class="stat-label">Total Followers</span>
-                            <span id="total-followers" class="stat-value" style="color: var(--accent-blue);">0</span>
-                        </div>
-                        <div class="milestone-stat">
-                            <span class="stat-label">Writing Streak</span>
-                            <span id="writing-streak" class="stat-value" style="color: #FF4500;">🔥 0 Days</span>
-                        </div>
-                        <div class="milestone-stat">
-                            <span class="stat-label">Author Level</span>
-                            <span id="author-level" class="stat-value" style="color: #ADFF2F;">Lv. 1</span>
-                        </div>
-                        <div class="milestone-stat">
-                            <span class="stat-label">Total Reads</span>
-                            <span id="total-reads" class="stat-value">0</span>
-                        </div>
-                    </div>
-
-                    <!-- Pinned Focus Project -->
-                    <div id="pinned-project-container" class="animate-up">
-                        <!-- Pinned book will be injected here -->
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 30px 0;">
-                        <div style="display: flex; gap: 20px;">
-                            <button onclick="readerApp.setGalleryTab('all')" id="tab-all" class="btn-tab active">All Stories</button>
-                            <button onclick="readerApp.setGalleryTab('drafts')" id="tab-drafts" class="btn-tab">Active Drafts</button>
-                            <button onclick="readerApp.setGalleryTab('published')" id="tab-published" class="btn-tab">Live on Srishty</button>
-                        </div>
-                        <div style="display: flex; gap: 15px; align-items: center;">
-                            <div style="display: flex; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-                                <button onclick="readerApp.setGalleryView('grid')" class="btn-view-toggle active" id="view-grid">⠿</button>
-                                <button onclick="readerApp.setGalleryView('list')" class="btn-view-toggle" id="view-list">≣</button>
-                            </div>
-                            <div class="search-container">
-                                <input type="text" id="gallery-search" placeholder="Search stories..." oninput="readerApp.filterMyWorks(this.value)">
-                            </div>
-                            <button class="btn-primary" onclick="readerApp.startNewBook()">+ Create New</button>
-                        </div>
-                    </div>
-                    
-                    <div class="book-grid" id="my-books-container">
-                        <!-- Books injected here -->
+        <!-- Mission Section -->
+        <section id="vision" class="mission-section">
+            <div class="mission-content">
+                <h2>Meet the Visionaries</h2>
+                <p class="mission-quote">"We built Srishty to empower every voice that has a story to tell but nowhere to speak it. Our mission is to bridge the gap between imagination and reality, giving authors the tools to build their own professional publishing house."</p>
+                <div class="owner-profile">
+                    <div class="owner-avatar">NC</div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 20px;">Niyas C.</div>
+                        <div style="color: var(--accent-secondary); font-weight: 600; font-size: 14px;">Founder & CEO</div>
                     </div>
                 </div>
+            </div>
+            <div style="width: 300px; text-align: center; opacity: 0.5;">
+                <div style="font-size: 80px; margin-bottom: 20px;">🏘️</div>
+                <p style="font-size: 14px; letter-spacing: 2px; text-transform: uppercase;">Empowering Creators Since 2026</p>
+            </div>
+        </section>
 
-                <!-- Right Sidebar: Activity Feed -->
-                <div style="width: 320px; flex-shrink: 0;">
-                    <div class="glass" style="padding: 25px; border-radius: 20px; height: 100%; min-height: 600px; display: flex; flex-direction: column;">
-                        <h3 style="font-size: 16px; margin-bottom: 20px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px;">Global Activity</h3>
-                        <div id="activity-feed" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
-                            <!-- Activity items injected here -->
-                            <div class="activity-item">
-                                <span class="activity-icon">❤️</span>
-                                <div>
-                                    <p>Someone liked <strong>My First Story</strong></p>
-                                    <span class="activity-time">2 mins ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <span class="activity-icon">👥</span>
-                                <div>
-                                    <p>New follower: <strong>Niyas C.</strong></p>
-                                    <span class="activity-time">1 hour ago</span>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <span class="activity-icon">🔥</span>
-                                <div>
-                                    <p>Your streak is safe! Keep writing.</p>
-                                    <span class="activity-time">Today</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
-                        
-                        <h3 style="font-size: 14px; margin-bottom: 15px; color: var(--text-secondary);">Author Tools</h3>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                            <button class="btn-secondary small" onclick="readerApp.openToolModal('rank')">Rank List</button>
-                            <button class="btn-secondary small" onclick="alert('Resources coming soon!')">Resources</button>
-                            <button class="btn-secondary small" onclick="readerApp.openToolModal('settings')">Settings</button>
-                            <button class="btn-secondary small" onclick="readerApp.openToolModal('help')">Help</button>
-                        </div>
-                    </div>
-                </div>
+        <!-- My Works Section (Hidden by default, shown when logged in) -->
+        <section id="my-works-section" class="container hidden animate-up">
+            <!-- This section is populated by app.js when logged in -->
+            <div style="padding: 100px 0; text-align: center;">
+                <h2 style="font-size: 32px; margin-bottom: 40px;">My Publishing House</h2>
+                <div class="book-grid" id="my-books-container"></div>
             </div>
         </section>
     </main>
 
-    <script src="/static/web_client/app.js"></script>
-
-    <!-- Author Tools Modal -->
-    <div id="author-tools-modal" class="modal-overlay">
-        <div class="glass animate-up" style="width: 90%; max-width: 600px; padding: 30px; border-radius: 25px; max-height: 80vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 id="tool-modal-title" style="margin: 0; color: var(--accent-blue);">Author Tool</h2>
-                <button onclick="readerApp.closeToolModal()" class="btn-secondary" style="font-size: 20px; padding: 5px 15px;">&times;</button>
-            </div>
-
-            <!-- Rank List Content -->
-            <div id="tool-content-rank" class="tool-content hidden">
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
-                    <p style="color: var(--text-secondary); font-size: 14px;">Your current standing in the Srishty Community</p>
-                </div>
-                <div id="leaderboard-list" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- Leaders injected here -->
-                </div>
-            </div>
-
-            <!-- Settings Content -->
-            <div id="tool-content-settings" class="tool-content hidden">
-                <div class="form-group">
-                    <label>Pen Name</label>
-                    <input type="text" id="setting-pen-name" class="form-control" placeholder="Change your author name...">
-                </div>
-                <div class="form-group">
-                    <label>Author Bio</label>
-                    <textarea id="setting-bio" class="form-control" rows="4" placeholder="Tell your readers about yourself..."></textarea>
-                </div>
-                <button class="btn-primary" style="width: 100%;" onclick="readerApp.saveAuthorSettings()">Save Changes</button>
-            </div>
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="auth-card">
+            <img src="/static/assets/logo.png" alt="Logo" style="width: 70px; height: 70px; margin-bottom: 30px; border-radius: 18px;">
+            <h2 id="auth-title" style="font-size: 32px; margin-bottom: 10px;">Sign In</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Enter the author portal</p>
             
-            <!-- Help Content -->
-            <div id="tool-content-help" class="tool-content hidden">
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <div class="glass" style="padding: 15px;">
-                        <h4 style="margin-bottom: 5px;">How do I publish?</h4>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Go to the Studio, complete Step 4, and hit "Publish".</p>
-                    </div>
-                    <div class="glass" style="padding: 15px;">
-                        <h4 style="margin-bottom: 5px;">Audio requirements?</h4>
-                        <p style="font-size: 13px; color: var(--text-secondary);">We recommend MP3 files under 20MB per chapter.</p>
-                    </div>
-                    <button class="btn-secondary" onclick="alert('Contacting support...')">Contact Support Team</button>
+            <form id="auth-form" onsubmit="readerApp.handleAuthSubmit(event)">
+                <div class="form-group" id="username-group">
+                    <input type="text" id="auth-username" class="form-control" placeholder="Username" required>
                 </div>
+                <div class="form-group hidden" id="email-group">
+                    <input type="email" id="auth-email" class="form-control" placeholder="Email Address">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="auth-password" class="form-control" placeholder="Password" required>
+                </div>
+                <p id="auth-error" style="color: #ff6b6b; margin-bottom: 20px; font-size: 14px; display: none;"></p>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 18px;" id="auth-submit-btn">Continue</button>
+            </form>
+            
+            <div style="margin-top: 30px; font-size: 14px;">
+                <span id="auth-toggle-text" style="color: var(--text-muted);">New Author?</span> 
+                <a href="#" onclick="readerApp.toggleAuthMode(event)" style="color: var(--accent-secondary); text-decoration: none; font-weight: 800;" id="auth-toggle-link">Create Account</a>
+                <br><br>
+                <a href="#" onclick="document.getElementById('auth-modal').classList.remove('active')" style="color: var(--text-muted); text-decoration: underline;">Back to Home</a>
             </div>
         </div>
     </div>
+
+    <script src="/static/web_client/app.js"></script>
 </body>
 </html>
