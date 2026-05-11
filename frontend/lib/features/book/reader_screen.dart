@@ -228,13 +228,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       Row(
                         children: [
                           IconButton(onPressed: () {
-                            setState(() => _fontSize--);
-                            _saveFontSizePreference(_fontSize);
+                            if (_fontSize > 12) {
+                              setModalState(() {
+                                setState(() => _fontSize--);
+                              });
+                              _saveFontSizePreference(_fontSize);
+                            }
                           }, icon: const Icon(Icons.remove_circle_outline)),
                           Text('${_fontSize.toInt()}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           IconButton(onPressed: () {
-                            setState(() => _fontSize++);
-                            _saveFontSizePreference(_fontSize);
+                            if (_fontSize < 40) {
+                              setModalState(() {
+                                setState(() => _fontSize++);
+                              });
+                              _saveFontSizePreference(_fontSize);
+                            }
                           }, icon: const Icon(Icons.add_circle_outline)),
                         ],
                       ),

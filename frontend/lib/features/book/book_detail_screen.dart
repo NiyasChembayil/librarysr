@@ -120,6 +120,20 @@ class BookDetailScreen extends ConsumerWidget {
                             },
                             child: Row(
                               children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: const Color(0xFF6C63FF).withValues(alpha: 0.1),
+                                  backgroundImage: (book.authorAvatarUrl != null && book.authorAvatarUrl!.isNotEmpty)
+                                      ? NetworkImage(book.authorAvatarUrl!)
+                                      : null,
+                                  child: (book.authorAvatarUrl == null || book.authorAvatarUrl!.isEmpty)
+                                      ? Text(
+                                          book.authorName[0].toUpperCase(),
+                                          style: const TextStyle(fontSize: 12, color: Color(0xFF6C63FF), fontWeight: FontWeight.bold),
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 10),
                                 Text(
                                   'by ${book.authorName}',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -219,15 +233,15 @@ class BookDetailScreen extends ConsumerWidget {
                   ),
                   child: const Text(
                     'Read Now',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               // Like Button
               GlassmorphicContainer(
-                width: 70,
-                height: 70,
+                width: 62,
+                height: 62,
                 borderRadius: 20,
                 blur: 10,
                 alignment: Alignment.center,
@@ -260,11 +274,11 @@ class BookDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               // Download/Library Toggle Button
               GlassmorphicContainer(
-                width: 70,
-                height: 70,
+                width: 62,
+                height: 62,
                 borderRadius: 20,
                 blur: 10,
                 alignment: Alignment.center,
@@ -301,15 +315,15 @@ class BookDetailScreen extends ConsumerWidget {
                     color: book.isInLibrary
                         ? Colors.greenAccent
                         : Colors.white,
-                    size: 30,
+                    size: 26,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               // Audio Button
               GlassmorphicContainer(
-                width: 70,
-                height: 70,
+                width: 62,
+                height: 62,
                 borderRadius: 20,
                 blur: 10,
                 alignment: Alignment.center,
@@ -352,7 +366,7 @@ class BookDetailScreen extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.headphones_rounded,
-                      color: Colors.white, size: 30),
+                      color: Colors.white, size: 26),
                 ),
               ),
             ],

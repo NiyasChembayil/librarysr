@@ -23,6 +23,7 @@ class BookModel {
   final int authorProfileId;
   final bool isAuthorFollowing;
   final bool isAuthorVerified;
+  final String? authorAvatarUrl;
 
   BookModel({
     required this.id,
@@ -46,6 +47,7 @@ class BookModel {
     this.isFavorite = false,
     this.isFeatured = false,
     this.recommendedMood,
+    this.authorAvatarUrl,
   });
 
     factory BookModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class BookModel {
       isFavorite: json['is_favorite_book'] ?? false,
       isFeatured: json['is_featured'] ?? false,
       recommendedMood: json['recommended_mood'],
+      authorAvatarUrl: MediaService.sanitizeUrl(json['author_avatar']),
       chapters: (json['chapters'] as List? ?? [])
           .map((c) => ChapterModel.fromJson(c))
           .toList(),
@@ -100,6 +103,7 @@ class BookModel {
     bool? isFeatured,
     String? recommendedMood,
     bool? isAuthorVerified,
+    String? authorAvatarUrl,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -123,6 +127,7 @@ class BookModel {
       isFavorite: isFavorite ?? this.isFavorite,
       isFeatured: isFeatured ?? this.isFeatured,
       recommendedMood: recommendedMood ?? this.recommendedMood,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
     );
   }
 }

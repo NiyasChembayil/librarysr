@@ -23,13 +23,22 @@ class BookSummarySerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     total_reads = serializers.SerializerMethodField()
     downloads_count = serializers.SerializerMethodField()
+    author_avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = [
-            'id', 'title', 'slug', 'author_name', 'author_profile_id', 'cover', 
+            'id', 'title', 'slug', 'author_name', 'author_profile_id', 'author_avatar', 'cover', 
             'category_name', 'is_featured', 'likes_count', 'total_reads', 'downloads_count'
         ]
+
+    def get_author_avatar(self, obj):
+        if hasattr(obj.author, 'profile') and obj.author.profile.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.profile.avatar.url)
+            return obj.author.profile.avatar.url
+        return None
 
     def get_likes_count(self, obj):
         return obj.likes.count()
@@ -57,16 +66,25 @@ class BookSerializer(serializers.ModelSerializer):
     shelf_status = serializers.SerializerMethodField()
     is_favorite_book = serializers.SerializerMethodField()
     is_author_verified = serializers.SerializerMethodField()
+    author_avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = [
-            'id', 'title', 'slug', 'author', 'author_name', 'author_profile_id', 'is_author_following', 'cover', 
+            'id', 'title', 'slug', 'author', 'author_name', 'author_profile_id', 'author_avatar', 'is_author_following', 'cover', 
             'description', 'category', 'category_name', 'recommended_mood', 'price', 
             'is_published', 'is_featured', 'created_at', 'updated_at', 'chapters',
             'likes_count', 'comments_count', 'total_reads', 'is_in_library', 'is_liked',
             'downloads_count', 'shelf_status', 'is_favorite_book', 'is_author_verified'
         ]
+
+    def get_author_avatar(self, obj):
+        if hasattr(obj.author, 'profile') and obj.author.profile.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.profile.avatar.url)
+            return obj.author.profile.avatar.url
+        return None
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
