@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Srishty Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="../frontend/assets/logo.png" type="image/x-icon">
+</head>
+<body class="auth-page">
+    <div class="auth-card animate-up">
+        <img src="../frontend/assets/logo.png" alt="Srishty Logo" class="auth-logo">
+        <h1>Welcome Back</h1>
+        <p>Sign in to your author account</p>
+
+        <div id="auth-error" class="auth-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="error-message"></span>
+        </div>
+
+        <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <div class="input-container">
+                    <i class="far fa-user"></i>
+                    <input type="text" id="username" class="form-control" placeholder="Enter username" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="margin-bottom: 0;">Password</label>
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple); text-decoration: none;">Forgot?</a>
+                </div>
+                <div class="input-container">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" id="login-btn" class="auth-btn">Login</button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="signup.html">Create one here</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://srishty-backend.onrender.com/api';
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+            const errorEl = document.getElementById('auth-error');
+            const errorMsg = document.getElementById('error-message');
+
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = 'Authenticating...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/token/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid username or password');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access);
+                if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
+                localStorage.setItem('username', username);
+
+                // Redirect to dashboard
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorMsg.innerText = error.message;
+                errorEl.style.display = 'flex';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Login';
+            }
+        }
+
+        // Check if already logged in
+        if (localStorage.getItem('access_token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

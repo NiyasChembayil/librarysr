@@ -151,9 +151,7 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return QuillProvider(
-      configurations: QuillConfigurations(controller: _controller),
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: const Color(0xFFF5F5F7),
         appBar: AppBar(
           title: Text(
@@ -190,9 +188,10 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
         ),
         body: Column(
           children: [
-            // Word-like Toolbar - Using QuillToolbarConfigurations for v8.6.4
-            QuillToolbar(
-              configurations: const QuillToolbarConfigurations(
+            // Word-like Toolbar - Using QuillSimpleToolbar for v11.x
+            QuillSimpleToolbar(
+              controller: _controller,
+              config: const QuillSimpleToolbarConfig(
                 showSearchButton: false,
                 showFontFamily: false,
                 showFontSize: false,
@@ -260,13 +259,13 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
                         ),
                         const SizedBox(height: 40),
 
-                        // Adjusted Editor - Using QuillEditorConfigurations for v8.6.4
-                        QuillEditor(
-                          configurations: const QuillEditorConfigurations(
+                        // Adjusted Editor - Using QuillEditor.basic for v11.x
+                        QuillEditor.basic(
+                          controller: _controller,
+                          config: const QuillEditorConfig(
                             scrollable: false,
                             padding: EdgeInsets.zero,
                             autoFocus: true,
-                            readOnly: false,
                             expands: false,
                           ),
                           focusNode: _focusNode,
@@ -280,7 +279,6 @@ class _ChapterEditorScreenState extends ConsumerState<ChapterEditorScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 }

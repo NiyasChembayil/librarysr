@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:dio/dio.dart';
 import '../../core/api_client.dart';
 import '../../providers/book_provider.dart';
 import '../studio/chapter_editor_screen.dart';
@@ -38,12 +35,14 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
       // Fetch book details to check published status
       final bookResponse = await ref.read(apiClientProvider).dio.get('core/books/${widget.bookId}/');
       
+      if (!mounted) return;
       setState(() {
         _chapters = chResponse.data is List ? chResponse.data : (chResponse.data['results'] ?? []);
         _isPublished = bookResponse.data['is_published'] ?? false;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -59,14 +58,14 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
       await ref.read(apiClientProvider).dio.patch('core/books/${widget.bookId}/', data: {
         'is_published': true,
       });
+      if (!mounted) return;
       setState(() {
         _isPublished = true;
         _isPublishing = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Your masterpiece is now LIVE! 🚀'), backgroundColor: Colors.green));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Your masterpiece is now LIVE! 🚀'), backgroundColor: Colors.green));
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isPublishing = false);
     }
   }
@@ -83,7 +82,7 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       _fetchData();
     }
   }
@@ -126,7 +125,8 @@ class _BookManagementScreenState extends ConsumerState<BookManagementScreen> {
         ref.invalidate(bookProvider);
         if (mounted) {
           final messenger = ScaffoldMessenger.of(context);
-          Navigator.pop(context); // Go back to Studio
+          final navigator = Navigator.of(context);
+          navigator.pop(); // Go back to Studio
           messenger.showSnackBar(
             const SnackBar(content: Text('Book deleted successfully.'), backgroundColor: Colors.redAccent),
           );

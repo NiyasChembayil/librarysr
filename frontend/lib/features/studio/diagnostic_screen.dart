@@ -90,10 +90,10 @@ class _DiagnosticScreenState extends ConsumerState<DiagnosticScreen> {
             _buildSectionTitle('Current Session'),
             _buildStatusCard(
               title: 'User Context',
-              value: auth.user?.username ?? 'Guest',
+              value: auth.profile?.username ?? 'Guest',
               icon: Icons.person_rounded,
               color: const Color(0xFF6C63FF),
-              subtitle: 'Role: ${auth.profile?.role ?? 'N/A'} | Verified: ${auth.profile?.is_verified == true ? 'Yes' : 'No'}',
+              subtitle: 'Role: ${auth.profile?.role ?? 'N/A'} | Verified: ${auth.profile?.isVerified == true ? 'Yes' : 'No'}',
             ),
             const SizedBox(height: 40),
             

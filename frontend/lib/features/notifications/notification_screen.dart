@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/social_provider.dart';
 import '../profile/profile_screen.dart';
@@ -272,6 +274,30 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     } catch (_) {
       return '2h';
     }
+  }
+
+  Map<String, List<dynamic>> _groupNotifications(List<dynamic> notifs) {
+    final Map<String, List<dynamic>> groups = {
+      'Today': [],
+      'Earlier': [],
+    };
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    for (var notif in notifs) {
+      try {
+        final date = DateTime.parse(notif['created_at']);
+        if (date.isAfter(today)) {
+          groups['Today']!.add(notif);
+        } else {
+          groups['Earlier']!.add(notif);
+        }
+      } catch (_) {
+        groups['Earlier']!.add(notif);
+      }
+    }
+    return groups;
   }
 
   Widget _buildEmptyState() {

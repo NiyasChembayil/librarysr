@@ -14,12 +14,9 @@ class MediaService {
     }
 
     // 2. Get the base domain from ApiClient (remove '/api/')
-    final apiBase = apiClientProvider.toString(); // This won't work as it's a provider
-    // We'll use a hardcoded reference to the production domain or extract it from ApiClient
     // For now, let's use the default domain but make it smart.
     
     const String productionDomain = 'https://srishty-backend.onrender.com';
-    const String localDomain = 'http://127.0.0.1:8000';
 
     // 3. Handle relative paths
     if (url.startsWith('/')) {

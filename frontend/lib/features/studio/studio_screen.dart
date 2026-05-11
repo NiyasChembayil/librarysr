@@ -5,9 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/api_client.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/book_provider.dart';
 import '../../providers/my_books_provider.dart';
-import '../../widgets/mini_book_card.dart';
 import '../studio/book_management_screen.dart';
 import '../studio/create_book_screen.dart';
 

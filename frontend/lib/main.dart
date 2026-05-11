@@ -20,7 +20,7 @@ void main() async {
   final container = ProviderContainer();
 
   debugPrint('Main: AudioService initialization disabled for Web testing.');
-  // _initAudioService(container);
+
 
   runApp(
     UncontrolledProviderScope(
@@ -30,25 +30,7 @@ void main() async {
   );
 }
 
-Future<void> _initAudioService(ProviderContainer container) async {
-  /*
-  try {
-    final handler = await AudioService.init(
-      builder: () => SrishtyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.srishty.audio',
-        androidNotificationChannelName: 'Srishty Playback',
-        androidStopForegroundOnPause: true,
-      ),
-    );
-    // Update the provider state once ready
-    container.read(audioHandlerProvider.notifier).state = handler;
-    debugPrint('Main: AudioService background initialization complete.');
-  } catch (e) {
-    debugPrint('Main: AudioService background error: $e');
-  }
-  */
-}
+
 
 class SrishtyApp extends ConsumerWidget {
   const SrishtyApp({super.key});
@@ -106,34 +88,40 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkTheme.scaffoldBackgroundColor,
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Placeholder/Image for logo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+            // Official Srishty Logo
+            Image.asset(
+              'assets/logo.png',
+              width: 140,
+              height: 140,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 100,
+                height: 100,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF6C63FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.book, size: 50, color: Colors.white),
               ),
-              child: const Icon(Icons.book, size: 50, color: Colors.blue),
             ),
             const SizedBox(height: 24),
             const Text(
               'SRISHTY',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 2.0,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1E1E2E),
+                letterSpacing: 4.0,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
             ),
           ],
         ),
