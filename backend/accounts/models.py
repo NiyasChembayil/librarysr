@@ -28,6 +28,20 @@ class Profile(models.Model):
     reader_theme = models.CharField(max_length=20, default='Dark')
     playback_speed = models.FloatField(default=1.0)
     
+    def save(self, *args, **kwargs):
+        from core.utils import optimize_image
+        # Optimize avatar
+        if self.avatar and not self.avatar._committed:
+            optimized_avatar = optimize_image(self.avatar, max_width=300)
+            if optimized_avatar:
+                self.avatar.save(optimized_avatar.name, optimized_avatar, save=False)
+        # Optimize banner
+        if self.banner and not self.banner._committed:
+            optimized_banner = optimize_image(self.banner, max_width=1200)
+            if optimized_banner:
+                self.banner.save(optimized_banner.name, optimized_banner, save=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 

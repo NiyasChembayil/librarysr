@@ -37,6 +37,15 @@ class Book(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+    def save(self, *args, **kwargs):
+        # Optimize cover image before saving
+        if self.cover and not self.cover._committed:
+            from .utils import optimize_image
+            optimized = optimize_image(self.cover)
+            if optimized:
+                self.cover.save(optimized.name, optimized, save=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
 
