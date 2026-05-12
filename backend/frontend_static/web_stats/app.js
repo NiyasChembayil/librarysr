@@ -5,9 +5,7 @@ class LiveCounter {
         this.digits = [];
         
         // Determine API URL based on current host
-        this.apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://127.0.0.1:8000/api'
-            : 'https://srishty-backend.onrender.com/api';
+        this.apiBase = 'https://srishty-backend.onrender.com/api';
             
         this.apiUrl = `${this.apiBase}/accounts/auth/global_stats/`;
         this.init();

@@ -1,6 +1,4 @@
-const API_BASE_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:8000/api' 
-    : '/api';
+const API_BASE_URL = 'https://srishty-backend.onrender.com/api';
 
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
