@@ -146,7 +146,7 @@ class PostViewSet(viewsets.ModelViewSet):
                 actor=request.user,
                 action_type='POST_LIKE',
                 post=post,
-                message=f"{request.user.username} liked your post."
+                message=f"🌟 {request.user.username} liked your post: '{post.text[:30]}...'"
             )
             # Trending Check
             if post.likes.count() == 10:
@@ -238,7 +238,8 @@ class LikeViewSet(viewsets.ModelViewSet):
                 recipient=like.book.author,
                 actor=self.request.user,
                 action_type='LIKE',
-                book=like.book
+                book=like.book,
+                message=f"❤️ {self.request.user.username} liked your story '{like.book.title}'"
             )
             # Trending Check
             if like.book.likes.count() == 10:
@@ -263,7 +264,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 actor=self.request.user,
                 action_type='COMMENT',
                 book=comment.book,
-                message=comment.text[:50]
+                message=f"💬 {self.request.user.username} commented on '{comment.book.title}': {comment.text[:50]}..."
             )
 
 class FollowViewSet(viewsets.ModelViewSet):
@@ -281,7 +282,7 @@ class FollowViewSet(viewsets.ModelViewSet):
             recipient=follow.followed,
             actor=self.request.user,
             action_type='FOLLOW',
-            message=f"{self.request.user.username} started following you."
+            message=f"👤 {self.request.user.username} is now following you! Grow your empire together."
         )
 
 class NotificationViewSet(viewsets.ModelViewSet):

@@ -239,7 +239,10 @@ else:
         CLOUDINARY_STORAGE = {
             'CLOUDINARY_URL': CLOUDINARY_URL
         }
-        INSTALLED_APPS.insert(0, 'cloudinary_storage') # Must be BEFORE staticfiles
+        # Define storage settings to satisfy django-cloudinary-storage
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+        
+        INSTALLED_APPS.insert(0, 'cloudinary_storage')
         if 'cloudinary' not in INSTALLED_APPS:
             INSTALLED_APPS.append('cloudinary')
-        DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

@@ -306,6 +306,8 @@ class SrishtyReaderApp {
             this.updateAuthorStats();
             this.renderMyBooks(data);
             this.renderAchievements();
+            // Stability Fix: Automatically mark notifications as read when dashboard is viewed
+            this.fetchAPI('/social/notifications/mark_all_read/', { method: 'POST' });
         } else {
             container.innerHTML = `
                 <div class="loading-spinner" style="grid-column: 1/-1; padding: 60px;">
