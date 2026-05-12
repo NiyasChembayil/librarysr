@@ -99,10 +99,13 @@ class LiveCounter {
     }
 
     enterStudio() {
+        console.log("Enter Studio clicked");
         const token = localStorage.getItem('access_token');
         if (token) {
+            console.log("Token found, redirecting...");
             window.location.href = '/studio/v2/';
         } else {
+            console.log("No token, showing auth...");
             this.showAuth('login');
         }
     }
@@ -186,7 +189,6 @@ class LiveCounter {
 }
 
 // Initialize the counter when the DOM is loaded
-let liveCounter;
 document.addEventListener('DOMContentLoaded', () => {
-    liveCounter = new LiveCounter('counter');
+    window.liveCounter = new LiveCounter('counter');
 });
