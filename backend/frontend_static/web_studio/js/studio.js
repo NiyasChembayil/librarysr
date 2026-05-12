@@ -82,11 +82,11 @@ class SrishtyStudio {
     }
 
     async loadDashboard() {
-        const stats = await this.fetchAPI('/core/author_stats/');
+        const stats = await this.fetchAPI('/core/books/author_stats/');
         if (stats) {
             document.getElementById('stat-total-reads').innerText = stats.total_reads.toLocaleString();
-            document.getElementById('stat-followers').innerText = stats.followers_count.toLocaleString();
-            document.getElementById('stat-published').innerText = stats.published_count.toLocaleString();
+            document.getElementById('stat-total-followers').innerText = stats.followers_count.toLocaleString();
+            document.getElementById('stat-total-published').innerText = stats.published_count.toLocaleString();
             document.getElementById('stat-streak').innerText = `${stats.writing_streak}d`;
             document.getElementById('dashboard-welcome').innerText = `Welcome back, ${localStorage.getItem('username') || 'Author'}`;
         }
