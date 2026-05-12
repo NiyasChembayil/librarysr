@@ -41,11 +41,11 @@
                 </div>
                 <div class="stat-card glass followers">
                     <div class="stat-label"><i class="fas fa-users"></i> Followers</div>
-                    <div id="stat-followers" class="stat-value">0</div>
+                    <div id="stat-total-followers" class="stat-value">0</div>
                 </div>
                 <div class="stat-card glass published">
                     <div class="stat-label"><i class="fas fa-book"></i> Published</div>
-                    <div id="stat-published" class="stat-value">0</div>
+                    <div id="stat-total-published" class="stat-value">0</div>
                 </div>
                 <div class="stat-card glass streak">
                     <div class="stat-label"><i class="fas fa-calendar-check"></i> Streak</div>
@@ -176,6 +176,16 @@
 
     <!-- Scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    <script src="/static/web_studio/js/studio.js"></script>
+    <script src="/static/web_studio/js/studio.js?v=9"></script>
+    <script>
+        // Force immediate data sync once app is loaded
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.studioApp && studioApp.loadDashboard) {
+                    studioApp.loadDashboard();
+                }
+            }, 500);
+        });
+    </script>
 </body>
 </html>
