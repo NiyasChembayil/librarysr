@@ -84,15 +84,22 @@ class SrishtyStudio {
     async loadDashboard() {
         const stats = await this.fetchAPI('/core/books/author_stats/');
         if (stats) {
-            // Update Stats with correct backend keys
-            document.getElementById('stat-total-reads').innerText = (stats.total_reads || 0).toLocaleString();
-            document.getElementById('stat-total-followers').innerText = (stats.followers_count || 0).toLocaleString();
-            document.getElementById('stat-total-published').innerText = (stats.published_count || 0).toLocaleString();
-            document.getElementById('stat-streak').innerText = `${stats.writing_streak || 0}d`;
+            // Stability Fix: Add null checks to prevent crashes if IDs are missing
+            const updateStat = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            };
+
+            updateStat('stat-total-reads', (stats.total_reads || 0).toLocaleString());
+            updateStat('stat-total-followers', (stats.followers_count || 0).toLocaleString());
+            updateStat('stat-total-published', (stats.published_count || 0).toLocaleString());
+            updateStat('stat-streak', `${stats.writing_streak || 0}d`);
             
-            // Get real username from stats or token info
-            const username = stats.username || localStorage.getItem('username') || 'Author';
-            document.getElementById('dashboard-welcome').innerText = `Welcome back, ${username}`;
+            const welcomeEl = document.getElementById('dashboard-welcome');
+            if (welcomeEl) {
+                const username = stats.username || localStorage.getItem('username') || 'Author';
+                welcomeEl.innerText = `Welcome back, ${username}`;
+            }
         }
 
         const books = await this.fetchAPI('/core/books/my_books/');

@@ -1,6 +1,8 @@
 class LiveCounter {
     constructor(elementId) {
         this.container = document.getElementById(elementId);
+        if (!this.container) return; // Stability Fix: Don't crash if element is missing
+        
         this.value = 0;
         this.digits = [];
         
