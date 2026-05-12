@@ -105,7 +105,7 @@ class SrishtyStudio {
         const grid = document.getElementById('my-books-grid');
         grid.innerHTML = books.map(book => `
             <div class="glass animate-up" style="padding: 15px; cursor: pointer;" onclick="studioApp.openBook(${JSON.stringify(book).replace(/"/g, '&quot;')})">
-                <img src="${book.cover || '/static/assets/logo.png'}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px;">
+                <img src="${book.cover || '/static/assets/logo.png'}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px;" loading="lazy">
                 <h3 style="font-size: 16px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${book.title}</h3>
                 <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
                     <span>${book.category_name}</span>

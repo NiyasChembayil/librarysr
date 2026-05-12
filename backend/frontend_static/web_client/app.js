@@ -239,7 +239,7 @@ class SrishtyReaderApp {
     createBookCardHTML(book) {
         // Fallback for missing cover
         const coverHtml = book.cover 
-            ? `<img src="${escapeHTML(book.cover)}" alt="${escapeHTML(book.title)} cover" class="book-cover">`
+            ? `<img src="${escapeHTML(book.cover)}" alt="${escapeHTML(book.title)} cover" class="book-cover" loading="lazy">`
             : `<div class="book-cover placeholder-cover">📖</div>`;
             
         return `
@@ -438,7 +438,7 @@ class SrishtyReaderApp {
             const cover = getCorrectImageUrl(book.cover);
             return `
                 <article class="book-card" onclick="readerApp.openBookInStudio(${escapeHTML(JSON.stringify(book))})">
-                    <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover">
+                    <img src="${cover}" alt="${escapeHTML(book.title)}" class="book-cover" loading="lazy">
                     <div class="book-title" title="${escapeHTML(book.title)}">${escapeHTML(book.title)}</div>
                     <div class="book-author">by You</div>
                 </article>
