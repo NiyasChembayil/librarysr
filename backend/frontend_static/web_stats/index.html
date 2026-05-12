@@ -4,7 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Srishty | Live User Count</title>
-    <link rel="stylesheet" href="/static/web_stats/style.css">
+    <link rel="stylesheet" href="/static/web_stats/style.css?v=3">
+    <style>
+        /* Critical fix for modal visibility */
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0, 0, 0, 0.7) !important;
+            backdrop-filter: blur(10px) !important;
+            display: none !important;
+            justify-content: center !important;
+            align-items: center !important;
+            z-index: 9999 !important;
+        }
+        .modal-overlay.active {
+            display: flex !important;
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
@@ -24,10 +43,43 @@
                 <!-- Digits will be injected by JS -->
             </div>
             <div class="sub-label">JOIN THE COMMUNITY</div>
+            <div class="auth-actions">
+                <button id="enter-studio-btn" class="btn btn-primary" onclick="liveCounter.enterStudio()">ENTER STUDIO</button>
+            </div>
             <div class="about-section">
                 <p>Srishty is a visionary platform dedicated to empowering authors and storytellers worldwide. We bridge the gap between imagination and reality, providing the tools for every voice to be heard and every story to be told.</p>
             </div>
         </main>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal-overlay">
+            <div class="auth-card glass">
+                <img src="/static/assets/logo.png" alt="Logo" style="width: 70px; height: 70px; margin-bottom: 30px; border-radius: 18px;">
+                <h2 id="auth-title" style="font-size: 32px; margin-bottom: 10px;">Sign In</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">Enter the author portal</p>
+                
+                <form id="auth-form" onsubmit="liveCounter.handleAuthSubmit(event)">
+                    <div class="form-group" id="username-group">
+                        <input type="text" id="auth-username" class="form-control" placeholder="Username" required>
+                    </div>
+                    <div class="form-group hidden" id="email-group">
+                        <input type="email" id="auth-email" class="form-control" placeholder="Email Address">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="auth-password" class="form-control" placeholder="Password" required>
+                    </div>
+                    <p id="auth-error" style="color: #ff6b6b; margin-bottom: 20px; font-size: 14px; display: none;"></p>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 18px;" id="auth-submit-btn">Continue</button>
+                </form>
+                
+                <div style="margin-top: 30px; font-size: 14px;">
+                    <span id="auth-toggle-text" style="color: var(--text-secondary);">New Author?</span> 
+                    <a href="#" onclick="liveCounter.toggleAuthMode(event)" style="color: var(--accent-color); text-decoration: none; font-weight: 800;" id="auth-toggle-link">Create Account</a>
+                    <br><br>
+                    <a href="#" onclick="liveCounter.hideAuth()" style="color: var(--text-secondary); text-decoration: underline;">Back to Home</a>
+                </div>
+            </div>
+        </div>
 
         <footer>
             <p>&copy; 2026 Srishty Platform. All rights reserved.</p>

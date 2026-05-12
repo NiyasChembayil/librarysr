@@ -26,6 +26,13 @@ class Book(models.Model):
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    rating = models.FloatField(default=4.8) # Keep the iconic 4.8 as initial default
+
+    @property
+    def average_rating(self):
+        from django.db.models import Avg
+        avg = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        return round(avg, 1) if avg else self.rating
 
     class Meta:
         ordering = ['-created_at']
@@ -114,3 +121,16 @@ class Purchase(models.Model):
 
     class Meta:
         unique_together = ('user', 'book')
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveSmallIntegerField(default=5) # 1-5
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'book')
+
+    def __str__(self):
+        return f"{self.user.username}'s review of {self.book.title}"

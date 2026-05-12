@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Count, Q, F, Sum
 from django.utils import timezone
 from datetime import timedelta
-from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound
-from .serializers import CategorySerializer, BookSerializer, BookSummarySerializer, ChapterSerializer, PurchaseSerializer, AmbientSoundSerializer, UserAmbientSoundSerializer
+from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound, Review
+from .serializers import CategorySerializer, BookSerializer, BookSummarySerializer, ChapterSerializer, PurchaseSerializer, AmbientSoundSerializer, UserAmbientSoundSerializer, ReviewSerializer
 from .payments import create_stripe_checkout_session, fulfill_purchase
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -396,6 +396,19 @@ class PurchaseViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Book not found'}, status=404)
         except Exception as e:
             return Response({'error': str(e)}, status=400)
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        book_id = self.request.query_params.get('book')
+        if book_id:
+            return Review.objects.filter(book_id=book_id).order_by('-created_at')
+        return Review.objects.all().order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 @csrf_exempt
 def stripe_webhook(request):

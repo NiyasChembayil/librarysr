@@ -35,6 +35,7 @@ urlpatterns = [
     path('welcome/', TemplateView.as_view(template_name='web_client/index.html'), name='public-ui'),
     path('index.html', TemplateView.as_view(template_name='web_client/index.html')),
     path('studio/', TemplateView.as_view(template_name='web_client/studio.html'), name='studio-ui'),
+    path('studio/v2/', TemplateView.as_view(template_name='web_studio/index.html'), name='studio-v2-ui'),
     path('stats/', TemplateView.as_view(template_name='web_stats/index.html'), name='live-stats'),
     path('portal/', TemplateView.as_view(template_name='web_admin/index.html'), name='admin-ui'),
 

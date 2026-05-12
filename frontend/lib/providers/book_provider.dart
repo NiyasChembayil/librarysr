@@ -224,6 +224,19 @@ class BookNotifier extends StateNotifier<BookFeedState> {
       rethrow;
     }
   }
+
+  Future<void> submitReview(int bookId, double rating, String comment) async {
+    try {
+      await _apiClient.dio.post('core/reviews/', data: {
+        'book': bookId,
+        'rating': rating.toInt(),
+        'comment': comment,
+      });
+    } catch (e) {
+      debugPrint("Failed to submit review: $e");
+      rethrow;
+    }
+  }
 }
 
 final currentBookProvider = FutureProvider.family<BookModel?, int>((ref, id) async {

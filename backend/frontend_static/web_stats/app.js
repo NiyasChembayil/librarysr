@@ -99,9 +99,96 @@ class LiveCounter {
             this.fetchStats();
         }, 5000);
     }
+
+    enterStudio() {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            window.location.href = '/studio/v2/';
+        } else {
+            this.showAuth('login');
+        }
+    }
+
+    // Auth Logic
+    showAuth(mode) {
+        this.authMode = mode;
+        const modal = document.getElementById('auth-modal');
+        const title = document.getElementById('auth-title');
+        const submitBtn = document.getElementById('auth-submit-btn');
+        const toggleText = document.getElementById('auth-toggle-text');
+        const toggleLink = document.getElementById('auth-toggle-link');
+        const emailGroup = document.getElementById('email-group');
+
+        if (mode === 'signup') {
+            title.innerText = 'Join Srishty';
+            submitBtn.innerText = 'Create Account';
+            toggleText.innerText = 'Already an Author?';
+            toggleLink.innerText = 'Sign In';
+            emailGroup.classList.remove('hidden');
+        } else {
+            title.innerText = 'Author Login';
+            submitBtn.innerText = 'Continue';
+            toggleText.innerText = 'New Author?';
+            toggleLink.innerText = 'Create Account';
+            emailGroup.classList.add('hidden');
+        }
+
+        modal.classList.add('active');
+    }
+
+    hideAuth() {
+        document.getElementById('auth-modal').classList.remove('active');
+    }
+
+    toggleAuthMode(e) {
+        e.preventDefault();
+        this.showAuth(this.authMode === 'login' ? 'signup' : 'login');
+    }
+
+    async handleAuthSubmit(e) {
+        e.preventDefault();
+        const username = document.getElementById('auth-username').value;
+        const password = document.getElementById('auth-password').value;
+        const email = document.getElementById('auth-email').value;
+        const errorEl = document.getElementById('auth-error');
+
+        errorEl.style.display = 'none';
+
+        const endpoint = this.authMode === 'signup' ? '/accounts/auth/register/' : '/token/';
+        const body = this.authMode === 'signup' 
+            ? JSON.stringify({ username, password, email, role: 'author' })
+            : JSON.stringify({ username, password });
+
+        try {
+            const response = await fetch(`${this.apiBase}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: body
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const token = this.authMode === 'signup' ? data.token.access : data.access;
+                localStorage.setItem('access_token', token);
+                localStorage.setItem('username', username);
+                
+                // Success! Redirect to Studio V2
+                window.location.href = '/studio/v2/';
+            } else {
+                errorEl.innerText = data.detail || data.error || 'Authentication failed. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Auth error:', error);
+            errorEl.innerText = 'Server connection error.';
+            errorEl.style.display = 'block';
+        }
+    }
 }
 
 // Initialize the counter when the DOM is loaded
+let liveCounter;
 document.addEventListener('DOMContentLoaded', () => {
-    new LiveCounter('counter');
+    liveCounter = new LiveCounter('counter');
 });

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Srishty Studio | Premium Author Experience</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/web_studio/css/style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar glass">
+        <div class="nav-brand">
+            <img src="/static/assets/logo.png" alt="Srishty" class="nav-logo">
+            <span>SRISHTY STUDIO</span>
+        </div>
+        <div id="auth-nav">
+            <span id="user-greeting" style="margin-right: 15px; color: var(--text-secondary);"></span>
+            <button class="btn btn-secondary" onclick="studioApp.logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+        <!-- Dashboard Section -->
+        <section id="view-dashboard" class="view animate-up">
+            <div class="header-section">
+                <h1 style="font-size: 48px; margin-bottom: 10px;">Srishty Studio</h1>
+                <p id="dashboard-welcome" style="font-size: 18px; color: var(--text-secondary);">Welcome back, Author</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card glass reads">
+                    <div class="stat-label"><i class="fas fa-chart-line"></i> Total Reads</div>
+                    <div id="stat-total-reads" class="stat-value">0</div>
+                </div>
+                <div class="stat-card glass followers">
+                    <div class="stat-label"><i class="fas fa-users"></i> Followers</div>
+                    <div id="stat-followers" class="stat-value">0</div>
+                </div>
+                <div class="stat-card glass published">
+                    <div class="stat-label"><i class="fas fa-book"></i> Published</div>
+                    <div id="stat-published" class="stat-value">0</div>
+                </div>
+                <div class="stat-card glass streak">
+                    <div class="stat-label"><i class="fas fa-calendar-check"></i> Streak</div>
+                    <div id="stat-streak" class="stat-value">0d</div>
+                </div>
+            </div>
+
+            <div class="action-cards">
+                <div class="action-card glass" onclick="studioApp.showView('create-book')">
+                    <div class="action-icon" style="background: rgba(108, 99, 255, 0.1); color: var(--accent-purple);">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h3>Create New Book</h3>
+                </div>
+                <div class="action-card glass" onclick="alert('Manage Audio coming soon!')">
+                    <div class="action-icon" style="background: rgba(255, 101, 132, 0.1); color: var(--accent-pink);">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <h3>Manage Audio</h3>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom: 25px;">Your Stories</h2>
+            <div id="my-books-grid" class="stats-grid">
+                <!-- Book cards will be injected here -->
+            </div>
+        </section>
+
+        <!-- Create Book Section -->
+        <section id="view-create-book" class="view hidden animate-up">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 40px;">
+                <button class="btn btn-secondary" onclick="studioApp.showView('dashboard')"><i class="fas fa-arrow-left"></i></button>
+                <h1>New Masterpiece</h1>
+            </div>
+
+            <div class="glass" style="padding: 40px; max-width: 800px; margin: 0 auto;">
+                <div class="cover-upload" onclick="document.getElementById('book-cover-input').click()" id="cover-upload-box">
+                    <div class="upload-placeholder">
+                        <i class="fas fa-image" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <p>Add Cover</p>
+                    </div>
+                    <img id="cover-preview-img" src="" alt="Preview">
+                    <input type="file" id="book-cover-input" hidden accept="image/*" onchange="studioApp.handleCoverPreview(event)">
+                </div>
+
+                <div class="form-group">
+                    <label>Book Title</label>
+                    <input type="text" id="book-title" class="form-control" placeholder="Enter a captivating title...">
+                </div>
+
+                <div class="form-group">
+                    <label>Category / Genre</label>
+                    <select id="book-category" class="form-control">
+                        <option value="">Select Genre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="book-description" class="form-control" rows="5" placeholder="What is your story about?"></textarea>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 18px;" onclick="studioApp.createBook()">
+                    CONTINUE TO WORKSPACE
+                </button>
+            </div>
+        </section>
+
+        <!-- Chapters List Section -->
+        <section id="view-chapters" class="view hidden animate-up">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <button class="btn btn-secondary" onclick="studioApp.showView('dashboard')"><i class="fas fa-arrow-left"></i></button>
+                    <h1 id="active-book-title">Book Title</h1>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn btn-primary" onclick="studioApp.publishBook()"><i class="fas fa-rocket"></i> GO LIVE</button>
+                    <button class="btn btn-secondary" style="color: #ff4d4d; border-color: rgba(255,77,77,0.3);" onclick="studioApp.deleteBook()"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Chapters</h2>
+                <span id="chapter-count" style="color: var(--text-secondary);">0 Total</span>
+            </div>
+
+            <div id="chapters-container">
+                <!-- Chapters will be injected here -->
+            </div>
+
+            <div id="empty-chapters" class="hidden" style="text-align: center; padding: 100px 0;">
+                <i class="fas fa-book-open" style="font-size: 60px; margin-bottom: 20px; opacity: 0.2;"></i>
+                <h3 style="opacity: 0.5;">No chapters yet</h3>
+                <p style="color: var(--text-secondary);">Your story begins with the first word.</p>
+            </div>
+
+            <button class="btn btn-primary" style="position: fixed; bottom: 40px; right: 40px; padding: 20px 30px; border-radius: 40px; box-shadow: 0 10px 30px rgba(108,99,255,0.4);" onclick="studioApp.addNewChapter()">
+                <i class="fas fa-plus"></i> ADD CHAPTER
+            </button>
+        </section>
+
+        <!-- Chapter Editor Section -->
+        <section id="view-editor" class="view hidden animate-up">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <button class="btn btn-secondary" onclick="studioApp.showView('chapters')"><i class="fas fa-times"></i></button>
+                    <h1 id="editor-title">New Chapter</h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <span id="word-count" style="color: var(--text-secondary);">0 words</span>
+                    <button class="btn btn-primary" onclick="studioApp.saveChapter()">SAVE</button>
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 40px; background: white;">
+                <input type="text" id="chapter-title-input" style="width: 100%; border: none; font-size: 32px; font-weight: 700; margin-bottom: 20px; color: #333; outline: none; text-align: center;" placeholder="Chapter Title">
+                
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <button class="btn btn-secondary" style="color: var(--accent-purple);"><i class="fas fa-microphone"></i> Add Narration</button>
+                </div>
+
+                <div id="editor-toolbar"></div>
+                <div id="editor" class="editor-container"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="/static/web_studio/js/studio.js"></script>
+</body>
+</html>

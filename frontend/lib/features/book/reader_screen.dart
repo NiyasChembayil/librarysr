@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/book_provider.dart';
 import '../../providers/post_provider.dart';
 import '../../providers/reading_progress_provider.dart';
 import '../../providers/my_books_provider.dart';
@@ -35,6 +36,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   late PageController _pageController;
   int _currentChapterIndex = 0;
   double _fontSize = 18.0;
+  double _userRating = 0;
   Color _backgroundColor = const Color(0xFF0F0F1E);
   Color _textColor = Colors.white70;
   bool _isLoadingPrefs = true;
@@ -352,11 +354,38 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            "You've finished '${widget.title}'",
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
+          const SizedBox(height: 20),
+          // Interactive Star Rating
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _userRating = index + 1.0);
+                  HapticFeedback.lightImpact();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    index < _userRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: index < _userRating ? Colors.amber : Colors.white24,
+                    size: 36,
+                  ),
+                ),
+              );
+            }),
+          ),
+          if (_userRating > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'You rated this story ${_userRating.toInt()} stars!',
+                style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _shareMilestone,
@@ -371,6 +400,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          if (_userRating > 0)
+            ElevatedButton(
+              onPressed: _submitRating,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Submit Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
           OutlinedButton.icon(
             onPressed: () => _showReviewDialog(context),
             icon: const Icon(Icons.rate_review_rounded),
@@ -425,6 +465,27 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to share milestone: $e')),
+        );
+      }
+    }
+  void _submitRating() async {
+    if (_userRating == 0) return;
+    
+    try {
+      await ref.read(bookProvider.notifier).submitReview(
+        widget.bookId,
+        _userRating,
+        "Finished reading this story!",
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thank you for your rating! ⭐')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit rating: $e')),
         );
       }
     }

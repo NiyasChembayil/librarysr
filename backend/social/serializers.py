@@ -40,6 +40,7 @@ class PostSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
     user_avatar = serializers.SerializerMethodField()
     book_title = serializers.ReadOnlyField(source='book.title', read_only=True)
+    book_rating = serializers.ReadOnlyField(source='book.average_rating', read_only=True)
     book_cover = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
@@ -53,7 +54,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id', 'user', 'username', 'user_avatar', 'text', 'post_type', 
-            'book', 'book_title', 'book_cover', 'chapter_id', 'audio_file', 'parent_post', 'parent_post_data',
+            'book', 'book_title', 'book_cover', 'book_rating', 'chapter_id', 'audio_file', 'parent_post', 'parent_post_data',
             'created_at', 'updated_at', 'likes_count', 'comments_count', 
             'reposts_count', 'is_liked', 'poll', 'is_verified'
         ]

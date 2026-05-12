@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound
+from .models import Category, Book, Chapter, Purchase, ReadStats, ReadingProgress, AmbientSound, UserAmbientSound, Review
 
 class CategorySerializer(serializers.ModelSerializer):
     recommended_mood_name = serializers.ReadOnlyField(source='recommended_ambient_sound.name')
@@ -29,8 +29,10 @@ class BookSummarySerializer(serializers.ModelSerializer):
         model = Book
         fields = [
             'id', 'title', 'slug', 'author_name', 'author_profile_id', 'author_avatar', 'cover', 
-            'category_name', 'is_featured', 'likes_count', 'total_reads', 'downloads_count'
+            'category_name', 'is_featured', 'likes_count', 'total_reads', 'downloads_count', 'rating'
         ]
+
+    rating = serializers.ReadOnlyField(source='average_rating')
 
     def get_author_avatar(self, obj):
         if hasattr(obj.author, 'profile') and obj.author.profile.avatar:
@@ -67,6 +69,7 @@ class BookSerializer(serializers.ModelSerializer):
     is_favorite_book = serializers.SerializerMethodField()
     is_author_verified = serializers.SerializerMethodField()
     author_avatar = serializers.SerializerMethodField()
+    rating = serializers.ReadOnlyField(source='average_rating')
 
     class Meta:
         model = Book
@@ -75,7 +78,7 @@ class BookSerializer(serializers.ModelSerializer):
             'description', 'category', 'category_name', 'recommended_mood', 'price', 
             'is_published', 'is_featured', 'created_at', 'updated_at', 'chapters',
             'likes_count', 'comments_count', 'total_reads', 'is_in_library', 'is_liked',
-            'downloads_count', 'shelf_status', 'is_favorite_book', 'is_author_verified'
+            'downloads_count', 'shelf_status', 'is_favorite_book', 'is_author_verified', 'rating'
         ]
 
     def get_author_avatar(self, obj):
@@ -147,6 +150,23 @@ class PurchaseSerializer(serializers.ModelSerializer):
             'transaction_id', 'status', 'stripe_checkout_id'
         ]
         read_only_fields = ['user', 'amount', 'transaction_id', 'status', 'stripe_checkout_id']
+
+class ReviewSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    user_avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ['id', 'user', 'username', 'user_avatar', 'book', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user']
+
+    def get_user_avatar(self, obj):
+        if hasattr(obj.user, 'profile') and obj.user.profile.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.user.profile.avatar.url)
+            return obj.user.profile.avatar.url
+        return None
 
 class ReadStatsSerializer(serializers.ModelSerializer):
     class Meta:

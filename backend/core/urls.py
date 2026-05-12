@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework_nested import routers
-from .views import CategoryViewSet, BookViewSet, ChapterViewSet, PurchaseViewSet, AmbientSoundViewSet, UserAmbientSoundViewSet
+from .views import CategoryViewSet, BookViewSet, ChapterViewSet, PurchaseViewSet, AmbientSoundViewSet, UserAmbientSoundViewSet, ReviewViewSet
 
 router = routers.DefaultRouter()
 router.register(r'categories', CategoryViewSet)
 router.register(r'books', BookViewSet, basename='book')
 router.register(r'purchases', PurchaseViewSet)
+router.register(r'reviews', ReviewViewSet, basename='review')
 router.register(r'ambient-sounds-list', AmbientSoundViewSet, basename='ambient-sounds-list')
 router.register(r'user-sounds', UserAmbientSoundViewSet, basename='user-sounds')
 

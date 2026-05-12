@@ -645,7 +645,7 @@ class _PostCardState extends ConsumerState<PostCard>
                     const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      '4.8',
+                      '${widget.post.bookRating ?? 4.8}',
                       style: TextStyle(color: Colors.grey[400], fontSize: 13),
                     ),
                   ],

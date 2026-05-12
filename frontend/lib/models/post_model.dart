@@ -40,6 +40,7 @@ class PostModel {
   final String? bookCover;
   final int? chapterId;
   final String? audioUrl;
+  final double? bookRating;
   final PostModel? parentPost;
   final DateTime createdAt;
   final int likesCount;
@@ -61,6 +62,7 @@ class PostModel {
     this.bookCover,
     this.chapterId,
     this.audioUrl,
+    this.bookRating,
     this.parentPost,
     required this.createdAt,
     required this.likesCount,
@@ -89,6 +91,7 @@ class PostModel {
       bookCover: MediaService.sanitizeUrl(json['book_cover']),
       chapterId: json['chapter_id'],
       audioUrl: MediaService.sanitizeUrl(json['audio_file']),
+      bookRating: json['book_rating'] != null ? (json['book_rating'] as num).toDouble() : null,
       parentPost: parent,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       likesCount: json['likes_count'] ?? 0,
@@ -112,6 +115,7 @@ class PostModel {
     String? bookCover,
     int? chapterId,
     String? audioUrl,
+    double? bookRating,
     PostModel? parentPost,
     DateTime? createdAt,
     int? likesCount,
@@ -133,6 +137,7 @@ class PostModel {
       bookCover: bookCover ?? this.bookCover,
       chapterId: chapterId ?? this.chapterId,
       audioUrl: audioUrl ?? this.audioUrl,
+      bookRating: bookRating ?? this.bookRating,
       parentPost: parentPost ?? this.parentPost,
       createdAt: createdAt ?? this.createdAt,
       likesCount: likesCount ?? this.likesCount,
