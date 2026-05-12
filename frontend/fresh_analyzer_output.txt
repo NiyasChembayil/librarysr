@@ -1,39 +1,6 @@
-Analyzing frontend...                                           
 
-warning • The value of the local variable 'apiBase' isn't used • lib/core/media_service.dart:17:11 • unused_local_variable
-warning • The value of the local variable 'localDomain' isn't used • lib/core/media_service.dart:22:18 • unused_local_variable
-warning • The value of the field '_isAutoPlaying' isn't used • lib/features/audio/audio_player_screen.dart:35:14 • unused_field
-warning • The value of the local variable 'authState' isn't used • lib/features/book/book_detail_screen.dart:57:15 • unused_local_variable
-warning • The declaration '_buildTrendingTab' isn't referenced • lib/features/feed/feed_screen.dart:188:10 • unused_element
-  error • The method '_groupNotifications' isn't defined for the type '_NotificationScreenState' • lib/features/notifications/notification_screen.dart:24:27 • undefined_method
-  error • Undefined name 'GoogleFonts' • lib/features/notifications/notification_screen.dart:29:45 • undefined_identifier
-  error • Undefined name 'GoogleFonts' • lib/features/notifications/notification_screen.dart:55:34 • undefined_identifier
-  error • Undefined name 'GoogleFonts' • lib/features/notifications/notification_screen.dart:149:30 • undefined_identifier
-  error • Undefined name 'GoogleFonts' • lib/features/notifications/notification_screen.dart:171:34 • undefined_identifier
-  error • Undefined name 'GoogleFonts' • lib/features/notifications/notification_screen.dart:178:44 • undefined_identifier
-  error • Undefined name 'HapticFeedback' • lib/features/notifications/notification_screen.dart:205:11 • undefined_identifier
-  error • Undefined name 'socialProvider' • lib/features/profile/profile_screen.dart:325:55 • undefined_identifier
-  error • Undefined name 'socialProvider' • lib/features/profile/profile_screen.dart:335:48 • undefined_identifier
-warning • The declaration '_buildBooksList' isn't referenced • lib/features/profile/profile_screen.dart:645:10 • unused_element
-warning • The value of the local variable 'isAuthor' isn't used • lib/features/settings/settings_screen.dart:39:11 • unused_local_variable
-warning • The value of the local variable 'isBetaUser' isn't used • lib/features/settings/settings_screen.dart:41:11 • unused_local_variable
-warning • Unused import: 'dart:io' • lib/features/studio/book_management_screen.dart:1:8 • unused_import
-warning • Unused import: 'package:file_picker/file_picker.dart' • lib/features/studio/book_management_screen.dart:5:8 • unused_import
-warning • Unused import: 'package:dio/dio.dart' • lib/features/studio/book_management_screen.dart:6:8 • unused_import
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/studio/book_management_screen.dart:128:50 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/studio/book_management_screen.dart:129:25 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/studio/book_management_screen.dart:137:32 • use_build_context_synchronously
-  error • The method 'QuillProvider' isn't defined for the type '_ChapterEditorScreenState' • lib/features/studio/chapter_editor_screen.dart:154:12 • undefined_method
-  error • The method 'QuillConfigurations' isn't defined for the type '_ChapterEditorScreenState' • lib/features/studio/chapter_editor_screen.dart:155:23 • undefined_method
-  error • The method 'QuillToolbar' isn't defined for the type '_ChapterEditorScreenState' • lib/features/studio/chapter_editor_screen.dart:194:13 • undefined_method
-  error • The name 'QuillToolbarConfigurations' isn't a class • lib/features/studio/chapter_editor_screen.dart:195:37 • creation_with_non_type
-  error • The named parameter 'controller' is required, but there's no corresponding argument • lib/features/studio/chapter_editor_screen.dart:264:25 • missing_required_argument
-  error • The named parameter 'configurations' isn't defined • lib/features/studio/chapter_editor_screen.dart:265:27 • undefined_named_parameter
-  error • The name 'QuillEditorConfigurations' isn't a class • lib/features/studio/chapter_editor_screen.dart:265:49 • creation_with_non_type
-  error • The getter 'user' isn't defined for the type 'AuthState' • lib/features/studio/diagnostic_screen.dart:93:27 • undefined_getter
-  error • The getter 'is_verified' isn't defined for the type 'ProfileModel' • lib/features/studio/diagnostic_screen.dart:96:91 • undefined_getter
-warning • Unused import: '../../providers/book_provider.dart' • lib/features/studio/studio_screen.dart:8:8 • unused_import
-warning • Unused import: '../../widgets/mini_book_card.dart' • lib/features/studio/studio_screen.dart:10:8 • unused_import
-warning • The declaration '_initAudioService' isn't referenced • lib/main.dart:33:14 • unused_element
-  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/models/book_model.dart:60:17 • argument_type_not_assignable
-
+┌─────────────────────────────────────────────────────────┐
+│ A new version of Flutter is available!                  │
+│                                                         │
+│ To update to the latest version, run "flutter upgrade". │
+└─────────────────────────────────────────────────────────┘

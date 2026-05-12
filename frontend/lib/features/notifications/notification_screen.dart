@@ -17,7 +17,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(notificationProvider.notifier).fetchNotifications());
+    Future.microtask(() {
+      ref.read(notificationProvider.notifier).fetchNotifications();
+      // Stability Fix: Automatically mark all as read when screen is viewed
+      ref.read(notificationProvider.notifier).markAllRead(ref);
+    });
   }
 
   @override
@@ -241,7 +245,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       case 'NEW_BOOK': return ' published a new book: ';
       case 'REPOST': return ' reposted your post.';
       case 'SYSTEM': return ''; // Message contains the full text
-      default: return ' sent a notification. ';
+      default: return ' interacted with you.';
     }
   }
 

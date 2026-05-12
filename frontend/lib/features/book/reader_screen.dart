@@ -354,8 +354,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+          const Text(
+            'You have reached the end of this journey.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: Colors.white70, fontSize: 16),
           ),
           const SizedBox(height: 20),
           // Interactive Star Rating
@@ -468,6 +470,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         );
       }
     }
+  }
+
   void _submitRating() async {
     if (_userRating == 0) return;
     
