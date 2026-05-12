@@ -84,11 +84,15 @@ class SrishtyStudio {
     async loadDashboard() {
         const stats = await this.fetchAPI('/core/books/author_stats/');
         if (stats) {
-            document.getElementById('stat-total-reads').innerText = stats.total_reads.toLocaleString();
-            document.getElementById('stat-total-followers').innerText = stats.followers_count.toLocaleString();
-            document.getElementById('stat-total-published').innerText = stats.published_count.toLocaleString();
-            document.getElementById('stat-streak').innerText = `${stats.writing_streak}d`;
-            document.getElementById('dashboard-welcome').innerText = `Welcome back, ${localStorage.getItem('username') || 'Author'}`;
+            // Update Stats with correct backend keys
+            document.getElementById('stat-total-reads').innerText = (stats.total_reads || 0).toLocaleString();
+            document.getElementById('stat-total-followers').innerText = (stats.followers_count || 0).toLocaleString();
+            document.getElementById('stat-total-published').innerText = (stats.published_count || 0).toLocaleString();
+            document.getElementById('stat-streak').innerText = `${stats.writing_streak || 0}d`;
+            
+            // Get real username from stats or token info
+            const username = stats.username || localStorage.getItem('username') || 'Author';
+            document.getElementById('dashboard-welcome').innerText = `Welcome back, ${username}`;
         }
 
         const books = await this.fetchAPI('/core/books/my_books/');

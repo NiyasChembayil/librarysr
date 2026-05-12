@@ -169,6 +169,7 @@ class BookViewSet(viewsets.ModelViewSet):
         published_count = my_books.filter(is_published=True).count()
 
         return Response({
+            "username": user.username,
             "total_reads": total_reads,
             "followers_count": followers_count,
             "genre_dna": genre_dna,
