@@ -22,7 +22,17 @@
         <main>
             <div class="counter-label">TOTAL REGISTERED STORYTELLERS</div>
             <div id="counter" class="digital-counter">
-                <!-- Digits will be injected by JS -->
+                <!-- Fallback digits for instant visibility -->
+                <div class="digit-group">
+                    <div class="digit"><span>0</span></div>
+                    <div class="digit"><span>0</span></div>
+                    <div class="digit"><span>0</span></div>
+                </div>
+                <div class="digit-group">
+                    <div class="digit"><span>0</span></div>
+                    <div class="digit"><span>0</span></div>
+                    <div class="digit"><span>0</span></div>
+                </div>
             </div>
             <div class="sub-label">JOIN THE COMMUNITY</div>
             <a href="https://srishty-client.onrender.com" class="cta-button">ENTER STUDIO</a>
@@ -37,6 +47,100 @@
             <p>&copy; 2026 Srishty Platform. All rights reserved.</p>
         </footer>
     </div>
-    <script src="app.js"></script>
+
+    <script>
+        class LiveCounter {
+            constructor(elementId) {
+                this.container = document.getElementById(elementId);
+                this.value = 0;
+                this.digits = [];
+                this.apiBase = 'https://srishty-backend.onrender.com/api';
+                this.apiUrl = `${this.apiBase}/accounts/auth/global_stats/`;
+                this.init();
+            }
+
+            async init() {
+                // Initialize digits from existing DOM if possible
+                const existingDigits = this.container.querySelectorAll('.digit');
+                if (existingDigits.length === 6) {
+                    this.digits = Array.from(existingDigits);
+                } else {
+                    this.render();
+                }
+                
+                try {
+                    await this.fetchStats();
+                } catch (e) {
+                    console.error('Initial fetch failed:', e);
+                }
+                this.startPolling();
+            }
+
+            async fetchStats() {
+                try {
+                    const response = await fetch(this.apiUrl);
+                    if (!response.ok) throw new Error('API request failed');
+                    const data = await response.json();
+                    if (data.total_users !== undefined) {
+                        this.update(data.total_users);
+                    }
+                } catch (error) {
+                    console.error('Error fetching stats:', error);
+                }
+            }
+
+            render() {
+                const valStr = this.value.toString().padStart(6, '0');
+                this.container.innerHTML = '';
+                this.digits = [];
+                const groups = [valStr.slice(0, 3), valStr.slice(3, 6)];
+                groups.forEach((group) => {
+                    const groupEl = document.createElement('div');
+                    groupEl.className = 'digit-group';
+                    [...group].forEach((char) => {
+                        const digitEl = document.createElement('div');
+                        digitEl.className = 'digit';
+                        digitEl.innerHTML = `<span>${char}</span>`;
+                        groupEl.appendChild(digitEl);
+                        this.digits.push(digitEl);
+                    });
+                    this.container.appendChild(groupEl);
+                });
+            }
+
+            update(newValue) {
+                if (newValue === this.value && this.digits.length > 0) return;
+                const oldStr = this.value.toString().padStart(6, '0');
+                const newStr = newValue.toString().padStart(6, '0');
+                
+                if (this.digits.length === 0) {
+                    this.value = newValue;
+                    this.render();
+                    return;
+                }
+
+                for (let i = 0; i < newStr.length; i++) {
+                    if (oldStr[i] !== newStr[i]) {
+                        const digitEl = this.digits[i];
+                        if (digitEl) {
+                            digitEl.classList.remove('changed');
+                            void digitEl.offsetWidth; 
+                            digitEl.innerHTML = `<span>${newStr[i]}</span>`;
+                            digitEl.classList.add('changed');
+                        }
+                    }
+                }
+                this.value = newValue;
+            }
+
+            startPolling() {
+                setInterval(() => this.fetchStats(), 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new LiveCounter('counter');
+        });
+    </script>
 </body>
 </html>
