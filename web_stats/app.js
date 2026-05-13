@@ -10,50 +10,59 @@ class LiveCounter {
             : 'https://srishty-backend.onrender.com/api';
             
         this.apiUrl = `${this.apiBase}/accounts/auth/global_stats/`;
+        console.log('Counter initialized. API:', this.apiUrl);
         this.init();
     }
 
     async init() {
-        await this.fetchStats();
+        // Render initial state (000000) immediately
         this.render();
+        
+        // Then try to fetch real stats
+        try {
+            await this.fetchStats();
+        } catch (e) {
+            console.error('Initial fetch failed:', e);
+        }
+        
         this.startPolling();
     }
 
     async fetchStats() {
         try {
             const response = await fetch(this.apiUrl);
-            if (!response.ok) throw new Error('API request failed');
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
             const data = await response.json();
             
+            console.log('Fetched stats:', data);
             if (data.total_users !== undefined) {
                 this.update(data.total_users);
             }
         } catch (error) {
             console.error('Error fetching stats:', error);
-            // On error, show whatever value we have or 0
-            if (this.value === 0) {
-                this.update(0); 
+            // On error, ensure we at least show 0
+            if (this.value === 0 && this.digits.length === 0) {
+                this.render();
             }
         }
     }
 
     render() {
-        // We'll use 6 digits for the "premium" look
         const valStr = this.value.toString().padStart(6, '0');
+        console.log('Rendering counter:', valStr);
         this.container.innerHTML = '';
         this.digits = [];
         
-        // Split into groups of 3 (e.g., 000 006)
         const groups = [
             valStr.slice(0, 3),
             valStr.slice(3, 6)
         ];
 
-        groups.forEach((group, gIdx) => {
+        groups.forEach((group) => {
             const groupEl = document.createElement('div');
             groupEl.className = 'digit-group';
             
-            [...group].forEach((char, cIdx) => {
+            [...group].forEach((char) => {
                 const digitEl = document.createElement('div');
                 digitEl.className = 'digit';
                 digitEl.innerHTML = `<span>${char}</span>`;
@@ -71,7 +80,6 @@ class LiveCounter {
         const oldStr = this.value.toString().padStart(6, '0');
         const newStr = newValue.toString().padStart(6, '0');
         
-        // Initial render if digits are empty
         if (this.digits.length === 0) {
             this.value = newValue;
             this.render();
@@ -83,7 +91,7 @@ class LiveCounter {
                 const digitEl = this.digits[i];
                 if (digitEl) {
                     digitEl.classList.remove('changed');
-                    void digitEl.offsetWidth; // Trigger reflow
+                    void digitEl.offsetWidth; 
                     digitEl.innerHTML = `<span>${newStr[i]}</span>`;
                     digitEl.classList.add('changed');
                 }
@@ -94,14 +102,16 @@ class LiveCounter {
     }
 
     startPolling() {
-        // Fetch actual data every 5 seconds for a "live" feel
         setInterval(() => {
             this.fetchStats();
         }, 5000);
     }
 }
 
-// Initialize the counter when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new LiveCounter('counter');
+    if (document.getElementById('counter')) {
+        new LiveCounter('counter');
+    } else {
+        console.error('Counter element not found!');
+    }
 });
